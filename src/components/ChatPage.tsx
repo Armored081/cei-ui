@@ -60,11 +60,12 @@ function isLikelyAuthExpiry(code: string, message: string): boolean {
 }
 
 function toFriendlyError(code: string, message: string): FriendlyError {
-  if (isLikelyAuthExpiry(code, message)) {
+  // Check explicit error codes before heuristic matching to avoid misclassification
+  if (code === 'forbidden_error') {
     return {
-      bannerText: 'Your session expired. Please sign in again.',
-      messageText: 'Session expired. Sign in again to continue this conversation.',
-      shouldRelogin: true,
+      bannerText: 'You do not have permission to perform this action.',
+      messageText: 'Access denied. Contact your administrator if you believe this is an error.',
+      shouldRelogin: false,
     }
   }
 
@@ -84,11 +85,11 @@ function toFriendlyError(code: string, message: string): FriendlyError {
     }
   }
 
-  if (code === 'forbidden_error') {
+  if (isLikelyAuthExpiry(code, message)) {
     return {
-      bannerText: 'You do not have permission to perform this action.',
-      messageText: 'Access denied. Contact your administrator if you believe this is an error.',
-      shouldRelogin: false,
+      bannerText: 'Your session expired. Please sign in again.',
+      messageText: 'Session expired. Sign in again to continue this conversation.',
+      shouldRelogin: true,
     }
   }
 
