@@ -84,6 +84,14 @@ function toFriendlyError(code: string, message: string): FriendlyError {
     }
   }
 
+  if (code === 'forbidden_error') {
+    return {
+      bannerText: 'You do not have permission to perform this action.',
+      messageText: 'Access denied. Contact your administrator if you believe this is an error.',
+      shouldRelogin: false,
+    }
+  }
+
   if (code === 'configuration_error') {
     return {
       bannerText: 'App configuration is incomplete. Contact your administrator.',

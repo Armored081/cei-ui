@@ -55,8 +55,13 @@ function buildInvokeUrl(apiBaseUrl: string): string {
 }
 
 async function buildHttpErrorEvent(response: Response): Promise<StreamEvent> {
-  const defaultCode =
-    response.status === 401 || response.status === 403 ? 'auth_error' : 'http_error'
+  let defaultCode = 'http_error'
+  if (response.status === 401) {
+    defaultCode = 'auth_error'
+  } else if (response.status === 403) {
+    defaultCode = 'forbidden_error'
+  }
+
   let message = `Request failed with status ${response.status}`
   let code = defaultCode
 
