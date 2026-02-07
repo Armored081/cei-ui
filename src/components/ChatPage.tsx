@@ -17,6 +17,7 @@ type StreamStatus = 'idle' | 'connecting' | 'streaming' | 'done' | 'error'
 
 interface FriendlyError {
   bannerText: string
+  canRetry: boolean
   messageText: string
   shouldRelogin: boolean
 }
@@ -64,6 +65,7 @@ function toFriendlyError(code: string, message: string): FriendlyError {
   if (code === 'forbidden_error') {
     return {
       bannerText: 'You do not have permission to perform this action.',
+      canRetry: false,
       messageText: 'Access denied. Contact your administrator if you believe this is an error.',
       shouldRelogin: false,
     }
@@ -72,6 +74,7 @@ function toFriendlyError(code: string, message: string): FriendlyError {
   if (code === 'connection_error') {
     return {
       bannerText: 'Unable to reach the CEI service. Check your connection and try again.',
+      canRetry: true,
       messageText: 'Network connection failed before a response was received.',
       shouldRelogin: false,
     }
@@ -80,6 +83,7 @@ function toFriendlyError(code: string, message: string): FriendlyError {
   if (code === 'stream_interrupted') {
     return {
       bannerText: 'The response was interrupted before completion.',
+      canRetry: true,
       messageText: 'Stream interrupted. Retry to continue this thread.',
       shouldRelogin: false,
     }
@@ -88,6 +92,7 @@ function toFriendlyError(code: string, message: string): FriendlyError {
   if (isLikelyAuthExpiry(code, message)) {
     return {
       bannerText: 'Your session expired. Please sign in again.',
+      canRetry: false,
       messageText: 'Session expired. Sign in again to continue this conversation.',
       shouldRelogin: true,
     }
@@ -96,6 +101,7 @@ function toFriendlyError(code: string, message: string): FriendlyError {
   if (code === 'configuration_error') {
     return {
       bannerText: 'App configuration is incomplete. Contact your administrator.',
+      canRetry: false,
       messageText: 'Missing required API configuration.',
       shouldRelogin: false,
     }
@@ -104,6 +110,7 @@ function toFriendlyError(code: string, message: string): FriendlyError {
   if (code === 'http_error' || code === 'response_parse_error' || code === 'stream_error') {
     return {
       bannerText: 'The CEI service returned an unexpected response. Please retry.',
+      canRetry: true,
       messageText: 'The response could not be processed successfully.',
       shouldRelogin: false,
     }
@@ -111,6 +118,7 @@ function toFriendlyError(code: string, message: string): FriendlyError {
 
   return {
     bannerText: 'Something went wrong while processing your request. Please try again.',
+    canRetry: true,
     messageText: 'Request failed. Retry when ready.',
     shouldRelogin: false,
   }
@@ -485,7 +493,7 @@ export function ChatPage(): JSX.Element {
             agentMessage.id,
             (currentMessage: ChatMessageItem): ChatMessageItem => ({
               ...currentMessage,
-              canRetry: !friendlyError.shouldRelogin,
+              canRetry: friendlyError.canRetry,
               errorText: friendlyError.messageText,
               isStreaming: false,
             }),
@@ -547,7 +555,7 @@ export function ChatPage(): JSX.Element {
         agentMessage.id,
         (currentMessage: ChatMessageItem): ChatMessageItem => ({
           ...currentMessage,
-          canRetry: !friendlyError.shouldRelogin,
+          canRetry: friendlyError.canRetry,
           errorText: friendlyError.messageText,
           isStreaming: false,
         }),
