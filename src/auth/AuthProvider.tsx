@@ -106,9 +106,13 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
       return
     }
 
-    await signOut()
-    setUserEmail('')
-    setStatus('unauthenticated')
+    try {
+      await signOut()
+    } finally {
+      // Always transition to unauthenticated state, even if signOut fails
+      setUserEmail('')
+      setStatus('unauthenticated')
+    }
   }
 
   const getAccessToken = async (): Promise<string> => {
