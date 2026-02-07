@@ -163,7 +163,12 @@ export function ChatPage(): JSX.Element {
             >
               Send
             </button>
-            <button onClick={createNewThread} type="button" style={secondaryButtonStyle}>
+            <button
+              onClick={createNewThread}
+              type="button"
+              disabled={streamStatus === 'connecting' || streamStatus === 'streaming'}
+              style={secondaryButtonStyle}
+            >
               New Thread
             </button>
           </div>
