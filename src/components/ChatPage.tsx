@@ -304,7 +304,7 @@ export function ChatPage(): JSX.Element {
         }
       }
 
-      if (!sawDoneEvent && !sawErrorEvent && !abortController.signal.aborted) {
+      if (!sawDoneEvent && !sawErrorEvent) {
         setStreamStatus('done')
         setAgentMessageState(
           agentMessage.id,
