@@ -11,6 +11,7 @@ interface InvokeStreamParams {
   accessToken: string
   message: string
   requestId: string
+  signal: AbortSignal
   sessionId: string
 }
 
@@ -27,6 +28,18 @@ function toErrorMessage(error: unknown): string {
   }
 
   return 'Unknown stream error'
+}
+
+function isAbortError(error: unknown): boolean {
+  if (error instanceof DOMException) {
+    return error.name === 'AbortError'
+  }
+
+  if (error instanceof Error) {
+    return error.name === 'AbortError'
+  }
+
+  return false
 }
 
 function parseJsonStrict(payload: string): unknown {
@@ -125,6 +138,7 @@ function parseSseEvent(rawEvent: string): StreamEvent | null {
 
 async function* readSseMessages(
   stream: ReadableStream<Uint8Array>,
+  signal: AbortSignal,
 ): AsyncGenerator<string, void, undefined> {
   const reader = stream.getReader()
   const decoder = new TextDecoder()
@@ -132,6 +146,10 @@ async function* readSseMessages(
 
   try {
     while (true) {
+      if (signal.aborted) {
+        break
+      }
+
       const chunk = await reader.read()
 
       if (chunk.done) {
@@ -159,7 +177,21 @@ async function* readSseMessages(
     if (finalBlock) {
       yield finalBlock
     }
+  } catch (error) {
+    if (signal.aborted || isAbortError(error)) {
+      return
+    }
+
+    throw error
   } finally {
+    if (signal.aborted) {
+      try {
+        await reader.cancel()
+      } catch {
+        // Ignore read cancellation errors when the request is already aborted.
+      }
+    }
+
     reader.releaseLock()
   }
 }
@@ -199,8 +231,13 @@ export async function* invokeAgentStream(
         'X-Request-Id': params.requestId,
       },
       body: JSON.stringify(requestBody),
+      signal: params.signal,
     })
   } catch (error) {
+    if (params.signal.aborted || isAbortError(error)) {
+      return
+    }
+
     yield {
       type: 'error',
       code: 'connection_error',
@@ -234,21 +271,38 @@ export async function* invokeAgentStream(
 
   let didReceiveDone = false
 
-  for await (const rawEvent of readSseMessages(response.body)) {
-    const streamEvent = parseSseEvent(rawEvent)
+  try {
+    for await (const rawEvent of readSseMessages(response.body, params.signal)) {
+      if (params.signal.aborted) {
+        return
+      }
 
-    if (!streamEvent) {
-      continue
+      const streamEvent = parseSseEvent(rawEvent)
+
+      if (!streamEvent) {
+        continue
+      }
+
+      if (streamEvent.type === 'done') {
+        didReceiveDone = true
+      }
+
+      yield streamEvent
+    }
+  } catch (error) {
+    if (params.signal.aborted || isAbortError(error)) {
+      return
     }
 
-    if (streamEvent.type === 'done') {
-      didReceiveDone = true
+    yield {
+      type: 'error',
+      code: 'stream_error',
+      message: toErrorMessage(error),
     }
-
-    yield streamEvent
+    return
   }
 
-  if (!didReceiveDone) {
+  if (!didReceiveDone && !params.signal.aborted) {
     yield { type: 'done' }
   }
 }

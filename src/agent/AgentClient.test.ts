@@ -42,6 +42,10 @@ afterEach((): void => {
   vi.restoreAllMocks()
 })
 
+function createSignal(): AbortSignal {
+  return new AbortController().signal
+}
+
 describe('invokeAgentStream', (): void => {
   it('parses SSE events into typed stream events', async (): Promise<void> => {
     vi.stubEnv('VITE_API_URL', 'https://api.example.com')
@@ -63,6 +67,7 @@ describe('invokeAgentStream', (): void => {
         accessToken: 'token-123',
         message: 'Test prompt',
         requestId: 'request-123',
+        signal: createSignal(),
         sessionId: 'session-123',
       }),
     )
@@ -86,6 +91,7 @@ describe('invokeAgentStream', (): void => {
         accessToken: 'jwt-token',
         message: 'Security check',
         requestId: 'req-789',
+        signal: createSignal(),
         sessionId: 'session-456',
       }),
     )
@@ -112,6 +118,7 @@ describe('invokeAgentStream', (): void => {
         accessToken: 'jwt-token',
         message: 'Trigger failure',
         requestId: 'req-999',
+        signal: createSignal(),
         sessionId: 'session-999',
       }),
     )
@@ -123,5 +130,30 @@ describe('invokeAgentStream', (): void => {
         message: 'network down',
       },
     ])
+  })
+
+  it('resolves without events when fetch is aborted', async (): Promise<void> => {
+    vi.stubEnv('VITE_API_URL', 'https://api.example.com')
+
+    const controller = new AbortController()
+    controller.abort()
+
+    const mockFetch = vi
+      .fn()
+      .mockRejectedValue(new DOMException('The operation was aborted.', 'AbortError'))
+
+    vi.stubGlobal('fetch', mockFetch)
+
+    const events = await collectStreamEvents(
+      invokeAgentStream({
+        accessToken: 'jwt-token',
+        message: 'Trigger abort',
+        requestId: 'req-abort',
+        signal: controller.signal,
+        sessionId: 'session-abort',
+      }),
+    )
+
+    expect(events).toEqual([])
   })
 })
