@@ -42,16 +42,20 @@ function statusLabel(status: StreamStatus): string {
 }
 
 function isLikelyAuthExpiry(code: string, message: string): boolean {
-  const normalized = `${code} ${message}`.toLowerCase()
+  // Only treat explicit auth error codes as auth expiry
+  if (code === 'auth_error') {
+    return true
+  }
+
+  // For other codes, require specific auth-related phrases to avoid false positives
+  const normalized = message.toLowerCase()
 
   return (
-    code === 'auth_error' ||
-    normalized.includes('expired') ||
+    normalized.includes('session expired') ||
+    normalized.includes('token expired') ||
+    normalized.includes('jwt expired') ||
     normalized.includes('unauthorized') ||
-    normalized.includes('forbidden') ||
-    normalized.includes('jwt') ||
-    normalized.includes('token') ||
-    normalized.includes('401')
+    (normalized.includes('401') && normalized.includes('unauthorized'))
   )
 }
 
