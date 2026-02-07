@@ -28,9 +28,11 @@ export type ChatMessageSegment =
     }
 
 export interface ChatMessageItem {
+  canRetry?: boolean
   errorText: string
   id: string
   isStreaming: boolean
+  retryPrompt?: string
   role: ChatMessageRole
   segments: ChatMessageSegment[]
   tools: ToolActivityItem[]
@@ -48,6 +50,7 @@ export type ChatTimelineItem = ChatMessageItem | ThreadSeparatorItem
 interface ChatMessageListProps {
   items: ChatTimelineItem[]
   listRef: RefObject<HTMLDivElement>
+  onRetryMessage?: (messageId: string) => void
   onScroll: () => void
   onToggleTool: (messageId: string, toolId: string) => void
 }
@@ -110,13 +113,22 @@ function hasRenderableSegments(segments: ChatMessageSegment[]): boolean {
 export function ChatMessageList({
   items,
   listRef,
+  onRetryMessage,
   onScroll,
   onToggleTool,
 }: ChatMessageListProps): JSX.Element {
   if (items.length === 0) {
     return (
       <div aria-live="polite" className="cei-empty-state">
-        Start a thread by sending your first message.
+        <div className="cei-empty-state-content">
+          <p className="cei-empty-title">Welcome to CEI Agent</p>
+          <p className="cei-empty-subtitle">Try one of these prompts:</p>
+          <ul className="cei-empty-suggestions">
+            <li>Ask me about your portfolio risk profile.</li>
+            <li>Summarize security findings from recent scans.</li>
+            <li>Recommend next actions for high-severity issues.</li>
+          </ul>
+        </div>
       </div>
     )
   }
@@ -176,9 +188,20 @@ export function ChatMessageList({
                 </span>
               ) : null}
               {item.errorText ? (
-                <p className="cei-error-text" data-testid="message-error">
-                  {item.errorText}
-                </p>
+                <div className="cei-message-error-row">
+                  <p className="cei-error-text" data-testid="message-error">
+                    {item.errorText}
+                  </p>
+                  {item.canRetry && onRetryMessage ? (
+                    <button
+                      className="cei-button-secondary cei-retry-button"
+                      onClick={(): void => onRetryMessage(item.id)}
+                      type="button"
+                    >
+                      Retry
+                    </button>
+                  ) : null}
+                </div>
               ) : null}
             </div>
 

@@ -112,7 +112,7 @@ const buttonStyle: CSSProperties = {
   backgroundColor: 'var(--accent)',
   border: 0,
   borderRadius: 'var(--radius-md)',
-  color: '#062035',
+  color: 'var(--bg-primary)',
   cursor: 'pointer',
   fontWeight: 700,
   padding: 'var(--space-3) var(--space-4)',

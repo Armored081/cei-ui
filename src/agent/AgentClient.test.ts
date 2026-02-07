@@ -156,4 +156,64 @@ describe('invokeAgentStream', (): void => {
 
     expect(events).toEqual([])
   })
+
+  it('yields an auth error event for 401 responses', async (): Promise<void> => {
+    vi.stubEnv('VITE_API_URL', 'https://api.example.com')
+
+    const mockFetch = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ message: 'Token expired' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    )
+
+    vi.stubGlobal('fetch', mockFetch)
+
+    const events = await collectStreamEvents(
+      invokeAgentStream({
+        accessToken: 'jwt-token',
+        message: 'Trigger auth failure',
+        requestId: 'req-auth',
+        signal: createSignal(),
+        sessionId: 'session-auth',
+      }),
+    )
+
+    expect(events).toEqual([
+      {
+        type: 'error',
+        code: 'auth_error',
+        message: 'Token expired',
+      },
+    ])
+  })
+
+  it('yields an interruption error when the stream closes before done', async (): Promise<void> => {
+    vi.stubEnv('VITE_API_URL', 'https://api.example.com')
+
+    const mockFetch = vi
+      .fn()
+      .mockResolvedValue(makeSseResponse(['data: {"type":"delta","content":"Partial"}']))
+
+    vi.stubGlobal('fetch', mockFetch)
+
+    const events = await collectStreamEvents(
+      invokeAgentStream({
+        accessToken: 'jwt-token',
+        message: 'Trigger interruption',
+        requestId: 'req-interrupted',
+        signal: createSignal(),
+        sessionId: 'session-interrupted',
+      }),
+    )
+
+    expect(events).toEqual([
+      { type: 'delta', content: 'Partial' },
+      {
+        type: 'error',
+        code: 'stream_interrupted',
+        message: 'The response stream ended before completion.',
+      },
+    ])
+  })
 })

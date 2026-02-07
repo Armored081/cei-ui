@@ -15,6 +15,12 @@ import './ChatPage.css'
 
 type StreamStatus = 'idle' | 'connecting' | 'streaming' | 'done' | 'error'
 
+interface FriendlyError {
+  bannerText: string
+  messageText: string
+  shouldRelogin: boolean
+}
+
 function statusLabel(status: StreamStatus): string {
   if (status === 'connecting') {
     return 'Connecting...'
@@ -33,6 +39,68 @@ function statusLabel(status: StreamStatus): string {
   }
 
   return 'Idle'
+}
+
+function isLikelyAuthExpiry(code: string, message: string): boolean {
+  const normalized = `${code} ${message}`.toLowerCase()
+
+  return (
+    code === 'auth_error' ||
+    normalized.includes('expired') ||
+    normalized.includes('unauthorized') ||
+    normalized.includes('forbidden') ||
+    normalized.includes('jwt') ||
+    normalized.includes('token') ||
+    normalized.includes('401')
+  )
+}
+
+function toFriendlyError(code: string, message: string): FriendlyError {
+  if (isLikelyAuthExpiry(code, message)) {
+    return {
+      bannerText: 'Your session expired. Please sign in again.',
+      messageText: 'Session expired. Sign in again to continue this conversation.',
+      shouldRelogin: true,
+    }
+  }
+
+  if (code === 'connection_error') {
+    return {
+      bannerText: 'Unable to reach the CEI service. Check your connection and try again.',
+      messageText: 'Network connection failed before a response was received.',
+      shouldRelogin: false,
+    }
+  }
+
+  if (code === 'stream_interrupted') {
+    return {
+      bannerText: 'The response was interrupted before completion.',
+      messageText: 'Stream interrupted. Retry to continue this thread.',
+      shouldRelogin: false,
+    }
+  }
+
+  if (code === 'configuration_error') {
+    return {
+      bannerText: 'App configuration is incomplete. Contact your administrator.',
+      messageText: 'Missing required API configuration.',
+      shouldRelogin: false,
+    }
+  }
+
+  if (code === 'http_error' || code === 'response_parse_error' || code === 'stream_error') {
+    return {
+      bannerText: 'The CEI service returned an unexpected response. Please retry.',
+      messageText: 'The response could not be processed successfully.',
+      shouldRelogin: false,
+    }
+  }
+
+  return {
+    bannerText: 'Something went wrong while processing your request. Please try again.',
+    messageText: 'Request failed. Retry when ready.',
+    shouldRelogin: false,
+  }
 }
 
 function isMessageItem(item: ChatTimelineItem): item is ChatMessageItem {
@@ -89,9 +157,11 @@ function hasRenderableSegment(segments: ChatMessageSegment[]): boolean {
 
 function buildUserMessage(content: string): ChatMessageItem {
   return {
+    canRetry: false,
     errorText: '',
     id: uuidv4(),
     isStreaming: false,
+    retryPrompt: '',
     role: 'user',
     segments: [{ content, type: 'text' }],
     tools: [],
@@ -99,11 +169,13 @@ function buildUserMessage(content: string): ChatMessageItem {
   }
 }
 
-function buildAgentMessage(): ChatMessageItem {
+function buildAgentMessage(retryPrompt: string): ChatMessageItem {
   return {
+    canRetry: false,
     errorText: '',
     id: uuidv4(),
     isStreaming: true,
+    retryPrompt,
     role: 'agent',
     segments: [],
     tools: [],
@@ -115,13 +187,14 @@ export function ChatPage(): JSX.Element {
   const { getAccessToken, logout, userEmail } = useAuth()
 
   const [draftMessage, setDraftMessage] = useState<string>('')
-  const [error, setError] = useState<string>('')
+  const [errorBanner, setErrorBanner] = useState<string>('')
   const [sessionId, setSessionId] = useState<string>(uuidv4())
   const [streamStatus, setStreamStatus] = useState<StreamStatus>('idle')
   const [timelineItems, setTimelineItems] = useState<ChatTimelineItem[]>([])
 
   const activeAbortControllerRef = useRef<AbortController | null>(null)
   const activeStreamIdRef = useRef<number>(0)
+  const composerRef = useRef<HTMLTextAreaElement | null>(null)
   const messageListRef = useRef<HTMLDivElement | null>(null)
   const shouldAutoScrollRef = useRef<boolean>(true)
 
@@ -164,6 +237,33 @@ export function ChatPage(): JSX.Element {
     }
   }, [])
 
+  useEffect((): void => {
+    if (!isStreaming) {
+      composerRef.current?.focus()
+    }
+  }, [isStreaming])
+
+  useEffect((): (() => void) => {
+    const onWindowKeyDown = (event: globalThis.KeyboardEvent): void => {
+      if (event.key !== 'Escape') {
+        return
+      }
+
+      if (!isStreaming) {
+        return
+      }
+
+      cancelActiveStream()
+      setStreamStatus('idle')
+    }
+
+    window.addEventListener('keydown', onWindowKeyDown)
+
+    return (): void => {
+      window.removeEventListener('keydown', onWindowKeyDown)
+    }
+  }, [isStreaming])
+
   const setAgentMessageState = (
     messageId: string,
     updater: (message: ChatMessageItem) => ChatMessageItem,
@@ -199,8 +299,9 @@ export function ChatPage(): JSX.Element {
       },
     ])
     setDraftMessage('')
-    setError('')
+    setErrorBanner('')
     setStreamStatus('idle')
+    composerRef.current?.focus()
   }
 
   const submitPrompt = async (messageToSend: string): Promise<void> => {
@@ -220,10 +321,10 @@ export function ChatPage(): JSX.Element {
 
     const requestId = uuidv4()
     const userMessage = buildUserMessage(trimmedMessage)
-    const agentMessage = buildAgentMessage()
+    const agentMessage = buildAgentMessage(trimmedMessage)
 
     setDraftMessage('')
-    setError('')
+    setErrorBanner('')
     setStreamStatus('connecting')
     setTimelineItems((currentItems: ChatTimelineItem[]): ChatTimelineItem[] => [
       ...currentItems,
@@ -344,16 +445,23 @@ export function ChatPage(): JSX.Element {
 
         if (streamEvent.type === 'error') {
           sawErrorEvent = true
-          setError(`${streamEvent.code}: ${streamEvent.message}`)
+          const friendlyError = toFriendlyError(streamEvent.code, streamEvent.message)
+          setErrorBanner(friendlyError.bannerText)
           setStreamStatus('error')
           setAgentMessageState(
             agentMessage.id,
             (currentMessage: ChatMessageItem): ChatMessageItem => ({
               ...currentMessage,
-              errorText: `${streamEvent.code}: ${streamEvent.message}`,
+              canRetry: !friendlyError.shouldRelogin,
+              errorText: friendlyError.messageText,
               isStreaming: false,
             }),
           )
+
+          if (friendlyError.shouldRelogin) {
+            await logout()
+          }
+
           return
         }
 
@@ -392,17 +500,23 @@ export function ChatPage(): JSX.Element {
         return
       }
 
-      const errorMessage = describeAuthError(submitError)
-      setError(errorMessage)
+      const authErrorMessage = describeAuthError(submitError)
+      const friendlyError = toFriendlyError('auth_client_error', authErrorMessage)
+      setErrorBanner(friendlyError.bannerText)
       setStreamStatus('error')
       setAgentMessageState(
         agentMessage.id,
         (currentMessage: ChatMessageItem): ChatMessageItem => ({
           ...currentMessage,
-          errorText: errorMessage,
+          canRetry: !friendlyError.shouldRelogin,
+          errorText: friendlyError.messageText,
           isStreaming: false,
         }),
       )
+
+      if (friendlyError.shouldRelogin) {
+        await logout()
+      }
     } finally {
       setAgentMessageState(
         agentMessage.id,
@@ -457,12 +571,41 @@ export function ChatPage(): JSX.Element {
     })
   }
 
+  const onRetryMessage = (messageId: string): void => {
+    if (isStreaming) {
+      return
+    }
+
+    const retrySource = timelineItems.find((item: ChatTimelineItem): boolean => {
+      return isMessageItem(item) && item.id === messageId
+    })
+
+    if (!retrySource || !isMessageItem(retrySource) || !retrySource.retryPrompt) {
+      return
+    }
+
+    setTimelineItems((currentItems: ChatTimelineItem[]): ChatTimelineItem[] => {
+      return currentItems.map((item: ChatTimelineItem): ChatTimelineItem => {
+        if (!isMessageItem(item) || item.id !== messageId) {
+          return item
+        }
+
+        return {
+          ...item,
+          canRetry: false,
+        }
+      })
+    })
+
+    void submitPrompt(retrySource.retryPrompt)
+  }
+
   return (
     <main className="cei-chat-shell">
       <header className="cei-chat-header">
         <div>
-          <p className="cei-chat-kicker">CEI Agent UI - Phase 3</p>
-          <h1 className="cei-chat-title">Structured Output Rendering</h1>
+          <p className="cei-chat-kicker">CEI Agent UI - Phase 4</p>
+          <h1 className="cei-chat-title">Polish and Deployment Readiness</h1>
           <p className="cei-chat-subtitle">Signed in as {userEmail}</p>
         </div>
 
@@ -477,9 +620,31 @@ export function ChatPage(): JSX.Element {
 
       <SectionCard title="Conversation">
         <div className="cei-chat-layout">
+          {errorBanner ? (
+            <div className="cei-error-banner" role="alert">
+              <span>{errorBanner}</span>
+              <button
+                aria-label="Dismiss error"
+                className="cei-error-dismiss"
+                onClick={(): void => setErrorBanner('')}
+                type="button"
+              >
+                Dismiss
+              </button>
+            </div>
+          ) : null}
+
+          {streamStatus === 'connecting' ? (
+            <div className="cei-connection-indicator" data-testid="connecting-indicator">
+              <span aria-hidden="true" className="cei-spinner" />
+              Connecting to CEI service...
+            </div>
+          ) : null}
+
           <ChatMessageList
             items={timelineItems}
             listRef={messageListRef}
+            onRetryMessage={onRetryMessage}
             onScroll={updateMessageScrollIntent}
             onToggleTool={onToggleTool}
           />
@@ -493,12 +658,14 @@ export function ChatPage(): JSX.Element {
               onKeyDown={onComposerKeyDown}
               placeholder="Ask the CEI agent to investigate a security scenario..."
               className="cei-textarea"
+              disabled={isStreaming}
+              ref={composerRef}
               rows={5}
             />
 
             <div className="cei-button-row">
               <button className="cei-button-primary" disabled={isStreaming} type="submit">
-                Send
+                {isStreaming ? 'Sending...' : 'Send'}
               </button>
               <button className="cei-button-secondary" onClick={createNewThread} type="button">
                 New Thread
@@ -513,7 +680,7 @@ export function ChatPage(): JSX.Element {
           Session ID: <code>{sessionId}</code>
         </p>
         <p className="cei-meta-row">Status: {status}</p>
-        {error ? <p className="cei-meta-row cei-error-text">{error}</p> : null}
+        {errorBanner ? <p className="cei-meta-row cei-error-text">{errorBanner}</p> : null}
       </SectionCard>
     </main>
   )

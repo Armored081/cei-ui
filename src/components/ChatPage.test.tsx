@@ -1,8 +1,8 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { ChatPage } from './ChatPage'
 import type { StreamEvent } from '../agent/types'
+import { ChatPage } from './ChatPage'
 
 interface InvokeCall {
   accessToken: string
@@ -82,6 +82,13 @@ afterEach((): void => {
 })
 
 describe('ChatPage', (): void => {
+  it('shows an empty welcome state with suggestions', (): void => {
+    render(<ChatPage />)
+
+    expect(screen.getByText('Welcome to CEI Agent')).toBeInTheDocument()
+    expect(screen.getByText('Try one of these prompts:')).toBeInTheDocument()
+  })
+
   it('renders user and agent message history', async (): Promise<void> => {
     mockInvokeAgentStream.mockImplementation(() =>
       streamFromEvents([
@@ -170,6 +177,137 @@ describe('ChatPage', (): void => {
     expect(thirdCall.sessionId).not.toBe(firstCall.sessionId)
   })
 
+  it('shows connecting and sending feedback while waiting for stream start', async (): Promise<void> => {
+    let hasConnectRelease = false
+    let releaseConnect = (): void => {}
+
+    mockInvokeAgentStream.mockImplementation(() =>
+      (async function* (): AsyncGenerator<StreamEvent, void, undefined> {
+        await new Promise<void>((resolve): void => {
+          hasConnectRelease = true
+          releaseConnect = (): void => resolve()
+        })
+        yield { type: 'done' }
+      })(),
+    )
+
+    render(<ChatPage />)
+
+    fillAndSendMessage('Long startup request')
+
+    expect(await screen.findByTestId('connecting-indicator')).toBeInTheDocument()
+    expect(screen.getByLabelText('Instruction')).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Sending...' })).toBeDisabled()
+
+    await waitFor((): void => {
+      expect(hasConnectRelease).toBe(true)
+    })
+    releaseConnect()
+
+    await waitFor((): void => {
+      expect(screen.queryByTestId('connecting-indicator')).not.toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Send' })).not.toBeDisabled()
+    })
+  })
+
+  it('shows a friendly network error without exposing raw backend text', async (): Promise<void> => {
+    mockInvokeAgentStream.mockImplementation(() =>
+      streamFromEvents([
+        {
+          type: 'error',
+          code: 'connection_error',
+          message: 'getaddrinfo ENOTFOUND api.internal',
+        },
+      ]),
+    )
+
+    render(<ChatPage />)
+
+    fillAndSendMessage('Check connectivity')
+
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent(
+      'Unable to reach the CEI service. Check your connection and try again.',
+    )
+    expect(
+      await screen.findByText('Network connection failed before a response was received.'),
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/ENOTFOUND/)).not.toBeInTheDocument()
+  })
+
+  it('logs out and prompts re-login on auth expiry errors', async (): Promise<void> => {
+    mockInvokeAgentStream.mockImplementation(() =>
+      streamFromEvents([
+        {
+          type: 'error',
+          code: 'auth_error',
+          message: 'JWT expired',
+        },
+      ]),
+    )
+
+    render(<ChatPage />)
+
+    fillAndSendMessage('Run security review')
+
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent('Your session expired. Please sign in again.')
+    expect(
+      await screen.findByText('Session expired. Sign in again to continue this conversation.'),
+    ).toBeInTheDocument()
+
+    await waitFor((): void => {
+      expect(mockLogout).toHaveBeenCalledTimes(1)
+    })
+
+    expect(screen.queryByRole('button', { name: 'Retry' })).not.toBeInTheDocument()
+  })
+
+  it('marks interrupted streams as retryable and retries with same session id', async (): Promise<void> => {
+    let invocation = 0
+
+    mockInvokeAgentStream.mockImplementation(() => {
+      invocation += 1
+
+      if (invocation === 1) {
+        return streamFromEvents([
+          { type: 'delta', content: 'Partial response...' },
+          {
+            type: 'error',
+            code: 'stream_interrupted',
+            message: 'socket closed',
+          },
+        ])
+      }
+
+      return streamFromEvents([
+        { type: 'delta', content: 'Retried response complete.' },
+        { type: 'done' },
+      ])
+    })
+
+    render(<ChatPage />)
+
+    fillAndSendMessage('Investigate asset inventory')
+
+    expect(await screen.findByText('Partial response...')).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: 'Retry' })).toBeInTheDocument()
+
+    const firstCall = mockInvokeAgentStream.mock.calls[0][0] as InvokeCall
+
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }))
+
+    await waitFor((): void => {
+      expect(mockInvokeAgentStream).toHaveBeenCalledTimes(2)
+    })
+
+    const secondCall = mockInvokeAgentStream.mock.calls[1][0] as InvokeCall
+
+    expect(secondCall.sessionId).toBe(firstCall.sessionId)
+    expect(secondCall.message).toBe(firstCall.message)
+    expect(await screen.findByText('Retried response complete.')).toBeInTheDocument()
+  })
+
   it('aborts the active stream when creating a new thread', async (): Promise<void> => {
     mockInvokeAgentStream.mockImplementation((params: InvokeCall) =>
       (async function* (): AsyncGenerator<StreamEvent, void, undefined> {
@@ -195,6 +333,34 @@ describe('ChatPage', (): void => {
 
     await waitFor((): void => {
       expect(firstCall.signal.aborted).toBe(true)
+    })
+  })
+
+  it('aborts the active stream when pressing Escape', async (): Promise<void> => {
+    mockInvokeAgentStream.mockImplementation((params: InvokeCall) =>
+      (async function* (): AsyncGenerator<StreamEvent, void, undefined> {
+        yield { type: 'delta', content: 'Working...' }
+
+        await new Promise<void>((resolve): void => {
+          params.signal.addEventListener('abort', (): void => resolve(), { once: true })
+        })
+      })(),
+    )
+
+    render(<ChatPage />)
+
+    fillAndSendMessage('Cancelable request')
+
+    await waitFor((): void => {
+      expect(mockInvokeAgentStream).toHaveBeenCalledTimes(1)
+    })
+
+    const firstCall = mockInvokeAgentStream.mock.calls[0][0] as InvokeCall
+    fireEvent.keyDown(window, { key: 'Escape' })
+
+    await waitFor((): void => {
+      expect(firstCall.signal.aborted).toBe(true)
+      expect(screen.getByRole('button', { name: 'Send' })).not.toBeDisabled()
     })
   })
 
@@ -239,7 +405,8 @@ describe('ChatPage', (): void => {
   })
 
   it('displays tool activity updates and marks completion', async (): Promise<void> => {
-    let releaseToolCompletion: (() => void) | null = null
+    let hasToolRelease = false
+    let releaseToolCompletion = (): void => {}
 
     mockInvokeAgentStream.mockImplementation(() =>
       (async function* (): AsyncGenerator<StreamEvent, void, undefined> {
@@ -250,7 +417,8 @@ describe('ChatPage', (): void => {
         }
 
         await new Promise<void>((resolve): void => {
-          releaseToolCompletion = resolve
+          hasToolRelease = true
+          releaseToolCompletion = (): void => resolve()
         })
 
         yield {
@@ -272,13 +440,10 @@ describe('ChatPage', (): void => {
     const toolToggle = screen.getByRole('button', { name: /security_lookup/i })
     expect(toolToggle).toHaveAttribute('aria-expanded', 'true')
 
-    const completeTool = releaseToolCompletion as (() => void) | null
-
-    if (!completeTool) {
-      throw new Error('tool completion callback was not registered')
-    }
-
-    completeTool()
+    await waitFor((): void => {
+      expect(hasToolRelease).toBe(true)
+    })
+    releaseToolCompletion()
 
     await waitFor((): void => {
       expect(screen.getByText('Complete')).toBeInTheDocument()

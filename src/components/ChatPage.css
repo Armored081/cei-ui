@@ -1,5 +1,5 @@
 .cei-chat-shell {
-  max-width: 960px;
+  width: min(1080px, 100%);
   margin: 0 auto;
   min-height: 100vh;
   padding: var(--space-8) var(--space-6);
@@ -41,14 +41,15 @@
 .cei-chat-layout {
   display: grid;
   gap: var(--space-4);
+  align-items: start;
 }
 
 .cei-message-list {
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   background-color: var(--bg-panel);
-  min-height: 280px;
-  max-height: 480px;
+  min-height: 320px;
+  max-height: min(56vh, 560px);
   overflow-y: auto;
   padding: var(--space-4);
   display: grid;
@@ -60,10 +61,34 @@
   border-radius: var(--radius-md);
   color: var(--text-muted);
   background-color: var(--bg-panel);
-  min-height: 120px;
-  display: grid;
-  place-items: center;
+  min-height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: var(--space-4);
+}
+
+.cei-empty-state-content {
+  width: min(560px, 100%);
+}
+
+.cei-empty-title {
+  margin-top: 0;
+  margin-bottom: var(--space-2);
+  color: var(--text-primary);
+  font-size: 1rem;
+}
+
+.cei-empty-subtitle {
+  margin-top: 0;
+  margin-bottom: var(--space-3);
+}
+
+.cei-empty-suggestions {
+  margin: 0;
+  padding-left: var(--space-5);
+  display: grid;
+  gap: var(--space-2);
 }
 
 .cei-thread-separator {
@@ -139,6 +164,14 @@
   color: var(--danger);
 }
 
+.cei-message-error-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
 .cei-typing-cursor {
   margin-left: var(--space-1);
   color: var(--accent-strong);
@@ -206,6 +239,11 @@
 .cei-composer {
   display: grid;
   gap: var(--space-4);
+  position: sticky;
+  bottom: 0;
+  background-color: var(--bg-panel-muted);
+  border-top: 1px solid var(--border);
+  padding-top: var(--space-4);
 }
 
 .cei-textarea {
@@ -217,6 +255,11 @@
   padding: var(--space-3);
   resize: vertical;
   min-height: 120px;
+}
+
+.cei-textarea:disabled {
+  cursor: not-allowed;
+  opacity: 0.75;
 }
 
 .cei-button-row {
@@ -252,6 +295,39 @@
   opacity: 0.65;
 }
 
+.cei-error-banner {
+  border: 1px solid var(--danger);
+  border-radius: var(--radius-md);
+  background-color: var(--bg-panel);
+  color: var(--danger);
+  padding: var(--space-3) var(--space-4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.cei-error-dismiss {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background-color: transparent;
+  color: var(--text-primary);
+  padding: var(--space-2) var(--space-3);
+  cursor: pointer;
+}
+
+.cei-connection-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.cei-retry-button {
+  padding: var(--space-2) var(--space-3);
+}
+
 @keyframes cei-cursor-blink {
   0% {
     opacity: 1;
@@ -273,5 +349,28 @@
 
   to {
     transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 1024px) {
+  .cei-chat-shell {
+    padding: var(--space-6) var(--space-5);
+  }
+}
+
+@media (max-width: 768px) {
+  .cei-chat-shell {
+    padding: var(--space-5) var(--space-4);
+    gap: var(--space-5);
+  }
+
+  .cei-chat-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .cei-message-list {
+    min-height: 280px;
+    max-height: min(52vh, 500px);
   }
 }

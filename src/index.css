@@ -29,3 +29,46 @@ input,
 textarea {
   font: inherit;
 }
+
+.cei-auth-loading {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: var(--space-6);
+}
+
+.cei-auth-loading-card {
+  width: min(360px, 100%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background-color: var(--bg-panel-muted);
+  box-shadow: var(--shadow-panel);
+  padding: var(--space-6);
+  display: grid;
+  justify-items: center;
+  gap: var(--space-3);
+}
+
+.cei-auth-loading-spinner {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  animation: cei-auth-spin 0.9s linear infinite;
+}
+
+.cei-auth-loading-text {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+@keyframes cei-auth-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}

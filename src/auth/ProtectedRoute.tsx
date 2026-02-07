@@ -12,15 +12,11 @@ export function ProtectedRoute({ children }: ProtectedRouteProps): JSX.Element {
 
   if (status === 'loading') {
     return (
-      <main
-        style={{
-          display: 'grid',
-          placeItems: 'center',
-          minHeight: '100vh',
-          color: 'var(--text-muted)',
-        }}
-      >
-        Checking authentication...
+      <main className="cei-auth-loading" role="status" aria-live="polite">
+        <div className="cei-auth-loading-card">
+          <span aria-hidden="true" className="cei-auth-loading-spinner" />
+          <p className="cei-auth-loading-text">Checking authentication...</p>
+        </div>
       </main>
     )
   }

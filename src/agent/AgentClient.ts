@@ -303,6 +303,10 @@ export async function* invokeAgentStream(
   }
 
   if (!didReceiveDone && !params.signal.aborted) {
-    yield { type: 'done' }
+    yield {
+      type: 'error',
+      code: 'stream_interrupted',
+      message: 'The response stream ended before completion.',
+    }
   }
 }
