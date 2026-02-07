@@ -2,8 +2,14 @@ import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEven
 import { v4 as uuidv4 } from 'uuid'
 
 import { invokeAgentStream } from '../agent/AgentClient'
+import type { StructuredBlock } from '../agent/types'
 import { describeAuthError, useAuth } from '../auth/AuthProvider'
-import { ChatMessageList, type ChatMessageItem, type ChatTimelineItem } from './ChatMessageList'
+import {
+  ChatMessageList,
+  type ChatMessageItem,
+  type ChatMessageSegment,
+  type ChatTimelineItem,
+} from './ChatMessageList'
 import { SectionCard } from './SectionCard'
 import './ChatPage.css'
 
@@ -33,13 +39,61 @@ function isMessageItem(item: ChatTimelineItem): item is ChatMessageItem {
   return item.type === 'message'
 }
 
+function appendTextSegment(segments: ChatMessageSegment[], content: string): ChatMessageSegment[] {
+  if (!content) {
+    return segments
+  }
+
+  const nextSegments = [...segments]
+  const lastSegment = nextSegments[nextSegments.length - 1]
+
+  if (lastSegment?.type === 'text') {
+    nextSegments[nextSegments.length - 1] = {
+      ...lastSegment,
+      content: `${lastSegment.content}${content}`,
+    }
+
+    return nextSegments
+  }
+
+  nextSegments.push({
+    content,
+    type: 'text',
+  })
+
+  return nextSegments
+}
+
+function appendBlockSegment(
+  segments: ChatMessageSegment[],
+  block: StructuredBlock,
+): ChatMessageSegment[] {
+  return [
+    ...segments,
+    {
+      block,
+      type: 'block',
+    },
+  ]
+}
+
+function hasRenderableSegment(segments: ChatMessageSegment[]): boolean {
+  return segments.some((segment) => {
+    if (segment.type === 'text') {
+      return Boolean(segment.content)
+    }
+
+    return true
+  })
+}
+
 function buildUserMessage(content: string): ChatMessageItem {
   return {
-    content,
     errorText: '',
     id: uuidv4(),
     isStreaming: false,
     role: 'user',
+    segments: [{ content, type: 'text' }],
     tools: [],
     type: 'message',
   }
@@ -47,11 +101,11 @@ function buildUserMessage(content: string): ChatMessageItem {
 
 function buildAgentMessage(): ChatMessageItem {
   return {
-    content: '',
     errorText: '',
     id: uuidv4(),
     isStreaming: true,
     role: 'agent',
+    segments: [],
     tools: [],
     type: 'message',
   }
@@ -204,8 +258,21 @@ export function ChatPage(): JSX.Element {
             agentMessage.id,
             (currentMessage: ChatMessageItem): ChatMessageItem => ({
               ...currentMessage,
-              content: `${currentMessage.content}${streamEvent.content}`,
               isStreaming: true,
+              segments: appendTextSegment(currentMessage.segments, streamEvent.content),
+            }),
+          )
+          continue
+        }
+
+        if (streamEvent.type === 'block') {
+          setStreamStatus('streaming')
+          setAgentMessageState(
+            agentMessage.id,
+            (currentMessage: ChatMessageItem): ChatMessageItem => ({
+              ...currentMessage,
+              isStreaming: true,
+              segments: appendBlockSegment(currentMessage.segments, streamEvent.block),
             }),
           )
           continue
@@ -295,11 +362,17 @@ export function ChatPage(): JSX.Element {
           setStreamStatus('done')
           setAgentMessageState(
             agentMessage.id,
-            (currentMessage: ChatMessageItem): ChatMessageItem => ({
-              ...currentMessage,
-              content: currentMessage.content || streamEvent.summary || currentMessage.content,
-              isStreaming: false,
-            }),
+            (currentMessage: ChatMessageItem): ChatMessageItem => {
+              const nextSegments = hasRenderableSegment(currentMessage.segments)
+                ? currentMessage.segments
+                : appendTextSegment(currentMessage.segments, streamEvent.summary || '')
+
+              return {
+                ...currentMessage,
+                isStreaming: false,
+                segments: nextSegments,
+              }
+            },
           )
         }
       }
@@ -331,6 +404,14 @@ export function ChatPage(): JSX.Element {
         }),
       )
     } finally {
+      setAgentMessageState(
+        agentMessage.id,
+        (currentMessage: ChatMessageItem): ChatMessageItem => ({
+          ...currentMessage,
+          isStreaming: false,
+        }),
+      )
+
       if (
         activeStreamIdRef.current === streamId &&
         activeAbortControllerRef.current === abortController
@@ -380,8 +461,8 @@ export function ChatPage(): JSX.Element {
     <main className="cei-chat-shell">
       <header className="cei-chat-header">
         <div>
-          <p className="cei-chat-kicker">CEI Agent UI - Phase 2</p>
-          <h1 className="cei-chat-title">Chat Interface and Session Management</h1>
+          <p className="cei-chat-kicker">CEI Agent UI - Phase 3</p>
+          <h1 className="cei-chat-title">Structured Output Rendering</h1>
           <p className="cei-chat-subtitle">Signed in as {userEmail}</p>
         </div>
 

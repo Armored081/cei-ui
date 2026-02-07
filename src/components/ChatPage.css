@@ -109,12 +109,24 @@
   border-radius: var(--radius-md);
   background-color: var(--bg-panel-muted);
   padding: var(--space-3);
-  white-space: pre-wrap;
   word-break: break-word;
 }
 
 .cei-message-user {
   background-color: var(--bg-secondary);
+}
+
+.cei-message-content {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.cei-message-text-segment {
+  white-space: pre-wrap;
+}
+
+.cei-message-block-segment {
+  min-width: 0;
 }
 
 .cei-muted {

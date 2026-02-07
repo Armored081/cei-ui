@@ -1,5 +1,10 @@
 import type { CSSProperties, RefObject } from 'react'
 
+import type { StructuredBlock } from '../agent/types'
+import { ChartBlock } from './blocks/ChartBlock'
+import { RecommendationBlock } from './blocks/RecommendationBlock'
+import { TableBlock } from './blocks/TableBlock'
+
 export type ChatMessageRole = 'user' | 'agent'
 export type ToolActivityStatus = 'running' | 'complete'
 
@@ -12,12 +17,22 @@ export interface ToolActivityItem {
   status: ToolActivityStatus
 }
 
+export type ChatMessageSegment =
+  | {
+      content: string
+      type: 'text'
+    }
+  | {
+      block: StructuredBlock
+      type: 'block'
+    }
+
 export interface ChatMessageItem {
-  content: string
   errorText: string
   id: string
   isStreaming: boolean
   role: ChatMessageRole
+  segments: ChatMessageSegment[]
   tools: ToolActivityItem[]
   type: 'message'
 }
@@ -70,6 +85,28 @@ function renderToolStatus(status: ToolActivityStatus): JSX.Element {
   )
 }
 
+function renderStructuredBlock(block: StructuredBlock): JSX.Element {
+  if (block.kind === 'chart') {
+    return <ChartBlock block={block} />
+  }
+
+  if (block.kind === 'table') {
+    return <TableBlock block={block} />
+  }
+
+  return <RecommendationBlock block={block} />
+}
+
+function hasRenderableSegments(segments: ChatMessageSegment[]): boolean {
+  return segments.some((segment) => {
+    if (segment.type === 'text') {
+      return Boolean(segment.content)
+    }
+
+    return true
+  })
+}
+
 export function ChatMessageList({
   items,
   listRef,
@@ -112,7 +149,27 @@ export function ChatMessageList({
             </header>
 
             <div className={bubbleClassName}>
-              {item.content || <span className="cei-muted">Waiting for response...</span>}
+              {hasRenderableSegments(item.segments) ? (
+                <div className="cei-message-content">
+                  {item.segments.map((segment, index): JSX.Element => {
+                    if (segment.type === 'text') {
+                      return (
+                        <span className="cei-message-text-segment" key={`text-${index.toString()}`}>
+                          {segment.content}
+                        </span>
+                      )
+                    }
+
+                    return (
+                      <div className="cei-message-block-segment" key={`block-${index.toString()}`}>
+                        {renderStructuredBlock(segment.block)}
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : (
+                <span className="cei-muted">Waiting for response...</span>
+              )}
               {item.isStreaming ? (
                 <span aria-hidden="true" className="cei-typing-cursor">
                   |

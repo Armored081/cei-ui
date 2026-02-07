@@ -13,6 +13,21 @@
   --danger: #ff7d9e;
   --warning: #ffd47d;
   --success: #89ffbe;
+  --block-bg: rgba(10, 20, 35, 0.55);
+  --block-border: rgba(122, 160, 220, 0.32);
+  --block-download-border: rgba(138, 168, 216, 0.36);
+  --chart-series-1: #4fb3ff;
+  --chart-series-2: #79ffc5;
+  --chart-series-3: #ffd47d;
+  --chart-series-4: #c4a3ff;
+  --chart-grid: rgba(143, 171, 224, 0.25);
+  --severity-critical: #ff7d9e;
+  --severity-high: #ffad7d;
+  --severity-medium: #ffd47d;
+  --severity-low: #89ffbe;
+  --table-header-bg: rgba(20, 37, 66, 0.72);
+  --table-header-text: #cddaf2;
+  --table-border: rgba(147, 171, 214, 0.24);
 
   --space-1: 4px;
   --space-2: 8px;

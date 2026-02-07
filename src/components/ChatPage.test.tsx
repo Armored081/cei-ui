@@ -100,6 +100,34 @@ describe('ChatPage', (): void => {
     expect(screen.getAllByText('Agent')).toHaveLength(1)
   })
 
+  it('renders mixed text and structured blocks from stream events', async (): Promise<void> => {
+    mockInvokeAgentStream.mockImplementation(() =>
+      streamFromEvents([
+        { type: 'delta', content: 'Initial analysis: ' },
+        {
+          type: 'block',
+          block: {
+            kind: 'recommendation',
+            severity: 'medium',
+            title: 'Patch vulnerable package',
+            body: 'Update dependency xyz to 3.2.1.',
+          },
+        },
+        { type: 'delta', content: 'Follow-up validation complete.' },
+        { type: 'done' },
+      ]),
+    )
+
+    render(<ChatPage />)
+
+    fillAndSendMessage('Check dependency exposure')
+
+    expect(await screen.findByText(/Initial analysis:/)).toBeInTheDocument()
+    expect(await screen.findByText('Patch vulnerable package')).toBeInTheDocument()
+    expect(await screen.findByText('Update dependency xyz to 3.2.1.')).toBeInTheDocument()
+    expect(await screen.findByText('Follow-up validation complete.')).toBeInTheDocument()
+  })
+
   it('keeps session id across messages and rotates it on new thread', async (): Promise<void> => {
     mockInvokeAgentStream.mockImplementation(() => streamFromEvents([{ type: 'done' }]))
 
