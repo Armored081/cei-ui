@@ -492,7 +492,11 @@ export function ChatPage(): JSX.Element {
           )
 
           if (friendlyError.shouldRelogin) {
-            await logout()
+            try {
+              await logout()
+            } catch {
+              // Logout failure is non-critical here; user will be redirected on next auth check
+            }
           }
 
           return
@@ -550,7 +554,11 @@ export function ChatPage(): JSX.Element {
       )
 
       if (friendlyError.shouldRelogin) {
-        await logout()
+        try {
+          await logout()
+        } catch {
+          // Logout failure is non-critical here; user will be redirected on next auth check
+        }
       }
     } finally {
       setAgentMessageState(
