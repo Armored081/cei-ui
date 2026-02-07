@@ -393,6 +393,7 @@ export function ChatPage(): JSX.Element {
         }
 
         if (streamEvent.type === 'tool_call') {
+          setStreamStatus('streaming')
           setAgentMessageState(
             agentMessage.id,
             (currentMessage: ChatMessageItem): ChatMessageItem => ({
