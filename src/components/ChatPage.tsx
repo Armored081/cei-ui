@@ -43,7 +43,7 @@ function statusLabel(status: StreamStatus): string {
 
 function isLikelyAuthExpiry(code: string, message: string): boolean {
   // Only treat explicit auth error codes as auth expiry
-  if (code === 'auth_error') {
+  if (code === 'auth_error' || code === 'auth_client_error') {
     return true
   }
 
