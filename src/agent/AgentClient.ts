@@ -275,6 +275,7 @@ export async function* invokeAgentStream(
   }
 
   let didReceiveDone = false
+  let didReceiveError = false
 
   try {
     for await (const rawEvent of readSseMessages(response.body, params.signal)) {
@@ -292,6 +293,10 @@ export async function* invokeAgentStream(
         didReceiveDone = true
       }
 
+      if (streamEvent.type === 'error') {
+        didReceiveError = true
+      }
+
       yield streamEvent
     }
   } catch (error) {
@@ -307,7 +312,7 @@ export async function* invokeAgentStream(
     return
   }
 
-  if (!didReceiveDone && !params.signal.aborted) {
+  if (!didReceiveDone && !didReceiveError && !params.signal.aborted) {
     yield {
       type: 'error',
       code: 'stream_interrupted',
