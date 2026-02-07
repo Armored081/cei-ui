@@ -207,6 +207,7 @@ export function ChatPage(): JSX.Element {
 
   const activeAbortControllerRef = useRef<AbortController | null>(null)
   const activeStreamIdRef = useRef<number>(0)
+  const activeAgentMessageIdRef = useRef<string | null>(null)
   const composerRef = useRef<HTMLTextAreaElement | null>(null)
   const messageListRef = useRef<HTMLDivElement | null>(null)
   const shouldAutoScrollRef = useRef<boolean>(true)
@@ -268,6 +269,21 @@ export function ChatPage(): JSX.Element {
 
       cancelActiveStream()
       setStreamStatus('idle')
+
+      // Remove pending agent message if it has no content
+      const pendingMessageId = activeAgentMessageIdRef.current
+      if (pendingMessageId) {
+        setTimelineItems((currentItems: ChatTimelineItem[]): ChatTimelineItem[] => {
+          return currentItems.filter((item: ChatTimelineItem): boolean => {
+            if (!isMessageItem(item) || item.id !== pendingMessageId) {
+              return true
+            }
+            // Keep the message if it has any content or errors
+            return item.segments.length > 0 || item.tools.length > 0 || item.errorText !== ''
+          })
+        })
+        activeAgentMessageIdRef.current = null
+      }
     }
 
     window.addEventListener('keydown', onWindowKeyDown)
@@ -335,6 +351,8 @@ export function ChatPage(): JSX.Element {
     const requestId = uuidv4()
     const userMessage = buildUserMessage(trimmedMessage)
     const agentMessage = buildAgentMessage(trimmedMessage)
+
+    activeAgentMessageIdRef.current = agentMessage.id
 
     setDraftMessage('')
     setErrorBanner('')
@@ -459,6 +477,7 @@ export function ChatPage(): JSX.Element {
 
         if (streamEvent.type === 'error') {
           sawErrorEvent = true
+          activeAgentMessageIdRef.current = null
           const friendlyError = toFriendlyError(streamEvent.code, streamEvent.message)
           setErrorBanner(friendlyError.bannerText)
           setStreamStatus('error')
@@ -482,6 +501,7 @@ export function ChatPage(): JSX.Element {
         if (streamEvent.type === 'done') {
           sawDoneEvent = true
           setStreamStatus('done')
+          activeAgentMessageIdRef.current = null
           setAgentMessageState(
             agentMessage.id,
             (currentMessage: ChatMessageItem): ChatMessageItem => {
@@ -514,6 +534,7 @@ export function ChatPage(): JSX.Element {
         return
       }
 
+      activeAgentMessageIdRef.current = null
       const authErrorMessage = describeAuthError(submitError)
       const friendlyError = toFriendlyError('auth_client_error', authErrorMessage)
       setErrorBanner(friendlyError.bannerText)
