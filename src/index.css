@@ -1,0 +1,31 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  color: var(--text-primary);
+  background:
+    radial-gradient(circle at 10% 0%, rgba(89, 157, 255, 0.2), transparent 50%),
+    radial-gradient(circle at 90% 100%, rgba(121, 255, 197, 0.14), transparent 42%),
+    linear-gradient(160deg, var(--bg-primary), #070c16 72%);
+}
+
+a {
+  color: inherit;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
