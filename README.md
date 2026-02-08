@@ -1,6 +1,47 @@
 # CEI UI
 
-Standalone React SPA for the CEI Agent. Phase 1 provides authentication with Cognito and a minimal streaming client that calls the CEI `/invoke` endpoint over SSE.
+React SPA for the CEI Agent. Provides a streaming chat interface with authentication, structured output rendering, and error handling.
+
+## Architecture
+
+```
+React + Vite + TypeScript
+  → AWS Cognito (auth via @aws-amplify/auth)
+  → API Gateway HTTP API
+  → AgentCore Runtime (SSE streaming)
+```
+
+### Key Directories
+
+- `src/auth/` — Cognito auth provider, login page, protected route wrapper, access token helper
+- `src/agent/` — SSE streaming client (`AgentClient.ts`), stream event types
+- `src/components/` — Chat UI, structured output renderers
+- `src/theme/` — Dark theme tokens and global styles
+
+## Features
+
+- **SSE Streaming:** Async generator consumes `/invoke` SSE stream, rendering tokens as they arrive
+- **Structured Output Rendering:** Rich blocks emitted by the agent render as interactive components:
+  - **8 chart types** (bar, line, pie, area, stacked-bar, grouped-bar, multi-line, stacked-area) via Recharts
+  - **Sortable tables** with column headers
+  - **Severity-graded recommendations** (high / medium / low)
+- **Schema Validation:** Zod schemas validate block payloads; refinement rules ensure data shape matches `chartType` (e.g., multi-series charts require `series` field)
+- **Error Handling:** Network and stream errors display inline with selective retry
+- **Cancel:** Press Escape to abort an in-flight stream
+- **Auth States:** `loading`, `authenticated`, `unauthenticated` with automatic redirect to login
+
+## Stream Contract
+
+SSE events from the agent:
+
+| `type`        | Description                         |
+| ------------- | ----------------------------------- |
+| `delta`       | Text token                          |
+| `block`       | Structured output (chart/table/rec) |
+| `tool_call`   | Tool invocation indicator           |
+| `tool_result` | Tool response                       |
+| `done`        | Stream complete                     |
+| `error`       | Server-side error                   |
 
 ## Setup
 
@@ -29,36 +70,19 @@ cp .env.example .env
 npm run dev
 ```
 
-## Architecture (Phase 1)
-
-- `src/auth/`
-- `AuthProvider` for auth state (`loading`, `authenticated`, `unauthenticated`)
-- Login page and protected route wrapper
-- Access token helper for authenticated API calls
-
-- `src/agent/`
-- `types.ts` with the stream contract (`delta`, `block`, `tool_call`, `tool_result`, `done`, `error`)
-- `AgentClient.ts` async generator for `/invoke` SSE streaming
-
-- `src/components/ChatPage.tsx`
-- Minimal proof-of-concept chat UI
-- Sends a prompt and concatenates incoming `delta` stream events
-- Shows `Connecting...`, `Streaming...`, `Done`, and `Error` states
-
-- `src/theme/`
-- Dark theme tokens and global styles
-
 ## Scripts
 
-- `npm run dev` - start local dev server
-- `npm run build` - typecheck and production build
-- `npm run lint` - run ESLint
-- `npm run format` - format all files with Prettier
-- `npm run format:check` - verify formatting
-- `npm run test` - run Vitest once
-- `npm run test:watch` - run Vitest in watch mode
+| Command                | Description                    |
+| ---------------------- | ------------------------------ |
+| `npm run dev`          | Start local dev server         |
+| `npm run build`        | Typecheck and production build |
+| `npm run lint`         | Run ESLint                     |
+| `npm run format`       | Format all files with Prettier |
+| `npm run format:check` | Verify formatting              |
+| `npm test`             | Run Vitest once                |
+| `npm run test:watch`   | Run Vitest in watch mode       |
 
 ## Testing
 
-- `src/agent/AgentClient.test.ts` validates SSE parsing, auth/request headers, and network error handling.
-- `src/auth/AuthProvider.test.tsx` validates auth state transitions.
+- `src/agent/AgentClient.test.ts` — SSE parsing, auth headers, network error handling
+- `src/auth/AuthProvider.test.tsx` — Auth state transitions
