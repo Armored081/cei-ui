@@ -106,6 +106,52 @@ describe('invokeAgentStream', (): void => {
     })
   })
 
+  it('includes attachments in invoke inputs when provided', async (): Promise<void> => {
+    vi.stubEnv('VITE_API_URL', 'https://api.example.com')
+
+    const mockFetch = vi.fn().mockResolvedValue(makeSseResponse(['data: {"type":"done"}']))
+
+    vi.stubGlobal('fetch', mockFetch)
+
+    await collectStreamEvents(
+      invokeAgentStream({
+        accessToken: 'jwt-token',
+        attachments: [
+          {
+            data: 'c2FtcGxl',
+            mime: 'text/plain',
+            name: 'evidence.txt',
+            sizeBytes: 6,
+          },
+        ],
+        message: 'Review evidence',
+        requestId: 'req-attachments',
+        signal: createSignal(),
+        sessionId: 'session-attachments',
+      }),
+    )
+
+    const [, options] = mockFetch.mock.calls[0] as [string, RequestInit]
+    const requestBodyRaw = options.body
+
+    expect(typeof requestBodyRaw).toBe('string')
+
+    const parsedRequestBody = JSON.parse(requestBodyRaw as string) as {
+      inputs: {
+        attachments?: Array<{ name: string; mime: string; data: string; sizeBytes: number }>
+      }
+    }
+
+    expect(parsedRequestBody.inputs.attachments).toEqual([
+      {
+        data: 'c2FtcGxl',
+        mime: 'text/plain',
+        name: 'evidence.txt',
+        sizeBytes: 6,
+      },
+    ])
+  })
+
   it('yields a connection error event when fetch fails', async (): Promise<void> => {
     vi.stubEnv('VITE_API_URL', 'https://api.example.com')
 

@@ -3,12 +3,14 @@ import { z } from 'zod'
 import {
   invokeRequestSchema,
   streamEventSchema,
+  type AttachmentInput,
   type InvokeRequest,
   type StreamEvent,
 } from './types'
 
 interface InvokeStreamParams {
   accessToken: string
+  attachments?: AttachmentInput[]
   message: string
   requestId: string
   signal: AbortSignal
@@ -215,14 +217,20 @@ export async function* invokeAgentStream(
     return
   }
 
+  const requestInputs: InvokeRequest['inputs'] = {
+    message: params.message,
+    requestId: params.requestId,
+  }
+
+  if ((params.attachments || []).length > 0) {
+    requestInputs.attachments = params.attachments
+  }
+
   const requestBody: InvokeRequest = invokeRequestSchema.parse({
     action: 'invoke',
     stream: true,
     sessionId: params.sessionId,
-    inputs: {
-      message: params.message,
-      requestId: params.requestId,
-    },
+    inputs: requestInputs,
   })
 
   let response: Response

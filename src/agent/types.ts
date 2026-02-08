@@ -99,6 +99,16 @@ export const streamEventSchema = z.discriminatedUnion('type', [
   }),
 ])
 
+/**
+ * Base64-encoded attachment payload for invoke inputs.
+ */
+export const attachmentInputSchema = z.object({
+  name: z.string().min(1),
+  mime: z.string().min(1),
+  data: z.string().min(1),
+  sizeBytes: z.number().int().nonnegative(),
+})
+
 export const invokeRequestSchema = z.object({
   action: z.literal('invoke'),
   stream: z.literal(true),
@@ -106,11 +116,16 @@ export const invokeRequestSchema = z.object({
   inputs: z.object({
     message: z.string().min(1),
     requestId: z.string().min(1),
+    attachments: z.array(attachmentInputSchema).max(3).optional(),
   }),
 })
 
 export type ChartDataPoint = z.infer<typeof chartDataPointSchema>
 export type StructuredBlock = z.infer<typeof structuredBlockSchema>
 export type StreamEvent = z.infer<typeof streamEventSchema>
+/**
+ * Base64-encoded attachment payload for invoke requests.
+ */
+export type AttachmentInput = z.infer<typeof attachmentInputSchema>
 export type InvokeRequest = z.infer<typeof invokeRequestSchema>
 export type InvokeResponse = StreamEvent

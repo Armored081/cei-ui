@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { structuredBlockSchema } from './types'
+import { invokeRequestSchema, structuredBlockSchema } from './types'
 
 describe('structuredBlockSchema chart validation', (): void => {
   it('accepts existing single-series charts unchanged', (): void => {
@@ -69,6 +69,50 @@ describe('structuredBlockSchema chart validation', (): void => {
       kind: 'chart',
       series: ['Revenue', 'Cost'],
       title: 'Invalid values',
+    })
+
+    expect(parsed.success).toBe(false)
+  })
+})
+
+describe('invokeRequestSchema attachments', (): void => {
+  it('accepts invoke inputs with attachments', (): void => {
+    const parsed = invokeRequestSchema.parse({
+      action: 'invoke',
+      inputs: {
+        attachments: [
+          {
+            data: 'c29tZSBiYXNlNjQ=',
+            mime: 'text/plain',
+            name: 'notes.txt',
+            sizeBytes: 12,
+          },
+        ],
+        message: 'Analyze attached file',
+        requestId: 'req-1',
+      },
+      sessionId: 'session-1',
+      stream: true,
+    })
+
+    expect(parsed.inputs.attachments).toHaveLength(1)
+  })
+
+  it('rejects more than three attachments', (): void => {
+    const parsed = invokeRequestSchema.safeParse({
+      action: 'invoke',
+      inputs: {
+        attachments: [
+          { data: 'a', mime: 'text/plain', name: '1.txt', sizeBytes: 1 },
+          { data: 'b', mime: 'text/plain', name: '2.txt', sizeBytes: 1 },
+          { data: 'c', mime: 'text/plain', name: '3.txt', sizeBytes: 1 },
+          { data: 'd', mime: 'text/plain', name: '4.txt', sizeBytes: 1 },
+        ],
+        message: 'Analyze attached files',
+        requestId: 'req-2',
+      },
+      sessionId: 'session-2',
+      stream: true,
     })
 
     expect(parsed.success).toBe(false)

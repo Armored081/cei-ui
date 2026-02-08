@@ -246,6 +246,12 @@
   padding-top: var(--space-4);
 }
 
+.cei-composer-drag-over {
+  border: 1px dashed var(--accent);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+}
+
 .cei-textarea {
   width: 100%;
   border-radius: var(--radius-md);
@@ -255,6 +261,86 @@
   padding: var(--space-3);
   resize: vertical;
   min-height: 120px;
+}
+
+.cei-attachment-toolbar {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.cei-attachment-input {
+  display: none;
+}
+
+.cei-attachment-help {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.cei-attachment-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.cei-attachment-item {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-panel);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3);
+}
+
+.cei-attachment-content {
+  min-width: 0;
+  display: grid;
+  gap: var(--space-1);
+}
+
+.cei-attachment-name {
+  margin: 0;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.cei-attachment-meta {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.cei-attachment-progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.cei-attachment-progress {
+  width: min(280px, 60vw);
+  height: 8px;
+}
+
+.cei-attachment-progress-value {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.cei-attachment-remove {
+  padding: var(--space-2) var(--space-3);
+}
+
+.cei-attachment-error {
+  margin-top: 0;
+}
+
+.cei-attachment-error-banner {
+  margin: 0;
 }
 
 .cei-textarea:disabled {
@@ -372,5 +458,9 @@
   .cei-message-list {
     min-height: 280px;
     max-height: min(52vh, 500px);
+  }
+
+  .cei-attachment-item {
+    flex-direction: column;
   }
 }

@@ -1,9 +1,19 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type DragEvent,
+  type FormEvent,
+  type KeyboardEvent,
+} from 'react'
 import { v4 as uuidv4 } from 'uuid'
 
 import { invokeAgentStream } from '../agent/AgentClient'
-import type { StructuredBlock } from '../agent/types'
+import type { AttachmentInput, StructuredBlock } from '../agent/types'
 import { describeAuthError, useAuth } from '../auth/AuthProvider'
+import { AttachmentPreview } from './AttachmentPreview'
 import {
   ChatMessageList,
   type ChatMessageItem,
@@ -20,6 +30,99 @@ interface FriendlyError {
   canRetry: boolean
   messageText: string
   shouldRelogin: boolean
+}
+
+type AttachmentStatus = 'processing' | 'ready' | 'error'
+
+interface ComposerAttachment {
+  data: string
+  errorText: string
+  id: string
+  mime: string
+  name: string
+  progressPercent: number
+  sizeBytes: number
+  status: AttachmentStatus
+}
+
+const MAX_ATTACHMENT_SIZE_BYTES = 5 * 1024 * 1024
+const MAX_ATTACHMENTS_PER_MESSAGE = 3
+const ATTACHMENT_ACCEPTED_MIME_TYPES = [
+  'application/pdf',
+  'text/plain',
+  'text/markdown',
+  'text/csv',
+  'application/json',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+] as const
+const ATTACHMENT_ACCEPT_ATTRIBUTE = ATTACHMENT_ACCEPTED_MIME_TYPES.join(',')
+
+function isSupportedAttachmentMimeType(mime: string): boolean {
+  return (ATTACHMENT_ACCEPTED_MIME_TYPES as readonly string[]).includes(mime)
+}
+
+function toAttachmentInput(attachment: ComposerAttachment): AttachmentInput {
+  return {
+    name: attachment.name,
+    mime: attachment.mime,
+    data: attachment.data,
+    sizeBytes: attachment.sizeBytes,
+  }
+}
+
+function extractBase64FromDataUrl(dataUrl: string): string {
+  const commaIndex = dataUrl.indexOf(',')
+
+  if (commaIndex < 0) {
+    throw new Error('Unable to encode attachment data')
+  }
+
+  return dataUrl.slice(commaIndex + 1)
+}
+
+function readFileAsBase64(
+  file: File,
+  onProgress: (progressPercent: number) => void,
+): Promise<string> {
+  return new Promise<string>((resolve, reject): void => {
+    const reader = new FileReader()
+
+    reader.onprogress = (event: ProgressEvent<FileReader>): void => {
+      if (!event.lengthComputable) {
+        return
+      }
+
+      const progressPercent = Math.min(100, Math.round((event.loaded / event.total) * 100))
+      onProgress(progressPercent)
+    }
+
+    reader.onload = (): void => {
+      if (typeof reader.result !== 'string') {
+        reject(new Error('Unable to encode attachment data'))
+        return
+      }
+
+      try {
+        resolve(extractBase64FromDataUrl(reader.result))
+      } catch (error) {
+        reject(error)
+      }
+    }
+
+    reader.onerror = (): void => {
+      reject(new Error(`Failed to read ${file.name}`))
+    }
+
+    reader.readAsDataURL(file)
+  })
+}
+
+function hasFilesInDataTransfer(dataTransfer: DataTransfer | null): boolean {
+  if (!dataTransfer) {
+    return false
+  }
+
+  return Array.from(dataTransfer.types).includes('Files')
 }
 
 function statusLabel(status: StreamStatus): string {
@@ -210,6 +313,9 @@ export function ChatPage(): JSX.Element {
 
   const [draftMessage, setDraftMessage] = useState<string>('')
   const [errorBanner, setErrorBanner] = useState<string>('')
+  const [attachmentError, setAttachmentError] = useState<string>('')
+  const [attachments, setAttachments] = useState<ComposerAttachment[]>([])
+  const [isDragOver, setIsDragOver] = useState<boolean>(false)
   const [sessionId, setSessionId] = useState<string>(uuidv4())
   const [streamStatus, setStreamStatus] = useState<StreamStatus>('idle')
   const [timelineItems, setTimelineItems] = useState<ChatTimelineItem[]>([])
@@ -217,12 +323,20 @@ export function ChatPage(): JSX.Element {
   const activeAbortControllerRef = useRef<AbortController | null>(null)
   const activeStreamIdRef = useRef<number>(0)
   const activeAgentMessageIdRef = useRef<string | null>(null)
+  const attachmentsRef = useRef<ComposerAttachment[]>([])
+  const attachmentInputRef = useRef<HTMLInputElement | null>(null)
   const composerRef = useRef<HTMLTextAreaElement | null>(null)
   const messageListRef = useRef<HTMLDivElement | null>(null)
   const shouldAutoScrollRef = useRef<boolean>(true)
 
   const status = useMemo((): string => statusLabel(streamStatus), [streamStatus])
   const isStreaming = streamStatus === 'connecting' || streamStatus === 'streaming'
+  const isAttachmentProcessing = attachments.some(
+    (attachment: ComposerAttachment): boolean => attachment.status === 'processing',
+  )
+  const hasFailedAttachment = attachments.some(
+    (attachment: ComposerAttachment): boolean => attachment.status === 'error',
+  )
 
   const updateMessageScrollIntent = (): void => {
     const messageListElement = messageListRef.current
@@ -253,6 +367,10 @@ export function ChatPage(): JSX.Element {
       scrollToBottom()
     }
   }, [timelineItems])
+
+  useEffect((): void => {
+    attachmentsRef.current = attachments
+  }, [attachments])
 
   useEffect((): (() => void) => {
     return (): void => {
@@ -337,9 +455,197 @@ export function ChatPage(): JSX.Element {
       },
     ])
     setDraftMessage('')
+    setAttachmentError('')
+    setAttachments([])
+    setIsDragOver(false)
     setErrorBanner('')
     setStreamStatus('idle')
     composerRef.current?.focus()
+  }
+
+  const updateAttachmentById = (
+    attachmentId: string,
+    updater: (attachment: ComposerAttachment) => ComposerAttachment,
+  ): void => {
+    setAttachments((currentAttachments: ComposerAttachment[]): ComposerAttachment[] => {
+      return currentAttachments.map((attachment: ComposerAttachment): ComposerAttachment => {
+        if (attachment.id !== attachmentId) {
+          return attachment
+        }
+
+        return updater(attachment)
+      })
+    })
+  }
+
+  const encodeAttachment = async (attachmentId: string, file: File): Promise<void> => {
+    try {
+      const base64Data = await readFileAsBase64(file, (progressPercent: number): void => {
+        updateAttachmentById(
+          attachmentId,
+          (attachment: ComposerAttachment): ComposerAttachment => ({
+            ...attachment,
+            progressPercent,
+            status: 'processing',
+          }),
+        )
+      })
+
+      updateAttachmentById(
+        attachmentId,
+        (attachment: ComposerAttachment): ComposerAttachment => ({
+          ...attachment,
+          data: base64Data,
+          errorText: '',
+          progressPercent: 100,
+          status: 'ready',
+        }),
+      )
+    } catch (encodeError) {
+      const errorMessage = encodeError instanceof Error ? encodeError.message : 'Attachment failed'
+
+      updateAttachmentById(
+        attachmentId,
+        (attachment: ComposerAttachment): ComposerAttachment => ({
+          ...attachment,
+          errorText: errorMessage,
+          progressPercent: 0,
+          status: 'error',
+        }),
+      )
+      setAttachmentError('One or more attachments failed to upload. Remove and retry.')
+    }
+  }
+
+  const removeAttachment = (attachmentId: string): void => {
+    setAttachments((currentAttachments: ComposerAttachment[]): ComposerAttachment[] => {
+      return currentAttachments.filter(
+        (attachment: ComposerAttachment): boolean => attachment.id !== attachmentId,
+      )
+    })
+    setAttachmentError('')
+  }
+
+  const addFilesToAttachments = (files: File[]): void => {
+    if (files.length === 0) {
+      return
+    }
+
+    setAttachmentError('')
+
+    const availableSlots = MAX_ATTACHMENTS_PER_MESSAGE - attachmentsRef.current.length
+    if (availableSlots <= 0) {
+      setAttachmentError(`You can attach up to ${MAX_ATTACHMENTS_PER_MESSAGE} files per message.`)
+      return
+    }
+
+    const filesWithinLimit = files.slice(0, availableSlots)
+
+    if (files.length > filesWithinLimit.length) {
+      setAttachmentError(`You can attach up to ${MAX_ATTACHMENTS_PER_MESSAGE} files per message.`)
+    }
+
+    const pendingAttachments: Array<{ attachmentId: string; file: File }> = []
+
+    for (const file of filesWithinLimit) {
+      if (!isSupportedAttachmentMimeType(file.type)) {
+        setAttachmentError(`File "${file.name}" has an unsupported MIME type.`)
+        continue
+      }
+
+      if (file.size > MAX_ATTACHMENT_SIZE_BYTES) {
+        setAttachmentError(`File "${file.name}" exceeds the 5MB limit.`)
+        continue
+      }
+
+      const attachmentId = uuidv4()
+      pendingAttachments.push({ attachmentId, file })
+    }
+
+    if (pendingAttachments.length === 0) {
+      return
+    }
+
+    setAttachments((currentAttachments: ComposerAttachment[]): ComposerAttachment[] => [
+      ...currentAttachments,
+      ...pendingAttachments.map(({ attachmentId, file }) => ({
+        data: '',
+        errorText: '',
+        id: attachmentId,
+        mime: file.type,
+        name: file.name,
+        progressPercent: 0,
+        sizeBytes: file.size,
+        status: 'processing',
+      })),
+    ])
+
+    for (const pendingAttachment of pendingAttachments) {
+      void encodeAttachment(pendingAttachment.attachmentId, pendingAttachment.file)
+    }
+  }
+
+  const onAttachmentInputChange = (event: ChangeEvent<HTMLInputElement>): void => {
+    const nextFiles = event.target.files ? Array.from(event.target.files) : []
+    addFilesToAttachments(nextFiles)
+    event.target.value = ''
+  }
+
+  const onPickAttachment = (): void => {
+    attachmentInputRef.current?.click()
+  }
+
+  const onComposerDragEnter = (event: DragEvent<HTMLFormElement>): void => {
+    if (!hasFilesInDataTransfer(event.dataTransfer)) {
+      return
+    }
+
+    event.preventDefault()
+
+    if (isStreaming) {
+      return
+    }
+
+    setIsDragOver(true)
+  }
+
+  const onComposerDragOver = (event: DragEvent<HTMLFormElement>): void => {
+    if (!hasFilesInDataTransfer(event.dataTransfer)) {
+      return
+    }
+
+    event.preventDefault()
+
+    if (isStreaming) {
+      return
+    }
+
+    setIsDragOver(true)
+  }
+
+  const onComposerDragLeave = (event: DragEvent<HTMLFormElement>): void => {
+    const relatedTarget = event.relatedTarget
+    if (relatedTarget instanceof Node && event.currentTarget.contains(relatedTarget)) {
+      return
+    }
+
+    setIsDragOver(false)
+  }
+
+  const onComposerDrop = (event: DragEvent<HTMLFormElement>): void => {
+    if (!hasFilesInDataTransfer(event.dataTransfer)) {
+      return
+    }
+
+    event.preventDefault()
+
+    if (isStreaming) {
+      return
+    }
+
+    setIsDragOver(false)
+    const droppedFiles = Array.from(event.dataTransfer.files)
+    addFilesToAttachments(droppedFiles)
   }
 
   const submitPrompt = async (messageToSend: string): Promise<void> => {
@@ -348,6 +654,20 @@ export function ChatPage(): JSX.Element {
     if (!trimmedMessage) {
       return
     }
+
+    if (isAttachmentProcessing) {
+      setAttachmentError('Please wait for attachments to finish uploading.')
+      return
+    }
+
+    if (hasFailedAttachment) {
+      setAttachmentError('Remove failed attachments before sending.')
+      return
+    }
+
+    const requestAttachments: AttachmentInput[] = attachments
+      .filter((attachment: ComposerAttachment): boolean => attachment.status === 'ready')
+      .map((attachment: ComposerAttachment): AttachmentInput => toAttachmentInput(attachment))
 
     cancelActiveStream()
 
@@ -364,6 +684,9 @@ export function ChatPage(): JSX.Element {
     activeAgentMessageIdRef.current = agentMessage.id
 
     setDraftMessage('')
+    setAttachmentError('')
+    setAttachments([])
+    setIsDragOver(false)
     setErrorBanner('')
     setStreamStatus('connecting')
     setTimelineItems((currentItems: ChatTimelineItem[]): ChatTimelineItem[] => [
@@ -384,6 +707,7 @@ export function ChatPage(): JSX.Element {
 
       for await (const streamEvent of invokeAgentStream({
         accessToken,
+        attachments: requestAttachments,
         message: trimmedMessage,
         requestId,
         sessionId,
@@ -701,7 +1025,15 @@ export function ChatPage(): JSX.Element {
             onToggleTool={onToggleTool}
           />
 
-          <form className="cei-composer" onSubmit={onSubmit} data-testid="chat-form">
+          <form
+            className={`cei-composer${isDragOver ? ' cei-composer-drag-over' : ''}`}
+            data-testid="chat-form"
+            onDragEnter={onComposerDragEnter}
+            onDragLeave={onComposerDragLeave}
+            onDragOver={onComposerDragOver}
+            onDrop={onComposerDrop}
+            onSubmit={onSubmit}
+          >
             <label htmlFor="cei-message">Instruction</label>
             <textarea
               id="cei-message"
@@ -715,8 +1047,43 @@ export function ChatPage(): JSX.Element {
               rows={5}
             />
 
+            <div className="cei-attachment-toolbar">
+              <input
+                accept={ATTACHMENT_ACCEPT_ATTRIBUTE}
+                data-testid="attachment-input"
+                disabled={isStreaming}
+                multiple
+                onChange={onAttachmentInputChange}
+                ref={attachmentInputRef}
+                type="file"
+                className="cei-attachment-input"
+              />
+              <button
+                className="cei-button-secondary"
+                disabled={isStreaming}
+                onClick={onPickAttachment}
+                type="button"
+              >
+                Attach files
+              </button>
+              <p className="cei-attachment-help">
+                Up to 3 files per message, max 5MB each. Accepted: PDF, TXT, MD, CSV, JSON, DOCX.
+              </p>
+            </div>
+
+            <AttachmentPreview attachments={attachments} onRemoveAttachment={removeAttachment} />
+            {attachmentError ? (
+              <p className="cei-error-text cei-attachment-error-banner" role="alert">
+                {attachmentError}
+              </p>
+            ) : null}
+
             <div className="cei-button-row">
-              <button className="cei-button-primary" disabled={isStreaming} type="submit">
+              <button
+                className="cei-button-primary"
+                disabled={isStreaming || isAttachmentProcessing || hasFailedAttachment}
+                type="submit"
+              >
                 {isStreaming ? 'Sending...' : 'Send'}
               </button>
               <button className="cei-button-secondary" onClick={createNewThread} type="button">
