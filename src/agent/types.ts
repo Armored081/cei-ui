@@ -7,13 +7,54 @@ export const chartDataPointSchema = z
   })
   .catchall(z.unknown())
 
-export const structuredBlockSchema = z.discriminatedUnion('kind', [
-  z.object({
+const chartColorSchema = z.array(z.string())
+
+// Multi-series data point requires `label` for X-axis
+const multiSeriesDataPointSchema = z
+  .object({
+    label: z.string(),
+  })
+  .catchall(z.union([z.string(), z.number()]))
+
+// Chart types
+const singleSeriesChartTypes = ['bar', 'line', 'pie', 'area'] as const
+const multiSeriesChartTypes = ['stacked-bar', 'grouped-bar', 'multi-line', 'stacked-area'] as const
+
+// Unified chart schema with refinement to validate data shape matches chartType
+const chartBlockSchema = z
+  .object({
     kind: z.literal('chart'),
-    chartType: z.enum(['bar', 'line', 'pie', 'area']),
+    chartType: z.enum([...singleSeriesChartTypes, ...multiSeriesChartTypes]),
     title: z.string(),
-    data: z.array(chartDataPointSchema),
-  }),
+    data: z.union([z.array(chartDataPointSchema), z.array(multiSeriesDataPointSchema)]),
+    series: z.array(z.string()).optional(),
+    colors: chartColorSchema.optional(),
+  })
+  .refine(
+    (block) => {
+      const isSingleSeries = (singleSeriesChartTypes as readonly string[]).includes(block.chartType)
+      const isMultiSeries = (multiSeriesChartTypes as readonly string[]).includes(block.chartType)
+
+      // Single-series charts should have single-series data (with `value` field)
+      if (isSingleSeries) {
+        return block.data.every((point) => 'value' in point)
+      }
+
+      // Multi-series charts should have multi-series data (with `label` field, no `value`)
+      if (isMultiSeries) {
+        return block.data.every((point) => 'label' in point && !('value' in point))
+      }
+
+      return false
+    },
+    {
+      message:
+        'Chart data shape must match chartType (single-series requires value field, multi-series requires label without value)',
+    },
+  )
+
+export const structuredBlockSchema = z.discriminatedUnion('kind', [
+  chartBlockSchema,
   z.object({
     kind: z.literal('table'),
     title: z.string(),
