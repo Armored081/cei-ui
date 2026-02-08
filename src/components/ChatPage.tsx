@@ -294,8 +294,9 @@ function buildUserMessage(content: string): ChatMessageItem {
   }
 }
 
-function buildAgentMessage(retryPrompt: string): ChatMessageItem {
+function buildAgentMessage(retryPrompt: string, attachments?: AttachmentInput[]): ChatMessageItem {
   return {
+    attachments,
     canRetry: false,
     errorText: '',
     id: uuidv4(),
@@ -648,26 +649,31 @@ export function ChatPage(): JSX.Element {
     addFilesToAttachments(droppedFiles)
   }
 
-  const submitPrompt = async (messageToSend: string): Promise<void> => {
+  const submitPrompt = async (
+    messageToSend: string,
+    retryAttachments?: AttachmentInput[],
+  ): Promise<void> => {
     const trimmedMessage = messageToSend.trim()
 
     if (!trimmedMessage) {
       return
     }
 
-    if (isAttachmentProcessing) {
+    if (!retryAttachments && isAttachmentProcessing) {
       setAttachmentError('Please wait for attachments to finish uploading.')
       return
     }
 
-    if (hasFailedAttachment) {
+    if (!retryAttachments && hasFailedAttachment) {
       setAttachmentError('Remove failed attachments before sending.')
       return
     }
 
-    const requestAttachments: AttachmentInput[] = attachments
-      .filter((attachment: ComposerAttachment): boolean => attachment.status === 'ready')
-      .map((attachment: ComposerAttachment): AttachmentInput => toAttachmentInput(attachment))
+    const requestAttachments: AttachmentInput[] =
+      retryAttachments ||
+      attachments
+        .filter((attachment: ComposerAttachment): boolean => attachment.status === 'ready')
+        .map((attachment: ComposerAttachment): AttachmentInput => toAttachmentInput(attachment))
 
     cancelActiveStream()
 
@@ -679,7 +685,7 @@ export function ChatPage(): JSX.Element {
 
     const requestId = uuidv4()
     const userMessage = buildUserMessage(trimmedMessage)
-    const agentMessage = buildAgentMessage(trimmedMessage)
+    const agentMessage = buildAgentMessage(trimmedMessage, requestAttachments)
 
     activeAgentMessageIdRef.current = agentMessage.id
 
@@ -973,7 +979,7 @@ export function ChatPage(): JSX.Element {
       })
     })
 
-    void submitPrompt(retrySource.retryPrompt)
+    void submitPrompt(retrySource.retryPrompt, retrySource.attachments)
   }
 
   return (
