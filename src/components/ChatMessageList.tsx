@@ -1,6 +1,6 @@
 import type { CSSProperties, RefObject } from 'react'
 
-import type { StructuredBlock } from '../agent/types'
+import type { AttachmentInput, StructuredBlock } from '../agent/types'
 import { ChartBlock } from './blocks/ChartBlock'
 import { RecommendationBlock } from './blocks/RecommendationBlock'
 import { TableBlock } from './blocks/TableBlock'
@@ -28,6 +28,7 @@ export type ChatMessageSegment =
     }
 
 export interface ChatMessageItem {
+  attachments?: AttachmentInput[]
   canRetry?: boolean
   errorText: string
   id: string

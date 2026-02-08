@@ -1,11 +1,12 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { StreamEvent } from '../agent/types'
+import type { AttachmentInput, StreamEvent } from '../agent/types'
 import { ChatPage } from './ChatPage'
 
 interface InvokeCall {
   accessToken: string
+  attachments?: AttachmentInput[]
   message: string
   requestId: string
   signal: AbortSignal
@@ -59,6 +60,11 @@ function fillAndSendMessage(message: string): void {
   const textarea = screen.getByLabelText('Instruction') as HTMLTextAreaElement
   fireEvent.change(textarea, { target: { value: message } })
   fireEvent.click(screen.getByRole('button', { name: 'Send' }))
+}
+
+function attachFiles(files: File[]): void {
+  const input = screen.getByTestId('attachment-input') as HTMLInputElement
+  fireEvent.change(input, { target: { files } })
 }
 
 beforeEach((): void => {
@@ -453,5 +459,144 @@ describe('ChatPage', (): void => {
       'aria-expanded',
       'false',
     )
+  })
+
+  it('attaches a valid file and sends it with the invoke call', async (): Promise<void> => {
+    mockInvokeAgentStream.mockImplementation(() => streamFromEvents([{ type: 'done' }]))
+
+    render(<ChatPage />)
+
+    const file = new File(['evidence'], 'evidence.txt', { type: 'text/plain' })
+    attachFiles([file])
+
+    expect(await screen.findByText('evidence.txt')).toBeInTheDocument()
+    await waitFor((): void => {
+      expect(screen.getByText(/Ready/)).toBeInTheDocument()
+    })
+
+    fillAndSendMessage('Review attached evidence')
+
+    await waitFor((): void => {
+      expect(mockInvokeAgentStream).toHaveBeenCalledTimes(1)
+    })
+
+    const call = mockInvokeAgentStream.mock.calls[0][0] as InvokeCall
+
+    expect(call.attachments).toHaveLength(1)
+    expect(call.attachments?.[0]).toMatchObject({
+      mime: 'text/plain',
+      name: 'evidence.txt',
+      sizeBytes: file.size,
+    })
+    expect((call.attachments?.[0].data || '').length).toBeGreaterThan(0)
+  })
+
+  it('rejects oversized files', async (): Promise<void> => {
+    mockInvokeAgentStream.mockImplementation(() => streamFromEvents([{ type: 'done' }]))
+
+    render(<ChatPage />)
+
+    const oversizedBytes = new Uint8Array(5 * 1024 * 1024 + 1)
+    const file = new File([oversizedBytes], 'too-large.pdf', { type: 'application/pdf' })
+
+    attachFiles([file])
+
+    expect(
+      await screen.findByText('File "too-large.pdf" exceeds the 5MB limit.'),
+    ).toBeInTheDocument()
+    expect(screen.queryByText('too-large.pdf')).not.toBeInTheDocument()
+  })
+
+  it('rejects files with invalid MIME types', async (): Promise<void> => {
+    mockInvokeAgentStream.mockImplementation(() => streamFromEvents([{ type: 'done' }]))
+
+    render(<ChatPage />)
+
+    const file = new File(['PNG'], 'image.png', { type: 'image/png' })
+    attachFiles([file])
+
+    expect(
+      await screen.findByText('File "image.png" has an unsupported MIME type.'),
+    ).toBeInTheDocument()
+    expect(screen.queryByText('image.png')).not.toBeInTheDocument()
+  })
+
+  it('removes an attachment from preview before sending', async (): Promise<void> => {
+    mockInvokeAgentStream.mockImplementation(() => streamFromEvents([{ type: 'done' }]))
+
+    render(<ChatPage />)
+
+    const file = new File(['notes'], 'notes.md', { type: 'text/markdown' })
+    attachFiles([file])
+
+    expect(await screen.findByText('notes.md')).toBeInTheDocument()
+    await waitFor((): void => {
+      expect(screen.getByText(/Ready/)).toBeInTheDocument()
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Remove notes.md' }))
+    expect(screen.queryByText('notes.md')).not.toBeInTheDocument()
+
+    fillAndSendMessage('Message without attachments')
+
+    await waitFor((): void => {
+      expect(mockInvokeAgentStream).toHaveBeenCalledTimes(1)
+    })
+
+    const call = mockInvokeAgentStream.mock.calls[0][0] as InvokeCall
+    expect(call.attachments).toEqual([])
+  })
+
+  it('supports up to three attachments per message', async (): Promise<void> => {
+    mockInvokeAgentStream.mockImplementation(() => streamFromEvents([{ type: 'done' }]))
+
+    render(<ChatPage />)
+
+    const fileOne = new File(['a'], 'one.txt', { type: 'text/plain' })
+    const fileTwo = new File(['b'], 'two.csv', { type: 'text/csv' })
+    const fileThree = new File(['c'], 'three.json', { type: 'application/json' })
+    attachFiles([fileOne, fileTwo, fileThree])
+
+    expect(await screen.findByText('one.txt')).toBeInTheDocument()
+    expect(await screen.findByText('two.csv')).toBeInTheDocument()
+    expect(await screen.findByText('three.json')).toBeInTheDocument()
+    await waitFor((): void => {
+      expect(screen.getAllByText(/Ready/)).toHaveLength(3)
+    })
+
+    const fileFour = new File(['d'], 'four.txt', { type: 'text/plain' })
+    attachFiles([fileFour])
+
+    expect(await screen.findByText('You can attach up to 3 files per message.')).toBeInTheDocument()
+    expect(screen.queryByText('four.txt')).not.toBeInTheDocument()
+
+    fillAndSendMessage('Review three attachments')
+
+    await waitFor((): void => {
+      expect(mockInvokeAgentStream).toHaveBeenCalledTimes(1)
+    })
+
+    const call = mockInvokeAgentStream.mock.calls[0][0] as InvokeCall
+    expect(call.attachments).toHaveLength(3)
+  })
+
+  it('keeps text-only chat behavior unchanged', async (): Promise<void> => {
+    mockInvokeAgentStream.mockImplementation(() =>
+      streamFromEvents([{ type: 'delta', content: 'Text-only response' }, { type: 'done' }]),
+    )
+
+    render(<ChatPage />)
+
+    fillAndSendMessage('Text-only prompt')
+
+    expect(await screen.findByText('Text-only prompt')).toBeInTheDocument()
+    expect(await screen.findByText('Text-only response')).toBeInTheDocument()
+
+    await waitFor((): void => {
+      expect(mockInvokeAgentStream).toHaveBeenCalledTimes(1)
+    })
+
+    const call = mockInvokeAgentStream.mock.calls[0][0] as InvokeCall
+    expect(call.attachments).toEqual([])
   })
 })
