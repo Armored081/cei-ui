@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AttachmentInput, StreamEvent } from '../agent/types'
@@ -67,6 +68,14 @@ function attachFiles(files: File[]): void {
   fireEvent.change(input, { target: { files } })
 }
 
+function renderChatPage(): void {
+  render(
+    <MemoryRouter>
+      <ChatPage />
+    </MemoryRouter>,
+  )
+}
+
 beforeEach((): void => {
   mockInvokeAgentStream.mockReset()
   mockUseAuth.mockReset()
@@ -89,7 +98,7 @@ afterEach((): void => {
 
 describe('ChatPage', (): void => {
   it('shows an empty welcome state with suggestions', (): void => {
-    render(<ChatPage />)
+    renderChatPage()
 
     expect(screen.getByText('Welcome to CEI Agent')).toBeInTheDocument()
     expect(screen.getByText('Try one of these prompts:')).toBeInTheDocument()
@@ -103,7 +112,7 @@ describe('ChatPage', (): void => {
       ]),
     )
 
-    render(<ChatPage />)
+    renderChatPage()
 
     fillAndSendMessage('Check IAM misconfigurations')
 
@@ -131,7 +140,7 @@ describe('ChatPage', (): void => {
       ]),
     )
 
-    render(<ChatPage />)
+    renderChatPage()
 
     fillAndSendMessage('Check dependency exposure')
 
@@ -144,7 +153,7 @@ describe('ChatPage', (): void => {
   it('keeps session id across messages and rotates it on new thread', async (): Promise<void> => {
     mockInvokeAgentStream.mockImplementation(() => streamFromEvents([{ type: 'done' }]))
 
-    render(<ChatPage />)
+    renderChatPage()
 
     fillAndSendMessage('First')
 
@@ -197,7 +206,7 @@ describe('ChatPage', (): void => {
       })(),
     )
 
-    render(<ChatPage />)
+    renderChatPage()
 
     fillAndSendMessage('Long startup request')
 
@@ -227,7 +236,7 @@ describe('ChatPage', (): void => {
       ]),
     )
 
-    render(<ChatPage />)
+    renderChatPage()
 
     fillAndSendMessage('Check connectivity')
 
@@ -252,7 +261,7 @@ describe('ChatPage', (): void => {
       ]),
     )
 
-    render(<ChatPage />)
+    renderChatPage()
 
     fillAndSendMessage('Run security review')
 
@@ -292,7 +301,7 @@ describe('ChatPage', (): void => {
       ])
     })
 
-    render(<ChatPage />)
+    renderChatPage()
 
     fillAndSendMessage('Investigate asset inventory')
 
@@ -325,7 +334,7 @@ describe('ChatPage', (): void => {
       })(),
     )
 
-    render(<ChatPage />)
+    renderChatPage()
 
     fillAndSendMessage('Long task')
 
@@ -353,7 +362,7 @@ describe('ChatPage', (): void => {
       })(),
     )
 
-    render(<ChatPage />)
+    renderChatPage()
 
     fillAndSendMessage('Cancelable request')
 
@@ -389,7 +398,7 @@ describe('ChatPage', (): void => {
       return streamFromEvents([{ type: 'done' }])
     })
 
-    render(<ChatPage />)
+    renderChatPage()
 
     fillAndSendMessage('First prompt')
 
@@ -436,7 +445,7 @@ describe('ChatPage', (): void => {
       })(),
     )
 
-    render(<ChatPage />)
+    renderChatPage()
 
     fillAndSendMessage('Check storage risk')
 
@@ -464,7 +473,7 @@ describe('ChatPage', (): void => {
   it('attaches a valid file and sends it with the invoke call', async (): Promise<void> => {
     mockInvokeAgentStream.mockImplementation(() => streamFromEvents([{ type: 'done' }]))
 
-    render(<ChatPage />)
+    renderChatPage()
 
     const file = new File(['evidence'], 'evidence.txt', { type: 'text/plain' })
     attachFiles([file])
@@ -494,7 +503,7 @@ describe('ChatPage', (): void => {
   it('rejects oversized files', async (): Promise<void> => {
     mockInvokeAgentStream.mockImplementation(() => streamFromEvents([{ type: 'done' }]))
 
-    render(<ChatPage />)
+    renderChatPage()
 
     const oversizedBytes = new Uint8Array(5 * 1024 * 1024 + 1)
     const file = new File([oversizedBytes], 'too-large.pdf', { type: 'application/pdf' })
@@ -510,7 +519,7 @@ describe('ChatPage', (): void => {
   it('rejects files with invalid MIME types', async (): Promise<void> => {
     mockInvokeAgentStream.mockImplementation(() => streamFromEvents([{ type: 'done' }]))
 
-    render(<ChatPage />)
+    renderChatPage()
 
     const file = new File(['PNG'], 'image.png', { type: 'image/png' })
     attachFiles([file])
@@ -524,7 +533,7 @@ describe('ChatPage', (): void => {
   it('removes an attachment from preview before sending', async (): Promise<void> => {
     mockInvokeAgentStream.mockImplementation(() => streamFromEvents([{ type: 'done' }]))
 
-    render(<ChatPage />)
+    renderChatPage()
 
     const file = new File(['notes'], 'notes.md', { type: 'text/markdown' })
     attachFiles([file])
@@ -550,7 +559,7 @@ describe('ChatPage', (): void => {
   it('supports up to three attachments per message', async (): Promise<void> => {
     mockInvokeAgentStream.mockImplementation(() => streamFromEvents([{ type: 'done' }]))
 
-    render(<ChatPage />)
+    renderChatPage()
 
     const fileOne = new File(['a'], 'one.txt', { type: 'text/plain' })
     const fileTwo = new File(['b'], 'two.csv', { type: 'text/csv' })
@@ -585,7 +594,7 @@ describe('ChatPage', (): void => {
       streamFromEvents([{ type: 'delta', content: 'Text-only response' }, { type: 'done' }]),
     )
 
-    render(<ChatPage />)
+    renderChatPage()
 
     fillAndSendMessage('Text-only prompt')
 

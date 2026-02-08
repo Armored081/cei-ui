@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react'
+import type { ReactNode } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type { StructuredBlock } from '../../agent/types'
@@ -7,7 +8,7 @@ import { ChartBlock } from './ChartBlock'
 const rechartsMocks = vi.hoisted(() => {
   const makeMockChartPart = (testId: string) =>
     vi.fn(
-      ({ children }: { children?: unknown }): JSX.Element => (
+      ({ children }: { children?: ReactNode }): JSX.Element => (
         <div data-testid={testId}>{children}</div>
       ),
     )
@@ -63,7 +64,7 @@ function buildMultiSeriesChartBlock(
   chartType: MultiSeriesChartType,
   config?: {
     colors?: string[]
-    data?: Array<Record<string, string | number>>
+    data?: Array<{ label: string } & Record<string, string | number>>
     series?: string[]
   },
 ): ChartBlockData {
@@ -141,10 +142,7 @@ describe('ChartBlock', (): void => {
   it('renders stacked bar series using stackId', (): void => {
     render(<ChartBlock block={buildMultiSeriesChartBlock('stacked-bar')} />)
 
-    const barCalls = rechartsMocks.Bar.mock.calls as [
-      Record<string, unknown>,
-      Record<string, unknown>,
-    ][]
+    const barCalls = rechartsMocks.Bar.mock.calls as [Record<string, unknown>][]
 
     expect(barCalls).toHaveLength(2)
     expect(
@@ -219,10 +217,7 @@ describe('ChartBlock', (): void => {
   it('renders stacked-area series using stackId', (): void => {
     render(<ChartBlock block={buildMultiSeriesChartBlock('stacked-area')} />)
 
-    const areaCalls = rechartsMocks.Area.mock.calls as [
-      Record<string, unknown>,
-      Record<string, unknown>,
-    ][]
+    const areaCalls = rechartsMocks.Area.mock.calls as [Record<string, unknown>][]
     expect(areaCalls).toHaveLength(2)
     expect(
       areaCalls.map(([props]) => ({

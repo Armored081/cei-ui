@@ -1,12 +1,7 @@
-import {
-  fetchAuthSession,
-  getCurrentUser,
-  signIn,
-  signOut,
-  type GetCurrentUserOutput,
-} from '@aws-amplify/auth'
+import { getCurrentUser, signIn, signOut, type GetCurrentUserOutput } from '@aws-amplify/auth'
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 
+import { getAuthAccessToken } from './accessToken'
 import { configureAmplifyAuth } from './authConfig'
 
 export type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated'
@@ -120,14 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
       throw new Error('Auth is not configured. Set the required Cognito env vars.')
     }
 
-    const session = await fetchAuthSession()
-    const accessToken = session.tokens?.accessToken?.toString() || ''
-
-    if (!accessToken) {
-      throw new Error('No access token found. Please sign in again.')
-    }
-
-    return accessToken
+    return getAuthAccessToken()
   }
 
   const value: AuthContextValue = {
