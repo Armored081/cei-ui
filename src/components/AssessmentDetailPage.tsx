@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
   Bar,
@@ -11,17 +11,27 @@ import {
   YAxis,
 } from 'recharts'
 
-import { exportAssessmentCsv, fetchAssessmentDetail } from '../assessment/client'
+import {
+  approveAssessment,
+  exportAssessmentCsv,
+  fetchAssessmentDetail,
+  updateAssessmentStatus,
+  updateMappingRecord,
+} from '../assessment/client'
 import type {
   AssessmentDetail,
+  AssessmentStatus,
   GapSeverity,
   MappingFilters,
   MappingRecord,
   MappingSort,
   MappingSortColumn,
   MappingStatus,
+  UpdateMappingRecordRequest,
 } from '../assessment/types'
 import { AppNavigation } from './AppNavigation'
+import { ConfirmationModal } from './ConfirmationModal'
+import { ToastStack, type ToastMessage } from './Toast'
 import './AssessmentDetailPage.css'
 
 interface SectionChartRow {
@@ -29,6 +39,28 @@ interface SectionChartRow {
   label: string
   mapped: number
   partial: number
+}
+
+interface RefinementFormState {
+  confidencePercent: number
+  mappingStatus: MappingStatus
+  nistControlId: string
+  rationale: string
+  rcmControlId: string
+}
+
+interface RefinementChangedFields {
+  confidencePercent: boolean
+  mappingStatus: boolean
+  nistControlId: boolean
+  rationale: boolean
+  rcmControlId: boolean
+}
+
+interface WorkflowBadgeState {
+  kind: 'approved' | 'sent-back'
+  message: string
+  timestamp: string
 }
 
 const PAGE_SIZE = 25
@@ -62,6 +94,20 @@ function toConfidencePercent(confidence: number): number {
   }
 
   return clampPercentage(confidence)
+}
+
+function toConfidenceStorageValue(confidencePercent: number, currentValue: number): number {
+  const normalizedPercent = clampPercentage(confidencePercent)
+
+  if (currentValue <= 1) {
+    return normalizedPercent / 100
+  }
+
+  return normalizedPercent
+}
+
+function toConfidenceRatio(confidence: number): number {
+  return toConfidencePercent(confidence) / 100
 }
 
 function formatPercent(value: number): string {
@@ -227,7 +273,7 @@ function toApiErrorMessage(error: unknown): string {
     return error.message
   }
 
-  return 'Unable to load assessment.'
+  return 'Unable to process assessment request.'
 }
 
 function shouldShowRecommendedLanguage(mapping: MappingRecord): boolean {
@@ -236,6 +282,112 @@ function shouldShowRecommendedLanguage(mapping: MappingRecord): boolean {
   }
 
   return Boolean(mapping.recommendedLanguage)
+}
+
+function toRefinementFormState(mapping: MappingRecord): RefinementFormState {
+  return {
+    confidencePercent: Math.round(toConfidencePercent(mapping.confidence)),
+    mappingStatus: mapping.mappingStatus,
+    nistControlId: mapping.nistControlId,
+    rationale: mapping.rationale,
+    rcmControlId: mapping.rcmControlId,
+  }
+}
+
+function toChangedRefinementFields(
+  current: RefinementFormState,
+  baseline: RefinementFormState,
+): RefinementChangedFields {
+  return {
+    confidencePercent: current.confidencePercent !== baseline.confidencePercent,
+    mappingStatus: current.mappingStatus !== baseline.mappingStatus,
+    nistControlId: current.nistControlId !== baseline.nistControlId,
+    rationale: current.rationale !== baseline.rationale,
+    rcmControlId: current.rcmControlId !== baseline.rcmControlId,
+  }
+}
+
+function hasRefinementChanges(changedFields: RefinementChangedFields): boolean {
+  return Object.values(changedFields).some((value): boolean => value)
+}
+
+function toWorkflowBadgeClassName(kind: WorkflowBadgeState['kind']): string {
+  if (kind === 'approved') {
+    return 'cei-workflow-badge cei-workflow-badge-approved'
+  }
+
+  return 'cei-workflow-badge cei-workflow-badge-sent-back'
+}
+
+function isRefinementStatusEditable(status: AssessmentStatus): boolean {
+  return status === 'draft' || status === 'in-progress'
+}
+
+function summarizeAssessmentMappings(mappings: MappingRecord[]): {
+  avgConfidence: number
+  gapCount: number
+  mappedCount: number
+  partialCount: number
+} {
+  const mappedCount = mappings.filter(
+    (mapping): boolean => mapping.mappingStatus === 'mapped',
+  ).length
+  const partialCount = mappings.filter(
+    (mapping): boolean => mapping.mappingStatus === 'partial',
+  ).length
+  const gapCount = mappings.filter((mapping): boolean => mapping.mappingStatus === 'gap').length
+
+  if (mappings.length === 0) {
+    return {
+      avgConfidence: 0,
+      gapCount,
+      mappedCount,
+      partialCount,
+    }
+  }
+
+  const averageRatio =
+    mappings.reduce((total, mapping): number => total + toConfidenceRatio(mapping.confidence), 0) /
+    mappings.length
+
+  return {
+    avgConfidence: averageRatio,
+    gapCount,
+    mappedCount,
+    partialCount,
+  }
+}
+
+function withUpdatedMapping(
+  assessment: AssessmentDetail,
+  updatedMapping: MappingRecord,
+): AssessmentDetail {
+  const mappings = assessment.mappings.map((mapping): MappingRecord => {
+    if (mapping.id === updatedMapping.id) {
+      return updatedMapping
+    }
+
+    return mapping
+  })
+  const summary = summarizeAssessmentMappings(mappings)
+
+  return {
+    ...assessment,
+    mappings,
+    totalMappings: mappings.length,
+    mappedCount: summary.mappedCount,
+    partialCount: summary.partialCount,
+    gapCount: summary.gapCount,
+    avgConfidence: summary.avgConfidence,
+  }
+}
+
+function createToastMessageId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID()
+  }
+
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`
 }
 
 export function AssessmentDetailPage(): JSX.Element {
@@ -254,6 +406,15 @@ export function AssessmentDetailPage(): JSX.Element {
   const [selectedMappingId, setSelectedMappingId] = useState<string>('')
   const [isExporting, setIsExporting] = useState<boolean>(false)
   const [exportError, setExportError] = useState<string>('')
+  const [refinementDraft, setRefinementDraft] = useState<RefinementFormState | null>(null)
+  const [refinementBaseline, setRefinementBaseline] = useState<RefinementFormState | null>(null)
+  const [isSavingRefinement, setIsSavingRefinement] = useState<boolean>(false)
+  const [toasts, setToasts] = useState<ToastMessage[]>([])
+  const [activeModal, setActiveModal] = useState<'approve' | 'reject' | null>(null)
+  const [approvedByName, setApprovedByName] = useState<string>('')
+  const [rejectionReason, setRejectionReason] = useState<string>('')
+  const [isSubmittingWorkflowAction, setIsSubmittingWorkflowAction] = useState<boolean>(false)
+  const [workflowBadge, setWorkflowBadge] = useState<WorkflowBadgeState | null>(null)
 
   useEffect((): (() => void) => {
     let isCancelled = false
@@ -272,6 +433,7 @@ export function AssessmentDetailPage(): JSX.Element {
     const loadAssessment = async (): Promise<void> => {
       setIsLoading(true)
       setErrorText('')
+      setWorkflowBadge(null)
 
       try {
         const loadedAssessment = await fetchAssessmentDetail(assessmentId)
@@ -281,6 +443,16 @@ export function AssessmentDetailPage(): JSX.Element {
         }
 
         setAssessment(loadedAssessment)
+
+        if (loadedAssessment.status === 'approved') {
+          const approvedTimestamp = loadedAssessment.approvedAt || new Date().toISOString()
+
+          setWorkflowBadge({
+            kind: 'approved',
+            message: 'Approved',
+            timestamp: approvedTimestamp,
+          })
+        }
       } catch (error) {
         if (isCancelled) {
           return
@@ -402,6 +574,18 @@ export function AssessmentDetailPage(): JSX.Element {
     return sortedMappings.find((mapping): boolean => mapping.id === selectedMappingId) || null
   }, [selectedMappingId, sortedMappings])
 
+  useEffect((): void => {
+    if (!selectedMapping) {
+      setRefinementBaseline(null)
+      setRefinementDraft(null)
+      return
+    }
+
+    const nextDraft = toRefinementFormState(selectedMapping)
+    setRefinementBaseline(nextDraft)
+    setRefinementDraft(nextDraft)
+  }, [selectedMapping])
+
   const sectionChartData = useMemo((): SectionChartRow[] => {
     if (!assessment) {
       return []
@@ -418,6 +602,58 @@ export function AssessmentDetailPage(): JSX.Element {
     : 0
   const gapPercent = assessment ? toPercentage(assessment.gapCount, assessment.totalMappings) : 0
   const avgConfidencePercent = assessment ? toConfidencePercent(assessment.avgConfidence) : 0
+
+  const refinementChangedFields = useMemo((): RefinementChangedFields => {
+    if (!refinementDraft || !refinementBaseline) {
+      return {
+        confidencePercent: false,
+        mappingStatus: false,
+        nistControlId: false,
+        rationale: false,
+        rcmControlId: false,
+      }
+    }
+
+    return toChangedRefinementFields(refinementDraft, refinementBaseline)
+  }, [refinementDraft, refinementBaseline])
+
+  const hasUnsavedRefinementChanges = useMemo((): boolean => {
+    return hasRefinementChanges(refinementChangedFields)
+  }, [refinementChangedFields])
+
+  const isRefinementRationaleMissing = Boolean(
+    hasUnsavedRefinementChanges && refinementDraft && !refinementDraft.rationale.trim(),
+  )
+
+  const canRefineSelectedMapping = Boolean(
+    assessment && selectedMapping && isRefinementStatusEditable(assessment.status),
+  )
+
+  const approvalSummaryDetails = useMemo((): string[] => {
+    if (!assessment) {
+      return []
+    }
+
+    return [
+      `Total requirements: ${assessment.totalMappings}`,
+      `Mapped: ${assessment.mappedCount}`,
+      `Partial: ${assessment.partialCount}`,
+      `Gap: ${assessment.gapCount}`,
+      `Average confidence: ${formatPercent(toConfidencePercent(assessment.avgConfidence))}`,
+    ]
+  }, [assessment])
+
+  const onPushToast = (toast: Omit<ToastMessage, 'id'>): void => {
+    setToasts((current): ToastMessage[] => {
+      return [...current, { ...toast, id: createToastMessageId() }]
+    })
+  }
+
+  const onDismissToast = useCallback((toastId: string): void => {
+    setToasts((current): ToastMessage[] => {
+      return current.filter((toast): boolean => toast.id !== toastId)
+    })
+  }, [])
 
   const onChangeStatusFilter = (status: MappingFilters['status']): void => {
     setFilters(
@@ -499,6 +735,192 @@ export function AssessmentDetailPage(): JSX.Element {
     }
   }
 
+  const onCancelRefinement = (): void => {
+    if (!refinementBaseline) {
+      return
+    }
+
+    setRefinementDraft(refinementBaseline)
+  }
+
+  const onSaveRefinement = async (): Promise<void> => {
+    if (!assessment || !selectedMapping || !refinementDraft || !hasUnsavedRefinementChanges) {
+      return
+    }
+
+    if (isRefinementRationaleMissing) {
+      onPushToast({
+        variant: 'error',
+        title: 'Rationale is required',
+        description: 'Provide override rationale before saving changes.',
+      })
+      return
+    }
+
+    const updatePayload: UpdateMappingRecordRequest = {
+      mappingStatus: refinementDraft.mappingStatus,
+      confidence: toConfidenceStorageValue(
+        refinementDraft.confidencePercent,
+        selectedMapping.confidence,
+      ),
+      nistControlId: refinementDraft.nistControlId,
+      rcmControlId: refinementDraft.rcmControlId,
+      rationale: refinementDraft.rationale,
+      isUserOverride: true,
+    }
+
+    const optimisticMapping: MappingRecord = {
+      ...selectedMapping,
+      mappingStatus: updatePayload.mappingStatus,
+      confidence: updatePayload.confidence,
+      nistControlId: updatePayload.nistControlId,
+      rcmControlId: updatePayload.rcmControlId,
+      rationale: updatePayload.rationale,
+      isUserOverride: true,
+    }
+
+    const previousAssessment = assessment
+
+    setAssessment((current): AssessmentDetail | null => {
+      if (!current) {
+        return current
+      }
+
+      return withUpdatedMapping(current, optimisticMapping)
+    })
+    setIsSavingRefinement(true)
+
+    try {
+      const updatedMapping = await updateMappingRecord(
+        assessment.id,
+        selectedMapping.id,
+        updatePayload,
+      )
+
+      setAssessment((current): AssessmentDetail | null => {
+        if (!current) {
+          return current
+        }
+
+        return withUpdatedMapping(current, updatedMapping)
+      })
+
+      const nextRefinementState = toRefinementFormState(updatedMapping)
+      setRefinementBaseline(nextRefinementState)
+      setRefinementDraft(nextRefinementState)
+
+      onPushToast({
+        variant: 'success',
+        title: 'Mapping refinement saved',
+        description: `Updated ${updatedMapping.sourceRef}.`,
+      })
+    } catch (error) {
+      setAssessment(previousAssessment)
+      onPushToast({
+        variant: 'error',
+        title: 'Unable to save refinement',
+        description: toApiErrorMessage(error),
+      })
+    } finally {
+      setIsSavingRefinement(false)
+    }
+  }
+
+  const onCloseConfirmationModal = (): void => {
+    if (isSubmittingWorkflowAction) {
+      return
+    }
+
+    setActiveModal(null)
+  }
+
+  const onApproveAssessment = async (): Promise<void> => {
+    if (!assessment || isSubmittingWorkflowAction) {
+      return
+    }
+
+    const approvedBy = approvedByName.trim()
+
+    if (!approvedBy) {
+      return
+    }
+
+    setIsSubmittingWorkflowAction(true)
+
+    try {
+      const approvedAssessment = await approveAssessment(assessment.id, approvedBy)
+      const approvedAt = approvedAssessment.approvedAt || new Date().toISOString()
+      const normalizedAssessment: AssessmentDetail = {
+        ...approvedAssessment,
+        approvedAt,
+      }
+
+      setAssessment(normalizedAssessment)
+      setWorkflowBadge({
+        kind: 'approved',
+        message: `Approved by ${approvedBy}`,
+        timestamp: approvedAt,
+      })
+      setActiveModal(null)
+      setApprovedByName('')
+
+      onPushToast({
+        variant: 'success',
+        title: 'Assessment approved',
+        description: `Approved by ${approvedBy}.`,
+      })
+    } catch (error) {
+      onPushToast({
+        variant: 'error',
+        title: 'Unable to approve assessment',
+        description: toApiErrorMessage(error),
+      })
+    } finally {
+      setIsSubmittingWorkflowAction(false)
+    }
+  }
+
+  const onRejectAssessment = async (): Promise<void> => {
+    if (!assessment || isSubmittingWorkflowAction) {
+      return
+    }
+
+    const trimmedReason = rejectionReason.trim()
+
+    if (!trimmedReason) {
+      return
+    }
+
+    setIsSubmittingWorkflowAction(true)
+
+    try {
+      const updatedAssessment = await updateAssessmentStatus(assessment.id, 'draft')
+
+      setAssessment(updatedAssessment)
+      setWorkflowBadge({
+        kind: 'sent-back',
+        message: 'Sent back for review',
+        timestamp: new Date().toISOString(),
+      })
+      setActiveModal(null)
+      setRejectionReason('')
+
+      onPushToast({
+        variant: 'info',
+        title: 'Assessment sent back to draft',
+        description: trimmedReason,
+      })
+    } catch (error) {
+      onPushToast({
+        variant: 'error',
+        title: 'Unable to send assessment back',
+        description: toApiErrorMessage(error),
+      })
+    } finally {
+      setIsSubmittingWorkflowAction(false)
+    }
+  }
+
   if (isLoading) {
     return (
       <main className="cei-assessment-detail-shell">
@@ -524,6 +946,8 @@ export function AssessmentDetailPage(): JSX.Element {
 
   return (
     <main className="cei-assessment-detail-shell">
+      <ToastStack onDismiss={onDismissToast} toasts={toasts} />
+
       <header className="cei-assessment-detail-header">
         <div className="cei-assessment-detail-header-main">
           <button
@@ -557,6 +981,39 @@ export function AssessmentDetailPage(): JSX.Element {
         <div className="cei-assessment-detail-error" role="alert">
           {exportError}
         </div>
+      ) : null}
+
+      {assessment.status === 'complete' ? (
+        <section className="cei-approval-action-bar" aria-label="Approval workflow">
+          <div className="cei-approval-action-copy">
+            <h2>Ready for approval</h2>
+            <p>Review summary metrics and approve this assessment, or send it back to draft.</p>
+          </div>
+          <div className="cei-approval-action-buttons">
+            <button
+              className="cei-approval-button cei-approval-button-approve"
+              onClick={(): void => setActiveModal('approve')}
+              type="button"
+            >
+              Approve
+            </button>
+            <button
+              className="cei-approval-button cei-approval-button-reject"
+              onClick={(): void => setActiveModal('reject')}
+              type="button"
+            >
+              Reject / Send Back
+            </button>
+          </div>
+        </section>
+      ) : null}
+
+      {workflowBadge ? (
+        <section className="cei-workflow-badge-row" aria-label="Workflow status">
+          <span className={toWorkflowBadgeClassName(workflowBadge.kind)}>
+            {workflowBadge.message} | {formatAssessmentDate(workflowBadge.timestamp)}
+          </span>
+        </section>
       ) : null}
 
       <section className="cei-summary-grid" aria-label="Assessment summary">
@@ -815,78 +1272,311 @@ export function AssessmentDetailPage(): JSX.Element {
         {!selectedMapping ? (
           <p className="cei-panel-empty">Select a row to inspect detailed mapping information.</p>
         ) : (
-          <div className="cei-detail-grid">
-            <article className="cei-detail-card">
-              <h3>{selectedMapping.sourceRef}</h3>
-              <p>{selectedMapping.sourceText || 'No source text available.'}</p>
-              {selectedMapping.isUserOverride ? (
-                <span className="cei-user-override-badge">User override</span>
-              ) : null}
-            </article>
-
-            <article className="cei-detail-card">
-              <h3>Scope metadata</h3>
-              <dl className="cei-detail-definition-list">
-                <div>
-                  <dt>Domain</dt>
-                  <dd>{selectedMapping.scopeDomain || '—'}</dd>
-                </div>
-                <div>
-                  <dt>Subject</dt>
-                  <dd>{selectedMapping.scopeSubject || '—'}</dd>
-                </div>
-                <div>
-                  <dt>Asset type</dt>
-                  <dd>{selectedMapping.scopeAssetType || '—'}</dd>
-                </div>
-                <div>
-                  <dt>Environment</dt>
-                  <dd>{selectedMapping.scopeEnvironment || '—'}</dd>
-                </div>
-                <div>
-                  <dt>Summary</dt>
-                  <dd>{selectedMapping.scopeSummary || '—'}</dd>
-                </div>
-              </dl>
-            </article>
-
-            <article className="cei-detail-card">
-              <h3>NIST mapping</h3>
-              <p>
-                <strong>Control ID:</strong> {selectedMapping.nistControlId || '—'}
-              </p>
-              <p>
-                <strong>Control text:</strong> {selectedMapping.nistControlText || '—'}
-              </p>
-              <p>
-                <strong>Framework:</strong> {selectedMapping.nistFramework || '—'}
-              </p>
-            </article>
-
-            <article className="cei-detail-card">
-              <h3>RCM mapping</h3>
-              <p>
-                <strong>Control ID:</strong> {selectedMapping.rcmControlId || '—'}
-              </p>
-              <p>
-                <strong>Control text:</strong> {selectedMapping.rcmControlText || '—'}
-              </p>
-            </article>
-
-            <article className="cei-detail-card">
-              <h3>Rationale</h3>
-              <p>{selectedMapping.rationale || 'No rationale available.'}</p>
-            </article>
-
-            {shouldShowRecommendedLanguage(selectedMapping) ? (
+          <>
+            <div className="cei-detail-grid">
               <article className="cei-detail-card">
-                <h3>Recommended language</h3>
-                <p>{selectedMapping.recommendedLanguage}</p>
+                <h3>{selectedMapping.sourceRef}</h3>
+                <p>{selectedMapping.sourceText || 'No source text available.'}</p>
+                {selectedMapping.isUserOverride ? (
+                  <span className="cei-user-override-badge">User override</span>
+                ) : null}
               </article>
+
+              <article className="cei-detail-card">
+                <h3>Scope metadata</h3>
+                <dl className="cei-detail-definition-list">
+                  <div>
+                    <dt>Domain</dt>
+                    <dd>{selectedMapping.scopeDomain || '—'}</dd>
+                  </div>
+                  <div>
+                    <dt>Subject</dt>
+                    <dd>{selectedMapping.scopeSubject || '—'}</dd>
+                  </div>
+                  <div>
+                    <dt>Asset type</dt>
+                    <dd>{selectedMapping.scopeAssetType || '—'}</dd>
+                  </div>
+                  <div>
+                    <dt>Environment</dt>
+                    <dd>{selectedMapping.scopeEnvironment || '—'}</dd>
+                  </div>
+                  <div>
+                    <dt>Summary</dt>
+                    <dd>{selectedMapping.scopeSummary || '—'}</dd>
+                  </div>
+                </dl>
+              </article>
+
+              <article className="cei-detail-card">
+                <h3>NIST mapping</h3>
+                <p>
+                  <strong>Control ID:</strong> {selectedMapping.nistControlId || '—'}
+                </p>
+                <p>
+                  <strong>Control text:</strong> {selectedMapping.nistControlText || '—'}
+                </p>
+                <p>
+                  <strong>Framework:</strong> {selectedMapping.nistFramework || '—'}
+                </p>
+              </article>
+
+              <article className="cei-detail-card">
+                <h3>RCM mapping</h3>
+                <p>
+                  <strong>Control ID:</strong> {selectedMapping.rcmControlId || '—'}
+                </p>
+                <p>
+                  <strong>Control text:</strong> {selectedMapping.rcmControlText || '—'}
+                </p>
+              </article>
+
+              <article className="cei-detail-card">
+                <h3>Rationale</h3>
+                <p>{selectedMapping.rationale || 'No rationale available.'}</p>
+              </article>
+
+              {shouldShowRecommendedLanguage(selectedMapping) ? (
+                <article className="cei-detail-card">
+                  <h3>Recommended language</h3>
+                  <p>{selectedMapping.recommendedLanguage}</p>
+                </article>
+              ) : null}
+            </div>
+
+            {canRefineSelectedMapping && refinementDraft ? (
+              <section className="cei-refinement-panel" aria-label="Refinement controls">
+                <header className="cei-refinement-header">
+                  <h3>Refinement override</h3>
+                  {hasUnsavedRefinementChanges ? (
+                    <p className="cei-refinement-unsaved" role="status">
+                      Unsaved changes
+                    </p>
+                  ) : null}
+                </header>
+
+                <div className="cei-refinement-grid">
+                  <label
+                    className={
+                      refinementChangedFields.mappingStatus
+                        ? 'cei-refinement-field cei-refinement-field-changed'
+                        : 'cei-refinement-field'
+                    }
+                    htmlFor="refinement-status"
+                  >
+                    Status override
+                    <select
+                      id="refinement-status"
+                      onChange={(event): void => {
+                        setRefinementDraft((current): RefinementFormState | null =>
+                          current
+                            ? {
+                                ...current,
+                                mappingStatus: event.target.value as MappingStatus,
+                              }
+                            : current,
+                        )
+                      }}
+                      value={refinementDraft.mappingStatus}
+                    >
+                      <option value="mapped">Mapped</option>
+                      <option value="partial">Partial</option>
+                      <option value="gap">Gap</option>
+                    </select>
+                  </label>
+
+                  <label
+                    className={
+                      refinementChangedFields.confidencePercent
+                        ? 'cei-refinement-field cei-refinement-field-changed'
+                        : 'cei-refinement-field'
+                    }
+                    htmlFor="refinement-confidence"
+                  >
+                    Confidence adjustment ({refinementDraft.confidencePercent}%)
+                    <input
+                      id="refinement-confidence"
+                      max={100}
+                      min={0}
+                      onChange={(event): void => {
+                        const parsedValue = Number(event.target.value)
+
+                        if (!Number.isFinite(parsedValue)) {
+                          return
+                        }
+
+                        setRefinementDraft((current): RefinementFormState | null =>
+                          current
+                            ? {
+                                ...current,
+                                confidencePercent: Math.round(clampPercentage(parsedValue)),
+                              }
+                            : current,
+                        )
+                      }}
+                      step={1}
+                      type="range"
+                      value={refinementDraft.confidencePercent}
+                    />
+                  </label>
+
+                  <label
+                    className={
+                      refinementChangedFields.nistControlId
+                        ? 'cei-refinement-field cei-refinement-field-changed'
+                        : 'cei-refinement-field'
+                    }
+                    htmlFor="refinement-nist"
+                  >
+                    NIST Control ID
+                    <input
+                      id="refinement-nist"
+                      onChange={(event): void => {
+                        setRefinementDraft((current): RefinementFormState | null =>
+                          current
+                            ? {
+                                ...current,
+                                nistControlId: event.target.value,
+                              }
+                            : current,
+                        )
+                      }}
+                      type="text"
+                      value={refinementDraft.nistControlId}
+                    />
+                  </label>
+
+                  <label
+                    className={
+                      refinementChangedFields.rcmControlId
+                        ? 'cei-refinement-field cei-refinement-field-changed'
+                        : 'cei-refinement-field'
+                    }
+                    htmlFor="refinement-rcm"
+                  >
+                    RCM Control ID
+                    <input
+                      id="refinement-rcm"
+                      onChange={(event): void => {
+                        setRefinementDraft((current): RefinementFormState | null =>
+                          current
+                            ? {
+                                ...current,
+                                rcmControlId: event.target.value,
+                              }
+                            : current,
+                        )
+                      }}
+                      type="text"
+                      value={refinementDraft.rcmControlId}
+                    />
+                  </label>
+                </div>
+
+                <label
+                  className={
+                    refinementChangedFields.rationale
+                      ? 'cei-refinement-field cei-refinement-field-changed'
+                      : 'cei-refinement-field'
+                  }
+                  htmlFor="refinement-rationale"
+                >
+                  Override rationale
+                  <textarea
+                    id="refinement-rationale"
+                    onChange={(event): void => {
+                      setRefinementDraft((current): RefinementFormState | null =>
+                        current
+                          ? {
+                              ...current,
+                              rationale: event.target.value,
+                            }
+                          : current,
+                      )
+                    }}
+                    rows={4}
+                    value={refinementDraft.rationale}
+                  />
+                </label>
+
+                {isRefinementRationaleMissing ? (
+                  <p className="cei-refinement-validation" role="alert">
+                    Override rationale is required when saving changes.
+                  </p>
+                ) : null}
+
+                <div className="cei-refinement-actions">
+                  <button
+                    className="cei-button-primary"
+                    disabled={
+                      isSavingRefinement ||
+                      !hasUnsavedRefinementChanges ||
+                      Boolean(isRefinementRationaleMissing)
+                    }
+                    onClick={(): void => {
+                      void onSaveRefinement()
+                    }}
+                    type="button"
+                  >
+                    {isSavingRefinement ? 'Saving...' : 'Save'}
+                  </button>
+                  <button
+                    className="cei-button-secondary"
+                    disabled={isSavingRefinement || !hasUnsavedRefinementChanges}
+                    onClick={onCancelRefinement}
+                    type="button"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </section>
             ) : null}
-          </div>
+          </>
         )}
       </section>
+
+      <ConfirmationModal
+        cancelLabel="Cancel"
+        confirmDisabled={isSubmittingWorkflowAction}
+        confirmLabel={isSubmittingWorkflowAction ? 'Approving...' : 'Approve'}
+        confirmVariant="success"
+        details={approvalSummaryDetails}
+        input={{
+          label: 'Approved by',
+          onChange: setApprovedByName,
+          placeholder: 'Enter approver name',
+          required: true,
+          value: approvedByName,
+        }}
+        isOpen={activeModal === 'approve'}
+        message="Confirm approval for this assessment."
+        onCancel={onCloseConfirmationModal}
+        onConfirm={(): void => {
+          void onApproveAssessment()
+        }}
+        title="Approve Assessment"
+      />
+
+      <ConfirmationModal
+        cancelLabel="Cancel"
+        confirmDisabled={isSubmittingWorkflowAction}
+        confirmLabel={isSubmittingWorkflowAction ? 'Sending...' : 'Send Back'}
+        confirmVariant="danger"
+        input={{
+          label: 'Rejection reason',
+          onChange: setRejectionReason,
+          placeholder: 'Provide reason for sending back',
+          required: true,
+          value: rejectionReason,
+        }}
+        isOpen={activeModal === 'reject'}
+        message="This will move the assessment back to draft so mappings can be refined."
+        onCancel={onCloseConfirmationModal}
+        onConfirm={(): void => {
+          void onRejectAssessment()
+        }}
+        title="Send Assessment Back"
+      />
     </main>
   )
 }
