@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
   Bar,
@@ -649,11 +649,11 @@ export function AssessmentDetailPage(): JSX.Element {
     })
   }
 
-  const onDismissToast = (toastId: string): void => {
+  const onDismissToast = useCallback((toastId: string): void => {
     setToasts((current): ToastMessage[] => {
       return current.filter((toast): boolean => toast.id !== toastId)
     })
-  }
+  }, [])
 
   const onChangeStatusFilter = (status: MappingFilters['status']): void => {
     setFilters(
