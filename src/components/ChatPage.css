@@ -33,6 +33,10 @@
   color: var(--text-muted);
 }
 
+.cei-chat-header .cei-app-nav {
+  margin-top: var(--space-3);
+}
+
 .cei-meta-row {
   margin: 0;
   color: var(--text-muted);

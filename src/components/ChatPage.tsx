@@ -13,6 +13,7 @@ import { v4 as uuidv4 } from 'uuid'
 import { invokeAgentStream } from '../agent/AgentClient'
 import type { AttachmentInput, StructuredBlock } from '../agent/types'
 import { describeAuthError, useAuth } from '../auth/AuthProvider'
+import { AppNavigation } from './AppNavigation'
 import { AttachmentPreview } from './AttachmentPreview'
 import {
   ChatMessageList,
@@ -569,16 +570,18 @@ export function ChatPage(): JSX.Element {
 
     setAttachments((currentAttachments: ComposerAttachment[]): ComposerAttachment[] => [
       ...currentAttachments,
-      ...pendingAttachments.map(({ attachmentId, file }) => ({
-        data: '',
-        errorText: '',
-        id: attachmentId,
-        mime: file.type,
-        name: file.name,
-        progressPercent: 0,
-        sizeBytes: file.size,
-        status: 'processing',
-      })),
+      ...pendingAttachments.map(
+        ({ attachmentId, file }): ComposerAttachment => ({
+          data: '',
+          errorText: '',
+          id: attachmentId,
+          mime: file.type,
+          name: file.name,
+          progressPercent: 0,
+          sizeBytes: file.size,
+          status: 'processing',
+        }),
+      ),
     ])
 
     for (const pendingAttachment of pendingAttachments) {
@@ -989,6 +992,7 @@ export function ChatPage(): JSX.Element {
           <p className="cei-chat-kicker">CEI Agent UI - Phase 4</p>
           <h1 className="cei-chat-title">Polish and Deployment Readiness</h1>
           <p className="cei-chat-subtitle">Signed in as {userEmail}</p>
+          <AppNavigation />
         </div>
 
         <button
