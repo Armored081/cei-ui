@@ -58,6 +58,33 @@
   color: var(--text-muted);
 }
 
+.cei-button-primary,
+.cei-button-secondary {
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  padding: var(--space-2) var(--space-4);
+  cursor: pointer;
+}
+
+.cei-button-primary {
+  border: 0;
+  background-color: var(--accent);
+  color: var(--bg-primary);
+  font-weight: 700;
+}
+
+.cei-button-secondary {
+  border: 1px solid var(--border);
+  background-color: transparent;
+  color: var(--text-primary);
+}
+
+.cei-button-primary:disabled,
+.cei-button-secondary:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
 .cei-assessment-detail-loading,
 .cei-assessment-detail-error {
   border: 1px solid var(--border);
@@ -77,6 +104,78 @@
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: var(--space-3);
+}
+
+.cei-approval-action-bar {
+  border: 1px solid rgba(121, 255, 197, 0.36);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(160deg, rgba(27, 56, 44, 0.9), rgba(12, 22, 40, 0.95));
+  padding: var(--space-4);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.cei-approval-action-copy h2 {
+  margin: 0 0 var(--space-1);
+  font-size: 1.05rem;
+}
+
+.cei-approval-action-copy p {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.cei-approval-action-buttons {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.cei-approval-button {
+  border: 0;
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  padding: var(--space-2) var(--space-4);
+  cursor: pointer;
+  color: var(--bg-primary);
+}
+
+.cei-approval-button-approve {
+  background-color: #7dffbd;
+}
+
+.cei-approval-button-reject {
+  background-color: #ff8aa8;
+}
+
+.cei-workflow-badge-row {
+  display: flex;
+}
+
+.cei-workflow-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  padding: var(--space-2) var(--space-3);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.cei-workflow-badge-approved {
+  background-color: rgba(133, 107, 199, 0.28);
+  border-color: rgba(204, 177, 255, 0.4);
+  color: #ecdfff;
+}
+
+.cei-workflow-badge-sent-back {
+  background-color: rgba(75, 116, 168, 0.3);
+  border-color: rgba(105, 166, 255, 0.38);
+  color: #d7ebff;
 }
 
 .cei-summary-card {
@@ -320,6 +419,86 @@
   padding: 4px 10px;
 }
 
+.cei-refinement-panel {
+  margin-top: var(--space-4);
+  border: 1px solid rgba(122, 160, 220, 0.34);
+  border-radius: var(--radius-md);
+  background-color: rgba(7, 13, 24, 0.78);
+  padding: var(--space-4);
+  display: grid;
+  gap: var(--space-3);
+}
+
+.cei-refinement-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.cei-refinement-header h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.cei-refinement-unsaved {
+  margin: 0;
+  color: var(--warning);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.cei-refinement-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.cei-refinement-field {
+  display: grid;
+  gap: var(--space-2);
+  color: var(--text-muted);
+  font-size: 0.84rem;
+}
+
+.cei-refinement-field input,
+.cei-refinement-field select,
+.cei-refinement-field textarea {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background-color: rgba(10, 18, 34, 0.86);
+  color: var(--text-primary);
+  padding: var(--space-2) var(--space-3);
+}
+
+.cei-refinement-field input[type='range'] {
+  padding: 0;
+}
+
+.cei-refinement-field-changed {
+  color: #cde8ff;
+}
+
+.cei-refinement-field-changed input,
+.cei-refinement-field-changed select,
+.cei-refinement-field-changed textarea {
+  border-color: rgba(121, 255, 197, 0.62);
+  box-shadow: 0 0 0 1px rgba(121, 255, 197, 0.26);
+}
+
+.cei-refinement-validation {
+  margin: 0;
+  color: var(--danger);
+  font-size: 0.84rem;
+}
+
+.cei-refinement-actions {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: flex-end;
+}
+
 .cei-panel-empty {
   margin: 0;
   color: var(--text-muted);
@@ -351,11 +530,26 @@
 
   .cei-summary-grid,
   .cei-filter-grid,
-  .cei-detail-grid {
+  .cei-detail-grid,
+  .cei-refinement-grid {
     grid-template-columns: 1fr;
   }
 
   .cei-pagination-row {
     justify-content: space-between;
+  }
+
+  .cei-approval-action-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .cei-refinement-actions {
+    justify-content: stretch;
+  }
+
+  .cei-refinement-actions .cei-button-primary,
+  .cei-refinement-actions .cei-button-secondary {
+    flex: 1;
   }
 }

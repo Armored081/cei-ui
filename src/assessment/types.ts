@@ -36,6 +36,7 @@ export interface AssessmentSummary {
   jurisdiction: string
   status: AssessmentStatus
   createdAt: string
+  approvedAt?: string
   totalMappings: number
   mappedCount: number
   partialCount: number
@@ -77,6 +78,32 @@ export interface MappingRecord {
  */
 export interface AssessmentDetail extends AssessmentSummary {
   mappings: MappingRecord[]
+}
+
+/**
+ * Request payload for updating one mapping record.
+ */
+export interface UpdateMappingRecordRequest {
+  mappingStatus: MappingStatus
+  confidence: number
+  nistControlId: string
+  rcmControlId: string
+  rationale: string
+  isUserOverride: true
+}
+
+/**
+ * Request payload for approving one assessment.
+ */
+export interface ApproveAssessmentRequest {
+  approvedBy: string
+}
+
+/**
+ * Request payload for changing assessment workflow status.
+ */
+export interface UpdateAssessmentStatusRequest {
+  status: AssessmentStatus
 }
 
 /**
@@ -130,6 +157,7 @@ export const assessmentSummarySchema = z.object({
   jurisdiction: z.string().min(1),
   status: assessmentStatusSchema,
   createdAt: z.string().min(1),
+  approvedAt: nullableStringSchema,
   totalMappings: z.number().int().nonnegative(),
   mappedCount: z.number().int().nonnegative(),
   partialCount: z.number().int().nonnegative(),
@@ -190,4 +218,21 @@ export const mappingSortColumnSchema = z.enum([
 export const mappingSortSchema = z.object({
   column: mappingSortColumnSchema,
   direction: z.enum(['asc', 'desc']),
+})
+
+export const updateMappingRecordRequestSchema = z.object({
+  mappingStatus: mappingStatusSchema,
+  confidence: z.number().min(0).max(100),
+  nistControlId: z.string(),
+  rcmControlId: z.string(),
+  rationale: z.string().trim().min(1),
+  isUserOverride: z.literal(true),
+})
+
+export const approveAssessmentRequestSchema = z.object({
+  approvedBy: z.string().trim().min(1),
+})
+
+export const updateAssessmentStatusRequestSchema = z.object({
+  status: assessmentStatusSchema,
 })

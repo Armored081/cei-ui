@@ -3,16 +3,28 @@ import type { ReactNode } from 'react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { AssessmentDetail } from '../assessment/types'
+import type { AssessmentDetail, MappingRecord } from '../assessment/types'
 import { AssessmentDetailPage } from './AssessmentDetailPage'
 
-const { mockFetchAssessmentDetail, mockExportAssessmentCsv } = vi.hoisted(
+const {
+  mockApproveAssessment,
+  mockExportAssessmentCsv,
+  mockFetchAssessmentDetail,
+  mockUpdateAssessmentStatus,
+  mockUpdateMappingRecord,
+} = vi.hoisted(
   (): {
-    mockFetchAssessmentDetail: ReturnType<typeof vi.fn>
+    mockApproveAssessment: ReturnType<typeof vi.fn>
     mockExportAssessmentCsv: ReturnType<typeof vi.fn>
+    mockFetchAssessmentDetail: ReturnType<typeof vi.fn>
+    mockUpdateAssessmentStatus: ReturnType<typeof vi.fn>
+    mockUpdateMappingRecord: ReturnType<typeof vi.fn>
   } => ({
-    mockFetchAssessmentDetail: vi.fn(),
+    mockApproveAssessment: vi.fn(),
     mockExportAssessmentCsv: vi.fn(),
+    mockFetchAssessmentDetail: vi.fn(),
+    mockUpdateAssessmentStatus: vi.fn(),
+    mockUpdateMappingRecord: vi.fn(),
   }),
 )
 
@@ -41,11 +53,17 @@ vi.mock('recharts', () => rechartsMocks)
 vi.mock(
   '../assessment/client',
   (): {
+    approveAssessment: typeof mockApproveAssessment
     exportAssessmentCsv: typeof mockExportAssessmentCsv
     fetchAssessmentDetail: typeof mockFetchAssessmentDetail
+    updateAssessmentStatus: typeof mockUpdateAssessmentStatus
+    updateMappingRecord: typeof mockUpdateMappingRecord
   } => ({
+    approveAssessment: mockApproveAssessment,
     exportAssessmentCsv: mockExportAssessmentCsv,
     fetchAssessmentDetail: mockFetchAssessmentDetail,
+    updateAssessmentStatus: mockUpdateAssessmentStatus,
+    updateMappingRecord: mockUpdateMappingRecord,
   }),
 )
 
@@ -143,11 +161,42 @@ const detailFixture: AssessmentDetail = {
   ],
 }
 
+function buildDetailFixture(overrides: Partial<AssessmentDetail> = {}): AssessmentDetail {
+  return {
+    ...detailFixture,
+    ...overrides,
+    mappings: (overrides.mappings || detailFixture.mappings).map(
+      (mapping): MappingRecord => ({
+        ...mapping,
+      }),
+    ),
+  }
+}
+
+function renderAssessmentDetailPage(): void {
+  render(
+    <MemoryRouter initialEntries={['/assessments/assessment-de-1']}>
+      <Routes>
+        <Route element={<AssessmentDetailPage />} path="/assessments/:id" />
+      </Routes>
+    </MemoryRouter>,
+  )
+}
+
 beforeEach((): void => {
-  mockFetchAssessmentDetail.mockReset()
+  mockApproveAssessment.mockReset()
   mockExportAssessmentCsv.mockReset()
-  mockFetchAssessmentDetail.mockResolvedValue(detailFixture)
+  mockFetchAssessmentDetail.mockReset()
+  mockUpdateAssessmentStatus.mockReset()
+  mockUpdateMappingRecord.mockReset()
+
+  mockFetchAssessmentDetail.mockResolvedValue(buildDetailFixture())
   mockExportAssessmentCsv.mockResolvedValue(new Blob(['sourceRef,section'], { type: 'text/csv' }))
+  mockUpdateMappingRecord.mockResolvedValue(buildDetailFixture().mappings[0])
+  mockApproveAssessment.mockResolvedValue(
+    buildDetailFixture({ status: 'approved', approvedAt: '2026-02-08T12:45:00.000Z' }),
+  )
+  mockUpdateAssessmentStatus.mockResolvedValue(buildDetailFixture({ status: 'draft' }))
 
   vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:assessment-csv')
   vi.spyOn(URL, 'revokeObjectURL').mockImplementation((): void => {})
@@ -156,13 +205,7 @@ beforeEach((): void => {
 
 describe('AssessmentDetailPage', (): void => {
   it('renders summary cards and German source references', async (): Promise<void> => {
-    render(
-      <MemoryRouter initialEntries={['/assessments/assessment-de-1']}>
-        <Routes>
-          <Route element={<AssessmentDetailPage />} path="/assessments/:id" />
-        </Routes>
-      </MemoryRouter>,
-    )
+    renderAssessmentDetailPage()
 
     expect(await screen.findByText('DSGVO Artikel 30 Zuordnung')).toBeInTheDocument()
 
@@ -177,13 +220,7 @@ describe('AssessmentDetailPage', (): void => {
   })
 
   it('filters rows by status and toggles sort direction', async (): Promise<void> => {
-    render(
-      <MemoryRouter initialEntries={['/assessments/assessment-de-1']}>
-        <Routes>
-          <Route element={<AssessmentDetailPage />} path="/assessments/:id" />
-        </Routes>
-      </MemoryRouter>,
-    )
+    renderAssessmentDetailPage()
 
     await screen.findByText('§ 30 Abs. 1 – Überprüfung')
 
@@ -211,13 +248,7 @@ describe('AssessmentDetailPage', (): void => {
   })
 
   it('expands detail panel on row click and triggers CSV export', async (): Promise<void> => {
-    render(
-      <MemoryRouter initialEntries={['/assessments/assessment-de-1']}>
-        <Routes>
-          <Route element={<AssessmentDetailPage />} path="/assessments/:id" />
-        </Routes>
-      </MemoryRouter>,
-    )
+    renderAssessmentDetailPage()
 
     await screen.findByText('§ 30 Abs. 1 – Überprüfung')
 
@@ -243,5 +274,104 @@ describe('AssessmentDetailPage', (): void => {
         status: 'all',
       })
     })
+  })
+
+  it('renders refinement controls when mapping is selected and status is draft', async (): Promise<void> => {
+    mockFetchAssessmentDetail.mockResolvedValueOnce(buildDetailFixture({ status: 'draft' }))
+
+    renderAssessmentDetailPage()
+
+    await screen.findByText('§ 30 Abs. 1 – Überprüfung')
+
+    fireEvent.click(screen.getByText('§ 30 Abs. 1 – Überprüfung'))
+
+    expect(await screen.findByLabelText('Status override')).toBeInTheDocument()
+    expect(screen.getByLabelText(/Confidence adjustment/i)).toBeInTheDocument()
+    expect(screen.getByLabelText('NIST Control ID')).toBeInTheDocument()
+    expect(screen.getByLabelText('RCM Control ID')).toBeInTheDocument()
+    expect(screen.getByLabelText('Override rationale')).toBeInTheDocument()
+  })
+
+  it('hides refinement controls when assessment status is approved', async (): Promise<void> => {
+    mockFetchAssessmentDetail.mockResolvedValueOnce(buildDetailFixture({ status: 'approved' }))
+
+    renderAssessmentDetailPage()
+
+    await screen.findByText('§ 30 Abs. 1 – Überprüfung')
+
+    fireEvent.click(screen.getByText('§ 30 Abs. 1 – Überprüfung'))
+
+    expect(screen.queryByLabelText('Status override')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Override rationale')).not.toBeInTheDocument()
+  })
+
+  it('saves refinement, calls API, and updates local mapping state', async (): Promise<void> => {
+    mockFetchAssessmentDetail.mockResolvedValueOnce(buildDetailFixture({ status: 'draft' }))
+
+    const updatedMapping: MappingRecord = {
+      ...buildDetailFixture().mappings[0],
+      mappingStatus: 'mapped',
+      confidence: 0.55,
+      nistControlId: 'PR.AC-9',
+      rcmControlId: 'RCM-99',
+      rationale: 'Manual reviewer override based on audit packet.',
+      isUserOverride: true,
+    }
+
+    mockUpdateMappingRecord.mockResolvedValueOnce(updatedMapping)
+
+    renderAssessmentDetailPage()
+
+    await screen.findByText('§ 30 Abs. 1 – Überprüfung')
+
+    fireEvent.click(screen.getByText('§ 30 Abs. 1 – Überprüfung'))
+
+    fireEvent.change(screen.getByLabelText('Status override'), { target: { value: 'mapped' } })
+    fireEvent.change(screen.getByLabelText(/Confidence adjustment/i), { target: { value: '55' } })
+    fireEvent.change(screen.getByLabelText('NIST Control ID'), { target: { value: 'PR.AC-9' } })
+    fireEvent.change(screen.getByLabelText('RCM Control ID'), { target: { value: 'RCM-99' } })
+    fireEvent.change(screen.getByLabelText('Override rationale'), {
+      target: { value: 'Manual reviewer override based on audit packet.' },
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+    await waitFor((): void => {
+      expect(mockUpdateMappingRecord).toHaveBeenCalledWith('assessment-de-1', 'map-1', {
+        mappingStatus: 'mapped',
+        confidence: 0.55,
+        nistControlId: 'PR.AC-9',
+        rcmControlId: 'RCM-99',
+        rationale: 'Manual reviewer override based on audit packet.',
+        isUserOverride: true,
+      })
+    })
+
+    expect(await screen.findByText('Mapping refinement saved')).toBeInTheDocument()
+    expect(await screen.findAllByText('PR.AC-9')).toHaveLength(2)
+  })
+
+  it('shows approval confirmation modal from the approve button', async (): Promise<void> => {
+    renderAssessmentDetailPage()
+
+    await screen.findByText('Ready for approval')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Approve' }))
+
+    expect(await screen.findByRole('dialog')).toBeInTheDocument()
+    expect(screen.getByText('Approve Assessment')).toBeInTheDocument()
+    expect(screen.getByLabelText('Approved by')).toBeInTheDocument()
+  })
+
+  it('shows rejection confirmation modal from reject button', async (): Promise<void> => {
+    renderAssessmentDetailPage()
+
+    await screen.findByText('Ready for approval')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reject / Send Back' }))
+
+    expect(await screen.findByRole('dialog')).toBeInTheDocument()
+    expect(screen.getByText('Send Assessment Back')).toBeInTheDocument()
+    expect(screen.getByLabelText('Rejection reason')).toBeInTheDocument()
   })
 })

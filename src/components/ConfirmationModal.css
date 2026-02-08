@@ -1,0 +1,110 @@
+.cei-confirmation-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background-color: rgba(4, 10, 20, 0.66);
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+}
+
+.cei-confirmation-modal {
+  width: min(520px, 100%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background-color: rgba(12, 22, 40, 0.98);
+  box-shadow: 0 24px 48px rgba(2, 8, 20, 0.48);
+  padding: var(--space-5);
+  display: grid;
+  gap: var(--space-4);
+}
+
+.cei-confirmation-modal-header {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.cei-confirmation-modal-header h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.cei-confirmation-modal-header p {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.cei-confirmation-modal-details {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: var(--space-2);
+  color: var(--text-primary);
+}
+
+.cei-confirmation-modal-input {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.cei-confirmation-modal-input span {
+  color: var(--text-muted);
+  font-size: 0.86rem;
+}
+
+.cei-confirmation-modal-input input {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background-color: rgba(8, 15, 28, 0.72);
+  color: var(--text-primary);
+  padding: var(--space-2) var(--space-3);
+}
+
+.cei-confirmation-modal-input-error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 0.84rem;
+}
+
+.cei-confirmation-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}
+
+.cei-confirmation-modal-cancel,
+.cei-confirmation-modal-confirm {
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  padding: var(--space-2) var(--space-4);
+  cursor: pointer;
+}
+
+.cei-confirmation-modal-cancel {
+  border: 1px solid var(--border);
+  background-color: transparent;
+  color: var(--text-primary);
+}
+
+.cei-confirmation-modal-confirm {
+  border: 0;
+  color: var(--bg-primary);
+}
+
+.cei-confirmation-modal-confirm-default {
+  background-color: var(--accent);
+}
+
+.cei-confirmation-modal-confirm-success {
+  background-color: var(--success);
+}
+
+.cei-confirmation-modal-confirm-danger {
+  background-color: #ff8da9;
+}
+
+.cei-confirmation-modal-cancel:disabled,
+.cei-confirmation-modal-confirm:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}

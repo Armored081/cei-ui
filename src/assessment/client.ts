@@ -4,10 +4,17 @@ import { getAuthAccessToken } from '../auth/accessToken'
 import {
   assessmentDetailSchema,
   assessmentSummariesSchema,
+  approveAssessmentRequestSchema,
   mappingFiltersSchema,
+  mappingRecordSchema,
+  updateAssessmentStatusRequestSchema,
+  updateMappingRecordRequestSchema,
   type AssessmentDetail,
+  type AssessmentStatus,
   type AssessmentSummary,
   type MappingFilters,
+  type MappingRecord,
+  type UpdateMappingRecordRequest,
 } from './types'
 
 const errorPayloadSchema = z
@@ -236,4 +243,94 @@ export async function exportAssessmentCsv(id: string, filters?: MappingFilters):
   )
 
   return response.blob()
+}
+
+/**
+ * Updates one mapping record within an assessment.
+ */
+export async function updateMappingRecord(
+  assessmentId: string,
+  mappingId: string,
+  payload: UpdateMappingRecordRequest,
+): Promise<MappingRecord> {
+  if (!assessmentId) {
+    throw new AssessmentApiError('validation_error', 'Assessment ID is required')
+  }
+
+  if (!mappingId) {
+    throw new AssessmentApiError('validation_error', 'Mapping ID is required')
+  }
+
+  const validatedPayload = updateMappingRecordRequestSchema.parse(payload)
+  const response = await sendAuthorizedRequest(
+    `/assessments/${encodeURIComponent(assessmentId)}/mappings/${encodeURIComponent(mappingId)}`,
+    {
+      method: 'PUT',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(validatedPayload),
+    },
+  )
+
+  return getParsedJson(response, mappingRecordSchema)
+}
+
+/**
+ * Approves one completed assessment.
+ */
+export async function approveAssessment(
+  assessmentId: string,
+  approvedBy: string,
+): Promise<AssessmentDetail> {
+  if (!assessmentId) {
+    throw new AssessmentApiError('validation_error', 'Assessment ID is required')
+  }
+
+  const validatedPayload = approveAssessmentRequestSchema.parse({
+    approvedBy,
+  })
+  const response = await sendAuthorizedRequest(
+    `/assessments/${encodeURIComponent(assessmentId)}/approve`,
+    {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(validatedPayload),
+    },
+  )
+
+  return getParsedJson(response, assessmentDetailSchema)
+}
+
+/**
+ * Updates the workflow status for one assessment.
+ */
+export async function updateAssessmentStatus(
+  assessmentId: string,
+  status: AssessmentStatus,
+): Promise<AssessmentDetail> {
+  if (!assessmentId) {
+    throw new AssessmentApiError('validation_error', 'Assessment ID is required')
+  }
+
+  const validatedPayload = updateAssessmentStatusRequestSchema.parse({
+    status,
+  })
+  const response = await sendAuthorizedRequest(
+    `/assessments/${encodeURIComponent(assessmentId)}/status`,
+    {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(validatedPayload),
+    },
+  )
+
+  return getParsedJson(response, assessmentDetailSchema)
 }
