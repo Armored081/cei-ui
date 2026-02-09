@@ -376,6 +376,8 @@ export function ChatPage(): JSX.Element {
   }, [attachments])
 
   useEffect((): (() => void) => {
+    isMountedRef.current = true
+
     return (): void => {
       isMountedRef.current = false
       activeStreamIdRef.current += 1
