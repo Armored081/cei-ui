@@ -325,6 +325,7 @@ export function ChatPage(): JSX.Element {
   const activeAbortControllerRef = useRef<AbortController | null>(null)
   const activeStreamIdRef = useRef<number>(0)
   const activeAgentMessageIdRef = useRef<string | null>(null)
+  const isMountedRef = useRef<boolean>(true)
   const attachmentsRef = useRef<ComposerAttachment[]>([])
   const attachmentInputRef = useRef<HTMLInputElement | null>(null)
   const composerRef = useRef<HTMLTextAreaElement | null>(null)
@@ -376,7 +377,10 @@ export function ChatPage(): JSX.Element {
 
   useEffect((): (() => void) => {
     return (): void => {
+      isMountedRef.current = false
+      activeStreamIdRef.current += 1
       activeAbortControllerRef.current?.abort()
+      activeAbortControllerRef.current = null
     }
   }, [])
 
@@ -483,6 +487,10 @@ export function ChatPage(): JSX.Element {
   const encodeAttachment = async (attachmentId: string, file: File): Promise<void> => {
     try {
       const base64Data = await readFileAsBase64(file, (progressPercent: number): void => {
+        if (!isMountedRef.current) {
+          return
+        }
+
         updateAttachmentById(
           attachmentId,
           (attachment: ComposerAttachment): ComposerAttachment => ({
@@ -492,6 +500,10 @@ export function ChatPage(): JSX.Element {
           }),
         )
       })
+
+      if (!isMountedRef.current) {
+        return
+      }
 
       updateAttachmentById(
         attachmentId,
@@ -504,6 +516,10 @@ export function ChatPage(): JSX.Element {
         }),
       )
     } catch (encodeError) {
+      if (!isMountedRef.current) {
+        return
+      }
+
       const errorMessage = encodeError instanceof Error ? encodeError.message : 'Attachment failed'
 
       updateAttachmentById(
@@ -710,7 +726,11 @@ export function ChatPage(): JSX.Element {
     try {
       const accessToken = await getAccessToken()
 
-      if (activeStreamIdRef.current !== streamId || abortController.signal.aborted) {
+      if (
+        !isMountedRef.current ||
+        activeStreamIdRef.current !== streamId ||
+        abortController.signal.aborted
+      ) {
         return
       }
 
@@ -722,7 +742,11 @@ export function ChatPage(): JSX.Element {
         sessionId,
         signal: abortController.signal,
       })) {
-        if (activeStreamIdRef.current !== streamId || abortController.signal.aborted) {
+        if (
+          !isMountedRef.current ||
+          activeStreamIdRef.current !== streamId ||
+          abortController.signal.aborted
+        ) {
           return
         }
 
@@ -865,7 +889,7 @@ export function ChatPage(): JSX.Element {
         }
       }
 
-      if (!sawDoneEvent && !sawErrorEvent && !abortController.signal.aborted) {
+      if (!sawDoneEvent && !sawErrorEvent && !abortController.signal.aborted && isMountedRef.current) {
         setStreamStatus('done')
         setAgentMessageState(
           agentMessage.id,
@@ -876,7 +900,11 @@ export function ChatPage(): JSX.Element {
         )
       }
     } catch (submitError) {
-      if (activeStreamIdRef.current !== streamId || abortController.signal.aborted) {
+      if (
+        !isMountedRef.current ||
+        activeStreamIdRef.current !== streamId ||
+        abortController.signal.aborted
+      ) {
         return
       }
 
@@ -903,13 +931,15 @@ export function ChatPage(): JSX.Element {
         }
       }
     } finally {
-      setAgentMessageState(
-        agentMessage.id,
-        (currentMessage: ChatMessageItem): ChatMessageItem => ({
-          ...currentMessage,
-          isStreaming: false,
-        }),
-      )
+      if (isMountedRef.current) {
+        setAgentMessageState(
+          agentMessage.id,
+          (currentMessage: ChatMessageItem): ChatMessageItem => ({
+            ...currentMessage,
+            isStreaming: false,
+          }),
+        )
+      }
 
       if (
         activeStreamIdRef.current === streamId &&
