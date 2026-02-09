@@ -9,12 +9,12 @@ import './theme/tokens.css'
 import './index.css'
 
 // Configure Amplify synchronously before any React rendering
-configureAmplifyAuth()
+const isConfigured = configureAmplifyAuth()
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
     <BrowserRouter>
-      <AuthProvider>
+      <AuthProvider isConfigured={isConfigured}>
         <App />
       </AuthProvider>
     </BrowserRouter>

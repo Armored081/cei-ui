@@ -2,7 +2,6 @@ import { getCurrentUser, signIn, signOut, type GetCurrentUserOutput } from 'aws-
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 
 import { getAuthAccessToken } from './accessToken'
-import { configureAmplifyAuth } from './authConfig'
 
 export type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated'
 
@@ -13,6 +12,11 @@ interface AuthContextValue {
   logout: () => Promise<void>
   status: AuthStatus
   userEmail: string
+}
+
+interface AuthProviderProps {
+  children: ReactNode
+  isConfigured: boolean
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
@@ -30,28 +34,22 @@ function toErrorMessage(error: unknown): string {
   return 'Unknown authentication error'
 }
 
-export function AuthProvider({ children }: { children: ReactNode }): JSX.Element {
-  const [status, setStatus] = useState<AuthStatus>('loading')
+export function AuthProvider({ children, isConfigured }: AuthProviderProps): JSX.Element {
+  const [status, setStatus] = useState<AuthStatus>(isConfigured ? 'loading' : 'unauthenticated')
   const [userEmail, setUserEmail] = useState<string>('')
-  const [isConfigured, setIsConfigured] = useState<boolean>(false)
 
   useEffect((): (() => void) => {
     let cancelled = false
 
+    if (!isConfigured) {
+      setUserEmail('')
+      setStatus('unauthenticated')
+      return (): void => {
+        cancelled = true
+      }
+    }
+
     const bootstrapAuth = async (): Promise<void> => {
-      const configured = configureAmplifyAuth()
-
-      if (cancelled) {
-        return
-      }
-
-      setIsConfigured(configured)
-
-      if (!configured) {
-        setStatus('unauthenticated')
-        return
-      }
-
       try {
         const currentUser = await getCurrentUser()
 
@@ -76,7 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
     return (): void => {
       cancelled = true
     }
-  }, [])
+  }, [isConfigured])
 
   const login = async (email: string, password: string): Promise<void> => {
     if (!isConfigured) {

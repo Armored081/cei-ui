@@ -5,20 +5,17 @@ import { describe, expect, it, vi, afterEach, beforeEach } from 'vitest'
 import { AuthProvider, useAuth } from './AuthProvider'
 
 const {
-  mockConfigureAmplifyAuth,
   mockFetchAuthSession,
   mockGetCurrentUser,
   mockSignIn,
   mockSignOut,
 } = vi.hoisted(
   (): {
-    mockConfigureAmplifyAuth: ReturnType<typeof vi.fn>
     mockFetchAuthSession: ReturnType<typeof vi.fn>
     mockGetCurrentUser: ReturnType<typeof vi.fn>
     mockSignIn: ReturnType<typeof vi.fn>
     mockSignOut: ReturnType<typeof vi.fn>
   } => ({
-    mockConfigureAmplifyAuth: vi.fn(),
     mockFetchAuthSession: vi.fn(),
     mockGetCurrentUser: vi.fn(),
     mockSignIn: vi.fn(),
@@ -26,12 +23,8 @@ const {
   }),
 )
 
-vi.mock('./authConfig', (): { configureAmplifyAuth: typeof mockConfigureAmplifyAuth } => ({
-  configureAmplifyAuth: mockConfigureAmplifyAuth,
-}))
-
 vi.mock(
-  '@aws-amplify/auth',
+  'aws-amplify/auth',
   (): {
     fetchAuthSession: typeof mockFetchAuthSession
     getCurrentUser: typeof mockGetCurrentUser
@@ -68,13 +61,10 @@ afterEach((): void => {
 })
 
 beforeEach((): void => {
-  mockConfigureAmplifyAuth.mockReset()
   mockGetCurrentUser.mockReset()
   mockSignIn.mockReset()
   mockSignOut.mockReset()
   mockFetchAuthSession.mockReset()
-
-  mockConfigureAmplifyAuth.mockReturnValue(true)
 })
 
 describe('AuthProvider', (): void => {
@@ -86,7 +76,7 @@ describe('AuthProvider', (): void => {
     })
 
     render(
-      <AuthProvider>
+      <AuthProvider isConfigured>
         <AuthProbe />
       </AuthProvider>,
     )
@@ -102,7 +92,7 @@ describe('AuthProvider', (): void => {
     mockGetCurrentUser.mockRejectedValue(new Error('not signed in'))
 
     render(
-      <AuthProvider>
+      <AuthProvider isConfigured>
         <AuthProbe />
       </AuthProvider>,
     )
@@ -121,7 +111,7 @@ describe('AuthProvider', (): void => {
     mockSignIn.mockResolvedValue({ isSignedIn: true })
 
     render(
-      <AuthProvider>
+      <AuthProvider isConfigured>
         <AuthProbe />
       </AuthProvider>,
     )
