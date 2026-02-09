@@ -1,4 +1,4 @@
-import { fetchAuthSession } from '@aws-amplify/auth'
+import { fetchAuthSession } from 'aws-amplify/auth'
 
 /**
  * Resolves the current Cognito access token from the active Amplify auth session.
