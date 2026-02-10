@@ -67,10 +67,10 @@ export function LoginPage(): JSX.Element {
 
           <form onSubmit={onSubmit} style={{ display: 'grid', gap: 'var(--space-4)' }}>
             <label htmlFor="email" style={{ display: 'grid', gap: 'var(--space-2)' }}>
-              Email
+              Username / Email
               <input
                 id="email"
-                type="email"
+                type="text"
                 value={email}
                 onChange={(event): void => setEmail(event.target.value)}
                 autoComplete="email"
