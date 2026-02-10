@@ -8,6 +8,8 @@ import {
   type StreamEvent,
 } from './types'
 
+type DirectInvokeRequest = Omit<InvokeRequest, 'sessionId'>
+
 interface InvokeStreamParams {
   accessToken: string
   attachments?: AttachmentInput[]
@@ -17,6 +19,11 @@ interface InvokeStreamParams {
   sessionId: string
 }
 
+const useDirectAgentCoreEnvValue = 'true'
+const minimumAgentCoreSessionIdLength = 33
+const agentCoreSessionIdPrefix = 'cei-session-'
+const agentCoreSessionIdHeader = 'X-Amzn-Bedrock-AgentCore-Runtime-Session-Id'
+
 const errorPayloadSchema = z
   .object({
     code: z.string().optional(),
@@ -24,12 +31,18 @@ const errorPayloadSchema = z
   })
   .passthrough()
 
+const directInvokeRequestSchema = invokeRequestSchema.omit({ sessionId: true })
+
 function toErrorMessage(error: unknown): string {
   if (error instanceof Error) {
     return error.message
   }
 
   return 'Unknown stream error'
+}
+
+function shouldUseDirectAgentCore(): boolean {
+  return import.meta.env.VITE_USE_DIRECT_AGENTCORE === useDirectAgentCoreEnvValue
 }
 
 function isAbortError(error: unknown): boolean {
@@ -54,6 +67,27 @@ function parseJsonStrict(payload: string): unknown {
 
 function buildInvokeUrl(apiBaseUrl: string): string {
   return `${apiBaseUrl.replace(/\/$/, '')}/invoke`
+}
+
+function buildDirectAgentCoreUrl(region: string, runtimeArn: string): string {
+  const encodedArn = encodeURIComponent(runtimeArn)
+  return `https://bedrock-agentcore.${region}.amazonaws.com/runtimes/${encodedArn}/invocations?qualifier=DEFAULT`
+}
+
+function normalizeAgentCoreSessionId(rawSessionId: string): string {
+  const trimmedSessionId = rawSessionId.trim()
+
+  if (trimmedSessionId.length >= minimumAgentCoreSessionIdLength) {
+    return trimmedSessionId
+  }
+
+  const prefixedSessionId = `${agentCoreSessionIdPrefix}${trimmedSessionId || 'default'}`
+
+  if (prefixedSessionId.length >= minimumAgentCoreSessionIdLength) {
+    return prefixedSessionId
+  }
+
+  return prefixedSessionId.padEnd(minimumAgentCoreSessionIdLength, '0')
 }
 
 async function buildHttpErrorEvent(response: Response): Promise<StreamEvent> {
@@ -206,17 +240,6 @@ async function* readSseMessages(
 export async function* invokeAgentStream(
   params: InvokeStreamParams,
 ): AsyncGenerator<StreamEvent, void, undefined> {
-  const apiBaseUrl = import.meta.env.VITE_API_URL || ''
-
-  if (!apiBaseUrl) {
-    yield {
-      type: 'error',
-      code: 'configuration_error',
-      message: 'Missing VITE_API_URL in environment configuration',
-    }
-    return
-  }
-
   const requestInputs: InvokeRequest['inputs'] = {
     message: params.message,
     requestId: params.requestId,
@@ -226,23 +249,71 @@ export async function* invokeAgentStream(
     requestInputs.attachments = params.attachments
   }
 
-  const requestBody: InvokeRequest = invokeRequestSchema.parse({
-    action: 'invoke',
-    stream: true,
-    sessionId: params.sessionId,
-    inputs: requestInputs,
-  })
+  const shouldUseDirect = shouldUseDirectAgentCore()
+  let requestBody: InvokeRequest | DirectInvokeRequest
+  let requestUrl = ''
+  let headers: Record<string, string> = {}
+
+  if (shouldUseDirect) {
+    const runtimeArn = import.meta.env.VITE_AGENT_RUNTIME_ARN || ''
+    const region = import.meta.env.VITE_AGENTCORE_REGION || ''
+
+    if (!runtimeArn || !region) {
+      yield {
+        type: 'error',
+        code: 'configuration_error',
+        message:
+          'Missing VITE_AGENT_RUNTIME_ARN or VITE_AGENTCORE_REGION in environment configuration',
+      }
+      return
+    }
+
+    requestUrl = buildDirectAgentCoreUrl(region, runtimeArn)
+    requestBody = directInvokeRequestSchema.parse({
+      action: 'invoke',
+      stream: true,
+      inputs: requestInputs,
+    })
+
+    headers = {
+      Authorization: `Bearer ${params.accessToken}`,
+      Accept: 'text/event-stream',
+      'Content-Type': 'application/json',
+      [agentCoreSessionIdHeader]: normalizeAgentCoreSessionId(params.sessionId),
+    }
+  } else {
+    const apiBaseUrl = import.meta.env.VITE_API_URL || ''
+
+    if (!apiBaseUrl) {
+      yield {
+        type: 'error',
+        code: 'configuration_error',
+        message: 'Missing VITE_API_URL in environment configuration',
+      }
+      return
+    }
+
+    requestUrl = buildInvokeUrl(apiBaseUrl)
+    requestBody = invokeRequestSchema.parse({
+      action: 'invoke',
+      stream: true,
+      sessionId: params.sessionId,
+      inputs: requestInputs,
+    })
+
+    headers = {
+      Authorization: `Bearer ${params.accessToken}`,
+      'Content-Type': 'application/json',
+      'X-Request-Id': params.requestId,
+    }
+  }
 
   let response: Response
 
   try {
-    response = await fetch(buildInvokeUrl(apiBaseUrl), {
+    response = await fetch(requestUrl, {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${params.accessToken}`,
-        'Content-Type': 'application/json',
-        'X-Request-Id': params.requestId,
-      },
+      headers,
       body: JSON.stringify(requestBody),
       signal: params.signal,
     })
