@@ -1,0 +1,55 @@
+.cei-artifact-card {
+  display: grid;
+  gap: var(--space-2);
+  border: 1px solid var(--block-border);
+  border-radius: var(--radius-md);
+  background-color: var(--block-bg);
+  padding: var(--space-3);
+  cursor: pointer;
+  text-align: left;
+  color: var(--text-primary);
+  width: 100%;
+  min-height: 120px;
+  transition: border-color 120ms ease;
+}
+
+.cei-artifact-card:hover {
+  border-color: var(--accent);
+}
+
+.cei-artifact-card-selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.cei-artifact-card-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.cei-artifact-card-icon {
+  font-size: 1.2rem;
+}
+
+.cei-artifact-card-kind {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.cei-artifact-card-title {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cei-artifact-card-preview {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}

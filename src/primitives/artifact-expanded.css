@@ -1,0 +1,64 @@
+.cei-artifact-expanded {
+  display: grid;
+  gap: var(--space-3);
+  height: 100%;
+}
+
+.cei-artifact-expanded-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.cei-artifact-expanded-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cei-artifact-expanded-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+.cei-artifact-expanded-dl {
+  border: 1px solid var(--block-download-border);
+  background-color: transparent;
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-2);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.cei-artifact-expanded-dl:hover {
+  color: var(--text-primary);
+  border-color: var(--accent);
+}
+
+.cei-artifact-expanded-close {
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 1.4rem;
+  cursor: pointer;
+  padding: 0 var(--space-1);
+  line-height: 1;
+}
+
+.cei-artifact-expanded-close:hover {
+  color: var(--text-primary);
+}
+
+.cei-artifact-expanded-body {
+  overflow: auto;
+  min-height: 0;
+}
