@@ -1,0 +1,96 @@
+/* Artifact pills (inline clickable references) */
+.cei-ml-artifact-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  border: 1px solid var(--block-border);
+  border-radius: 999px;
+  background-color: var(--block-bg);
+  padding: var(--space-1) var(--space-3);
+  cursor: pointer;
+  font-size: 0.84rem;
+  color: var(--text-primary);
+}
+
+.cei-ml-artifact-pill:hover {
+  border-color: var(--accent);
+}
+
+.cei-ml-artifact-pill-icon {
+  font-size: 0.9rem;
+}
+
+.cei-ml-artifact-pill-title {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Artifact mini-cards */
+.cei-ml-artifact-mini-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  border: 1px solid var(--block-border);
+  border-radius: var(--radius-sm);
+  background-color: var(--block-bg);
+  padding: var(--space-2) var(--space-3);
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  color: var(--text-primary);
+  font-size: 0.88rem;
+}
+
+.cei-ml-artifact-mini-card:hover {
+  border-color: var(--accent);
+}
+
+.cei-ml-artifact-mini-card-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.cei-ml-artifact-mini-card-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Artifact tags */
+.cei-ml-artifact-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  border-radius: 4px;
+  background-color: rgba(79, 179, 255, 0.12);
+  color: var(--accent);
+  padding: 1px var(--space-2);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.cei-ml-artifact-tag:hover {
+  background-color: rgba(79, 179, 255, 0.22);
+}
+
+/* Tool status bar (thin inline summary) */
+.cei-ml-tool-status-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  padding: var(--space-1) 0;
+}
+
+.cei-ml-tool-status-bar-line {
+  height: 1px;
+  flex: 1;
+  background-color: var(--border);
+}
+
+.cei-ml-tool-status-bar-item {
+  white-space: nowrap;
+}

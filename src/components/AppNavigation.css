@@ -29,7 +29,7 @@
 
 .cei-app-nav-link-active {
   color: var(--bg-primary);
-  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+  background-color: var(--accent);
 }
 
 @media (max-width: 768px) {

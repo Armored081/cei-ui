@@ -1,0 +1,108 @@
+.cei-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  height: 48px;
+  padding: 0 var(--space-4);
+  border-bottom: 1px solid var(--border);
+  background-color: var(--bg-panel-muted);
+  flex-shrink: 0;
+}
+
+.cei-topbar-left {
+  display: flex;
+  align-items: center;
+}
+
+.cei-topbar-wordmark {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--accent);
+  letter-spacing: 0.08em;
+}
+
+.cei-topbar-center {
+  display: flex;
+  align-items: center;
+}
+
+.cei-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.cei-topbar-layout-switcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+}
+
+.cei-topbar-layout-btn {
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-muted);
+  padding: var(--space-1) var(--space-2);
+  cursor: pointer;
+  font-size: 0.9rem;
+  line-height: 1;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.cei-topbar-layout-btn:hover {
+  color: var(--text-primary);
+  background-color: rgba(122, 160, 220, 0.12);
+}
+
+.cei-topbar-layout-btn-active {
+  color: var(--bg-primary);
+  background-color: var(--accent);
+}
+
+.cei-topbar-user {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.cei-topbar-email {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cei-topbar-signout {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  padding: var(--space-1) var(--space-2);
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.cei-topbar-signout:hover {
+  color: var(--text-primary);
+  border-color: var(--text-muted);
+}
+
+@media (max-width: 768px) {
+  .cei-topbar {
+    flex-wrap: wrap;
+    height: auto;
+    padding: var(--space-2) var(--space-3);
+    gap: var(--space-2);
+  }
+
+  .cei-topbar-email {
+    display: none;
+  }
+}

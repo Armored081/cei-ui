@@ -1,0 +1,27 @@
+.cei-artifact-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  border: 1px solid var(--block-border);
+  border-radius: 999px;
+  background-color: var(--block-bg);
+  padding: var(--space-1) var(--space-3);
+  cursor: pointer;
+  font-size: 0.84rem;
+  color: var(--text-primary);
+}
+
+.cei-artifact-pill:hover {
+  border-color: var(--accent);
+}
+
+.cei-artifact-pill-icon {
+  font-size: 0.9rem;
+}
+
+.cei-artifact-pill-title {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
