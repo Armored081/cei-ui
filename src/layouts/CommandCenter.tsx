@@ -1,24 +1,43 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { v4 as uuidv4 } from 'uuid'
 
+import { registerBuiltinArtifactTypes } from '../artifacts/registerBuiltinTypes'
 import type { ChatMessageItem, ChatTimelineItem } from '../components/ChatMessageList'
-import type { ConversationSnapshot } from '../hooks/useChatEngine'
-import type { Artifact } from '../hooks/useChatEngine'
+import type { Artifact, ConversationSnapshot } from '../hooks/useChatEngine'
 import { useThreads } from '../hooks/useThreads'
-import { TopBar } from '../primitives/TopBar'
-import { MessageList } from '../primitives/MessageList'
+import { ArtifactCard } from '../primitives/ArtifactCard'
+import { ArtifactFullScreen } from '../primitives/ArtifactFullScreen'
+import { ArtifactOverlay } from '../primitives/ArtifactOverlay'
+import { ActivitySummaryBar } from '../primitives/ActivitySummaryBar'
 import { Composer } from '../primitives/Composer'
-import { composerPropsFromEngine } from '../primitives/composerPropsFromEngine'
+import { MessageList } from '../primitives/MessageList'
 import { SlideOver } from '../primitives/SlideOver'
 import { SlideUpDrawer } from '../primitives/SlideUpDrawer'
-import { ArtifactCard } from '../primitives/ArtifactCard'
-import { ArtifactExpanded } from '../primitives/ArtifactExpanded'
-import { ActivitySummaryBar } from '../primitives/ActivitySummaryBar'
 import { ThreadList } from '../primitives/ThreadList'
+import { TopBar } from '../primitives/TopBar'
+import { composerPropsFromEngine } from '../primitives/composerPropsFromEngine'
 import type { LayoutProps } from './types'
 import './layout-command-center.css'
 
+registerBuiltinArtifactTypes()
+
 const COMPACT_VIEWPORT_QUERY = '(max-width: 1024px)'
+
+type ArtifactZoomLevel = 'inline' | 'expanded' | 'fullscreen'
+
+interface ArtifactZoomState {
+  artifactId: string | null
+  zoomLevel: ArtifactZoomLevel
+  previousZoomLevel: ArtifactZoomLevel | null
+}
+
+function createInlineZoomState(): ArtifactZoomState {
+  return {
+    artifactId: null,
+    zoomLevel: 'inline',
+    previousZoomLevel: null,
+  }
+}
 
 function readIsCompactLayout(): boolean {
   if (typeof window.matchMedia !== 'function') {
@@ -81,8 +100,43 @@ function buildThreadTitle(userMessageText: string): string {
   return `${shortestCandidate.slice(0, 47).trimEnd()}...`
 }
 
+function readEditableTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) {
+    return false
+  }
+
+  const tagName = target.tagName.toLowerCase()
+
+  return (
+    tagName === 'input' ||
+    tagName === 'textarea' ||
+    tagName === 'select' ||
+    Boolean(target.isContentEditable)
+  )
+}
+
+function zoomAnnouncementText(
+  zoomLevel: ArtifactZoomLevel,
+  artifactTitle: string | undefined,
+): string {
+  if (zoomLevel === 'inline') {
+    return 'Artifact view closed.'
+  }
+
+  if (zoomLevel === 'expanded') {
+    return artifactTitle
+      ? `Expanded artifact view open: ${artifactTitle}.`
+      : 'Expanded artifact view open.'
+  }
+
+  return artifactTitle
+    ? `Full-screen artifact view open: ${artifactTitle}.`
+    : 'Full-screen artifact view open.'
+}
+
 export function CommandCenter({ engine, userEmail, onLogout }: LayoutProps): JSX.Element {
-  const [selectedArtifactId, setSelectedArtifactId] = useState<string | null>(null)
+  const [artifactZoomState, setArtifactZoomState] =
+    useState<ArtifactZoomState>(createInlineZoomState)
   const [leftCollapsed, setLeftCollapsed] = useState(false)
   const [rightCollapsed, setRightCollapsed] = useState(false)
   const [isCompactLayout, setIsCompactLayout] = useState<boolean>(readIsCompactLayout)
@@ -111,14 +165,86 @@ export function CommandCenter({ engine, userEmail, onLogout }: LayoutProps): JSX
   const threadMessageCountsRef = useRef<Map<string, number>>(new Map())
 
   const selectedArtifact: Artifact | null = useMemo(
-    (): Artifact | null => engine.artifacts.find((a) => a.id === selectedArtifactId) ?? null,
-    [engine.artifacts, selectedArtifactId],
+    (): Artifact | null =>
+      engine.artifacts.find((artifact) => artifact.id === artifactZoomState.artifactId) ?? null,
+    [artifactZoomState.artifactId, engine.artifacts],
   )
 
   const activeThread = useMemo(
     () => threads.find((thread) => thread.id === activeThreadId) ?? null,
     [activeThreadId, threads],
   )
+  const zoomAnnouncement = useMemo(
+    (): string => zoomAnnouncementText(artifactZoomState.zoomLevel, selectedArtifact?.title),
+    [artifactZoomState.zoomLevel, selectedArtifact?.title],
+  )
+
+  const onResetArtifactZoom = useCallback((): void => {
+    setArtifactZoomState(createInlineZoomState())
+  }, [])
+
+  const onSelectArtifact = useCallback((artifactId: string): void => {
+    setArtifactZoomState({
+      artifactId,
+      zoomLevel: 'expanded',
+      previousZoomLevel: 'inline',
+    })
+    setMobileArtifactsOpen(false)
+  }, [])
+
+  const onEnterArtifactFullScreen = useCallback((): void => {
+    setArtifactZoomState((currentZoomState): ArtifactZoomState => {
+      if (!currentZoomState.artifactId || currentZoomState.zoomLevel === 'fullscreen') {
+        return currentZoomState
+      }
+
+      return {
+        artifactId: currentZoomState.artifactId,
+        zoomLevel: 'fullscreen',
+        previousZoomLevel: currentZoomState.zoomLevel,
+      }
+    })
+  }, [])
+
+  const onExitArtifactFullScreen = useCallback((): void => {
+    setArtifactZoomState((currentZoomState): ArtifactZoomState => {
+      if (!currentZoomState.artifactId || currentZoomState.zoomLevel !== 'fullscreen') {
+        return currentZoomState
+      }
+
+      return {
+        artifactId: currentZoomState.artifactId,
+        zoomLevel: 'expanded',
+        previousZoomLevel: 'fullscreen',
+      }
+    })
+  }, [])
+
+  const onStepBackArtifactZoom = useCallback((): void => {
+    setArtifactZoomState((currentZoomState): ArtifactZoomState => {
+      if (currentZoomState.zoomLevel === 'inline') {
+        return currentZoomState
+      }
+
+      if (currentZoomState.zoomLevel === 'expanded') {
+        return createInlineZoomState()
+      }
+
+      if (
+        currentZoomState.zoomLevel === 'fullscreen' &&
+        currentZoomState.previousZoomLevel === 'expanded' &&
+        currentZoomState.artifactId
+      ) {
+        return {
+          artifactId: currentZoomState.artifactId,
+          zoomLevel: 'expanded',
+          previousZoomLevel: 'fullscreen',
+        }
+      }
+
+      return createInlineZoomState()
+    })
+  }, [])
 
   useEffect((): void => {
     if (!activeThreadId) {
@@ -228,6 +354,30 @@ export function CommandCenter({ engine, userEmail, onLogout }: LayoutProps): JSX
     updateThreadTitle(activeThreadId, buildThreadTitle(firstUserMessageText))
   }, [activeThread, activeThreadId, engine.messages, updateThreadTitle])
 
+  useEffect((): (() => void) => {
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape' && artifactZoomState.zoomLevel !== 'inline') {
+        event.preventDefault()
+        onStepBackArtifactZoom()
+        return
+      }
+
+      if (event.key.toLocaleLowerCase() !== 'f') {
+        return
+      }
+
+      if (artifactZoomState.zoomLevel !== 'expanded' || readEditableTarget(event.target)) {
+        return
+      }
+
+      event.preventDefault()
+      onEnterArtifactFullScreen()
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return (): void => window.removeEventListener('keydown', onKeyDown)
+  }, [artifactZoomState.zoomLevel, onEnterArtifactFullScreen, onStepBackArtifactZoom])
+
   const onCreateThread = useCallback((): void => {
     if (activeThreadId) {
       threadStateMapRef.current.set(activeThreadId, engine.getConversationSnapshot())
@@ -241,9 +391,9 @@ export function CommandCenter({ engine, userEmail, onLogout }: LayoutProps): JSX
     threadMessageCountsRef.current.set(nextThread.id, 0)
 
     engine.restoreConversationSnapshot(emptySnapshot)
-    setSelectedArtifactId(null)
+    onResetArtifactZoom()
     setMobileThreadsOpen(false)
-  }, [activeThreadId, createThread, engine])
+  }, [activeThreadId, createThread, engine, onResetArtifactZoom])
 
   const onSwitchThread = useCallback(
     (threadId: string): void => {
@@ -265,10 +415,10 @@ export function CommandCenter({ engine, userEmail, onLogout }: LayoutProps): JSX
 
       switchThread(threadId)
       engine.restoreConversationSnapshot(targetSnapshot)
-      setSelectedArtifactId(null)
+      onResetArtifactZoom()
       setMobileThreadsOpen(false)
     },
-    [activeThreadId, engine, switchThread],
+    [activeThreadId, engine, onResetArtifactZoom, switchThread],
   )
 
   const onArchiveThread = useCallback(
@@ -302,7 +452,7 @@ export function CommandCenter({ engine, userEmail, onLogout }: LayoutProps): JSX
 
         switchThread(fallbackThread.id)
         engine.restoreConversationSnapshot(fallbackSnapshot)
-        setSelectedArtifactId(null)
+        onResetArtifactZoom()
         return
       }
 
@@ -311,24 +461,27 @@ export function CommandCenter({ engine, userEmail, onLogout }: LayoutProps): JSX
       threadStateMapRef.current.set(nextThread.id, emptySnapshot)
       threadMessageCountsRef.current.set(nextThread.id, 0)
       engine.restoreConversationSnapshot(emptySnapshot)
-      setSelectedArtifactId(null)
+      onResetArtifactZoom()
     },
-    [activeThreadId, archiveThread, createThread, engine, switchThread, threads],
+    [
+      activeThreadId,
+      archiveThread,
+      createThread,
+      engine,
+      onResetArtifactZoom,
+      switchThread,
+      threads,
+    ],
   )
 
-  const onSelectArtifact = useCallback((artifactId: string): void => {
-    setSelectedArtifactId(artifactId)
+  const onSelectArtifactFromMessage = useCallback((artifactId: string): void => {
+    setArtifactZoomState({
+      artifactId,
+      zoomLevel: 'expanded',
+      previousZoomLevel: 'inline',
+    })
+    setMobileArtifactsOpen(false)
   }, [])
-
-  const onSelectArtifactFromMessage = useCallback(
-    (artifactId: string): void => {
-      setSelectedArtifactId(artifactId)
-      if (isCompactLayout) {
-        setMobileArtifactsOpen(true)
-      }
-    },
-    [isCompactLayout],
-  )
 
   const gridClassName = `cei-cc-grid${leftCollapsed ? ' cei-cc-grid-left-collapsed' : ''}${
     rightCollapsed ? ' cei-cc-grid-right-collapsed' : ''
@@ -337,6 +490,10 @@ export function CommandCenter({ engine, userEmail, onLogout }: LayoutProps): JSX
   return (
     <div className="cei-cc-shell">
       <TopBar userEmail={userEmail} onLogout={onLogout} />
+
+      <p aria-atomic="true" aria-live="polite" className="cei-sr-only">
+        {zoomAnnouncement}
+      </p>
 
       {engine.errorBanner ? (
         <div className="cei-error-banner" role="alert">
@@ -364,11 +521,11 @@ export function CommandCenter({ engine, userEmail, onLogout }: LayoutProps): JSX
         <aside className={`cei-cc-left${leftCollapsed ? ' cei-cc-rail-collapsed' : ''}`}>
           {leftCollapsed ? (
             <button
+              aria-label="Expand thread rail"
               className="cei-cc-expand-btn cei-cc-expand-left"
               onClick={(): void => setLeftCollapsed(false)}
               title="Expand thread rail"
               type="button"
-              aria-label="Expand thread rail"
             >
               &rsaquo;
             </button>
@@ -377,24 +534,24 @@ export function CommandCenter({ engine, userEmail, onLogout }: LayoutProps): JSX
               <div className="cei-cc-rail-header">
                 <h3 className="cei-cc-rail-title">Threads</h3>
                 <button
+                  aria-label="Collapse thread rail"
                   className="cei-cc-collapse-btn"
                   onClick={(): void => setLeftCollapsed(true)}
                   type="button"
-                  aria-label="Collapse thread rail"
                 >
                   &lsaquo;
                 </button>
               </div>
               <ThreadList
-                threads={filteredThreads}
                 activeThreadId={activeThreadId}
-                searchQuery={searchQuery}
-                onSearchQueryChange={setSearchQuery}
-                onCreateThread={onCreateThread}
-                onSelectThread={onSwitchThread}
                 onArchiveThread={onArchiveThread}
+                onCreateThread={onCreateThread}
                 onPinThread={pinThread}
+                onSearchQueryChange={setSearchQuery}
+                onSelectThread={onSwitchThread}
                 onUnpinThread={unpinThread}
+                searchQuery={searchQuery}
+                threads={filteredThreads}
               />
             </>
           )}
@@ -422,14 +579,14 @@ export function CommandCenter({ engine, userEmail, onLogout }: LayoutProps): JSX
             </button>
           </div>
           <MessageList
+            blockRenderer="pill"
+            displayMode="clean"
             items={engine.timelineItems}
             listRef={engine.messageListRef}
+            onArtifactClick={onSelectArtifactFromMessage}
             onRetryMessage={engine.onRetryMessage}
             onScroll={engine.updateMessageScrollIntent}
             onToggleTool={engine.onToggleTool}
-            displayMode="clean"
-            blockRenderer="pill"
-            onArtifactClick={onSelectArtifactFromMessage}
           />
           <Composer {...composerPropsFromEngine(engine, 'full')} />
         </main>
@@ -438,11 +595,11 @@ export function CommandCenter({ engine, userEmail, onLogout }: LayoutProps): JSX
         <aside className={`cei-cc-right${rightCollapsed ? ' cei-cc-rail-collapsed' : ''}`}>
           {rightCollapsed ? (
             <button
+              aria-label="Expand artifacts rail"
               className="cei-cc-expand-btn cei-cc-expand-right"
               onClick={(): void => setRightCollapsed(false)}
               title="Expand artifacts rail"
               type="button"
-              aria-label="Expand artifacts rail"
             >
               &lsaquo;
             </button>
@@ -451,28 +608,23 @@ export function CommandCenter({ engine, userEmail, onLogout }: LayoutProps): JSX
               <div className="cei-cc-rail-header">
                 <h3 className="cei-cc-rail-title">Artifacts</h3>
                 <button
+                  aria-label="Collapse artifacts rail"
                   className="cei-cc-collapse-btn"
                   onClick={(): void => setRightCollapsed(true)}
                   type="button"
-                  aria-label="Collapse artifacts rail"
                 >
                   &rsaquo;
                 </button>
               </div>
               <div className="cei-cc-artifacts">
-                {selectedArtifact ? (
-                  <ArtifactExpanded
-                    artifact={selectedArtifact}
-                    onClose={(): void => setSelectedArtifactId(null)}
-                  />
-                ) : engine.artifacts.length === 0 ? (
+                {engine.artifacts.length === 0 ? (
                   <p className="cei-muted cei-cc-empty-hint">Artifacts will appear here.</p>
                 ) : (
                   engine.artifacts.map((artifact) => (
                     <ArtifactCard
-                      key={artifact.id}
                       artifact={artifact}
-                      isSelected={artifact.id === selectedArtifactId}
+                      isSelected={artifact.id === artifactZoomState.artifactId}
+                      key={artifact.id}
                       onClick={onSelectArtifact}
                     />
                   ))
@@ -482,7 +634,26 @@ export function CommandCenter({ engine, userEmail, onLogout }: LayoutProps): JSX
             </>
           )}
         </aside>
+
+        {selectedArtifact && artifactZoomState.zoomLevel === 'expanded' ? (
+          <ArtifactOverlay
+            artifact={selectedArtifact}
+            onBack={onStepBackArtifactZoom}
+            onClose={onResetArtifactZoom}
+            onToggleFullScreen={onEnterArtifactFullScreen}
+          />
+        ) : null}
       </div>
+
+      {selectedArtifact && artifactZoomState.zoomLevel === 'fullscreen' ? (
+        <ArtifactFullScreen
+          artifact={selectedArtifact}
+          onBack={onStepBackArtifactZoom}
+          onClose={onResetArtifactZoom}
+          onEscape={onStepBackArtifactZoom}
+          onToggleFullScreen={onExitArtifactFullScreen}
+        />
+      ) : null}
 
       <SlideOver
         isOpen={isCompactLayout && mobileThreadsOpen}
@@ -491,38 +662,33 @@ export function CommandCenter({ engine, userEmail, onLogout }: LayoutProps): JSX
         width="320px"
       >
         <ThreadList
-          threads={filteredThreads}
           activeThreadId={activeThreadId}
-          searchQuery={searchQuery}
-          onSearchQueryChange={setSearchQuery}
-          onCreateThread={onCreateThread}
-          onSelectThread={onSwitchThread}
           onArchiveThread={onArchiveThread}
+          onCreateThread={onCreateThread}
           onPinThread={pinThread}
+          onSearchQueryChange={setSearchQuery}
+          onSelectThread={onSwitchThread}
           onUnpinThread={unpinThread}
+          searchQuery={searchQuery}
+          threads={filteredThreads}
         />
       </SlideOver>
 
       <SlideUpDrawer
         isOpen={isCompactLayout && mobileArtifactsOpen}
+        maxHeight="72vh"
         onClose={(): void => setMobileArtifactsOpen(false)}
         title="Artifacts"
-        maxHeight="72vh"
       >
         <div className="cei-cc-artifacts">
-          {selectedArtifact ? (
-            <ArtifactExpanded
-              artifact={selectedArtifact}
-              onClose={(): void => setSelectedArtifactId(null)}
-            />
-          ) : engine.artifacts.length === 0 ? (
+          {engine.artifacts.length === 0 ? (
             <p className="cei-muted cei-cc-empty-hint">Artifacts will appear here.</p>
           ) : (
             engine.artifacts.map((artifact) => (
               <ArtifactCard
-                key={artifact.id}
                 artifact={artifact}
-                isSelected={artifact.id === selectedArtifactId}
+                isSelected={artifact.id === artifactZoomState.artifactId}
+                key={artifact.id}
                 onClick={onSelectArtifact}
               />
             ))

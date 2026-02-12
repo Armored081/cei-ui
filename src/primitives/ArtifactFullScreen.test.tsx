@@ -1,0 +1,81 @@
+import { fireEvent, render, screen } from '@testing-library/react'
+import { describe, expect, it, vi } from 'vitest'
+
+import { registerBuiltinArtifactTypes } from '../artifacts/registerBuiltinTypes'
+import type { Artifact } from '../hooks/useChatEngine'
+import { ArtifactFullScreen } from './ArtifactFullScreen'
+
+registerBuiltinArtifactTypes()
+
+function buildTableArtifact(): Artifact {
+  return {
+    block: {
+      columns: ['service', 'severity'],
+      kind: 'table',
+      rows: [
+        { service: 'auth', severity: 'high' },
+        { service: 'storage', severity: 'medium' },
+      ],
+      title: 'Service Issues',
+    },
+    id: 'artifact-table-1',
+    kind: 'table',
+    segmentIndex: 1,
+    sourceMessageId: 'agent-1',
+    title: 'Service Issues',
+  }
+}
+
+describe('ArtifactFullScreen', (): void => {
+  it('renders full-screen dialog and table controls', (): void => {
+    render(
+      <ArtifactFullScreen
+        artifact={buildTableArtifact()}
+        onBack={vi.fn()}
+        onClose={vi.fn()}
+        onEscape={vi.fn()}
+        onToggleFullScreen={vi.fn()}
+      />,
+    )
+
+    expect(
+      screen.getByRole('dialog', { name: 'Full-screen artifact: Service Issues' }),
+    ).toBeInTheDocument()
+    expect(screen.getByLabelText('Filter table rows')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Back' })).toHaveFocus()
+  })
+
+  it('handles toolbar and escape interactions', (): void => {
+    const onBack = vi.fn()
+    const onClose = vi.fn()
+    const onEscape = vi.fn()
+    const onToggleFullScreen = vi.fn()
+
+    render(
+      <ArtifactFullScreen
+        artifact={buildTableArtifact()}
+        onBack={onBack}
+        onClose={onClose}
+        onEscape={onEscape}
+        onToggleFullScreen={onToggleFullScreen}
+      />,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Minimize artifact view' }))
+    expect(onToggleFullScreen).toHaveBeenCalledTimes(1)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }))
+    expect(onBack).toHaveBeenCalledTimes(1)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Close artifact view' }))
+    expect(onClose).toHaveBeenCalledTimes(1)
+
+    fireEvent.keyDown(
+      screen.getByRole('dialog', { name: 'Full-screen artifact: Service Issues' }),
+      {
+        key: 'Escape',
+      },
+    )
+    expect(onEscape).toHaveBeenCalledTimes(1)
+  })
+})
