@@ -933,6 +933,8 @@ export function useChatEngine(params: UseChatEngineParams): ChatEngine {
         }
 
         if (streamEvent.type === 'tool_call') {
+          const startedAt = new Date().toISOString()
+
           setStreamStatus('streaming')
           setAgentMessageState(
             agentMessage.id,
@@ -946,6 +948,7 @@ export function useChatEngine(params: UseChatEngineParams): ChatEngine {
                   isExpanded: true,
                   name: streamEvent.name,
                   result: null,
+                  startedAt,
                   status: 'running',
                 },
               ],
@@ -955,6 +958,8 @@ export function useChatEngine(params: UseChatEngineParams): ChatEngine {
         }
 
         if (streamEvent.type === 'tool_result') {
+          const completedAt = new Date().toISOString()
+
           setAgentMessageState(
             agentMessage.id,
             (currentMessage: ChatMessageItem): ChatMessageItem => {
@@ -977,11 +982,14 @@ export function useChatEngine(params: UseChatEngineParams): ChatEngine {
                   isExpanded: false,
                   name: streamEvent.name,
                   result: streamEvent.result,
+                  completedAt,
+                  startedAt: completedAt,
                   status: 'complete',
                 })
               } else {
                 nextTools[matchedIndex] = {
                   ...nextTools[matchedIndex],
+                  completedAt,
                   isExpanded: false,
                   result: streamEvent.result,
                   status: 'complete',

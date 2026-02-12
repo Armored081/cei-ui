@@ -78,6 +78,7 @@
 
 .cei-cc-right {
   grid-template-rows: auto 1fr auto;
+  position: relative;
 }
 
 .cei-cc-right {
@@ -161,6 +162,10 @@
   display: grid;
   gap: var(--space-2);
   align-content: start;
+}
+
+.cei-cc-right .cei-activity-drawer {
+  align-self: end;
 }
 
 .cei-cc-empty-hint {

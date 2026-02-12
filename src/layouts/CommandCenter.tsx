@@ -6,9 +6,9 @@ import type { ChatMessageItem, ChatTimelineItem } from '../components/ChatMessag
 import type { Artifact, ConversationSnapshot } from '../hooks/useChatEngine'
 import { useThreads } from '../hooks/useThreads'
 import { ArtifactCard } from '../primitives/ArtifactCard'
+import { ActivityDrawer } from '../primitives/ActivityDrawer'
 import { ArtifactFullScreen } from '../primitives/ArtifactFullScreen'
 import { ArtifactOverlay } from '../primitives/ArtifactOverlay'
-import { ActivitySummaryBar } from '../primitives/ActivitySummaryBar'
 import { Composer } from '../primitives/Composer'
 import { MessageList } from '../primitives/MessageList'
 import { SlideOver } from '../primitives/SlideOver'
@@ -70,6 +70,18 @@ function textFromUserMessage(message: ChatMessageItem): string {
     .join(' ')
     .replace(/\s+/g, ' ')
     .trim()
+}
+
+function latestAgentMessageId(messages: ChatMessageItem[]): string | null {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index]
+
+    if (message.role === 'agent') {
+      return message.id
+    }
+  }
+
+  return null
 }
 
 function buildThreadTitle(userMessageText: string): string {
@@ -139,6 +151,7 @@ export function CommandCenter({ engine, userEmail, onLogout }: LayoutProps): JSX
     useState<ArtifactZoomState>(createInlineZoomState)
   const [leftCollapsed, setLeftCollapsed] = useState(false)
   const [rightCollapsed, setRightCollapsed] = useState(false)
+  const [isActivityDrawerExpanded, setIsActivityDrawerExpanded] = useState(false)
   const [isCompactLayout, setIsCompactLayout] = useState<boolean>(readIsCompactLayout)
   const [mobileThreadsOpen, setMobileThreadsOpen] = useState(false)
   const [mobileArtifactsOpen, setMobileArtifactsOpen] = useState(false)
@@ -173,6 +186,10 @@ export function CommandCenter({ engine, userEmail, onLogout }: LayoutProps): JSX
   const activeThread = useMemo(
     () => threads.find((thread) => thread.id === activeThreadId) ?? null,
     [activeThreadId, threads],
+  )
+  const currentExchangeMessageId = useMemo(
+    (): string | null => latestAgentMessageId(engine.messages),
+    [engine.messages],
   )
   const zoomAnnouncement = useMemo(
     (): string => zoomAnnouncementText(artifactZoomState.zoomLevel, selectedArtifact?.title),
@@ -363,6 +380,16 @@ export function CommandCenter({ engine, userEmail, onLogout }: LayoutProps): JSX
       }
 
       if (event.key.toLocaleLowerCase() !== 'f') {
+        if (event.key.toLocaleLowerCase() !== 'a') {
+          return
+        }
+
+        if (readEditableTarget(event.target) || rightCollapsed) {
+          return
+        }
+
+        event.preventDefault()
+        setIsActivityDrawerExpanded((currentExpanded: boolean): boolean => !currentExpanded)
         return
       }
 
@@ -376,7 +403,12 @@ export function CommandCenter({ engine, userEmail, onLogout }: LayoutProps): JSX
 
     window.addEventListener('keydown', onKeyDown)
     return (): void => window.removeEventListener('keydown', onKeyDown)
-  }, [artifactZoomState.zoomLevel, onEnterArtifactFullScreen, onStepBackArtifactZoom])
+  }, [
+    artifactZoomState.zoomLevel,
+    onEnterArtifactFullScreen,
+    onStepBackArtifactZoom,
+    rightCollapsed,
+  ])
 
   const onCreateThread = useCallback((): void => {
     if (activeThreadId) {
@@ -481,6 +513,10 @@ export function CommandCenter({ engine, userEmail, onLogout }: LayoutProps): JSX
       previousZoomLevel: 'inline',
     })
     setMobileArtifactsOpen(false)
+  }, [])
+
+  const onToggleActivityDrawer = useCallback((): void => {
+    setIsActivityDrawerExpanded((currentExpanded: boolean): boolean => !currentExpanded)
   }, [])
 
   const gridClassName = `cei-cc-grid${leftCollapsed ? ' cei-cc-grid-left-collapsed' : ''}${
@@ -610,7 +646,10 @@ export function CommandCenter({ engine, userEmail, onLogout }: LayoutProps): JSX
                 <button
                   aria-label="Collapse artifacts rail"
                   className="cei-cc-collapse-btn"
-                  onClick={(): void => setRightCollapsed(true)}
+                  onClick={(): void => {
+                    setRightCollapsed(true)
+                    setIsActivityDrawerExpanded(false)
+                  }}
                   type="button"
                 >
                   &rsaquo;
@@ -630,7 +669,12 @@ export function CommandCenter({ engine, userEmail, onLogout }: LayoutProps): JSX
                   ))
                 )}
               </div>
-              <ActivitySummaryBar toolLog={engine.toolLog} />
+              <ActivityDrawer
+                currentExchangeMessageId={currentExchangeMessageId}
+                isExpanded={isActivityDrawerExpanded}
+                onToggleExpanded={onToggleActivityDrawer}
+                toolLog={engine.toolLog}
+              />
             </>
           )}
         </aside>
