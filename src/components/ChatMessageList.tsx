@@ -10,10 +10,12 @@ export type ToolActivityStatus = 'running' | 'complete'
 
 export interface ToolActivityItem {
   args: Record<string, unknown>
+  completedAt?: string
   id: string
   isExpanded: boolean
   name: string
   result: unknown
+  startedAt?: string
   status: ToolActivityStatus
 }
 

@@ -197,11 +197,17 @@ describe('CommandCenter compact layout', (): void => {
     expect(within(threadDialog).getByPlaceholderText('Search threads')).toBeInTheDocument()
   })
 
-  it('shows activity summary in the artifacts rail', (): void => {
+  it('shows and expands activity drawer in the artifacts rail', (): void => {
     renderLayout(createEngine(vi.fn()))
 
     const summaryBar = screen.getByRole('button', { name: 'Activity summary' })
     expect(summaryBar).toHaveTextContent('Last tool: db lookup')
     expect(within(summaryBar).getByText('1')).toBeInTheDocument()
+
+    expect(screen.queryByRole('heading', { name: 'Activity Log' })).not.toBeInTheDocument()
+
+    fireEvent.click(summaryBar)
+
+    expect(screen.getByRole('heading', { name: 'Activity Log' })).toBeInTheDocument()
   })
 })
