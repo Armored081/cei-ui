@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 
 import type { Artifact } from '../hooks/useChatEngine'
 import { TopBar } from '../primitives/TopBar'
@@ -25,20 +25,35 @@ export function Focus({
   const [artifactPanelOpen, setArtifactPanelOpen] = useState(false)
   const [selectedArtifactId, setSelectedArtifactId] = useState<string | null>(null)
 
-  const selectedArtifact: Artifact | null =
-    engine.artifacts.find((a) => a.id === selectedArtifactId) ?? null
+  const selectedArtifact: Artifact | null = useMemo(
+    (): Artifact | null => engine.artifacts.find((a) => a.id === selectedArtifactId) ?? null,
+    [engine.artifacts, selectedArtifactId],
+  )
 
-  const onToggleToolLogExpand = (entryId: string): void => {
-    const entry = engine.toolLog.find((t) => t.id === entryId)
-    if (entry) {
-      engine.onToggleTool(entry.sourceMessageId, entryId)
-    }
-  }
+  const runningToolCount = useMemo(
+    (): number => engine.toolLog.filter((t) => t.status === 'running').length,
+    [engine.toolLog],
+  )
 
-  const onArtifactClick = (artifactId: string): void => {
+  const onToggleToolLogExpand = useCallback(
+    (entryId: string): void => {
+      const entry = engine.toolLog.find((t) => t.id === entryId)
+      if (entry) {
+        engine.onToggleTool(entry.sourceMessageId, entryId)
+      }
+    },
+    [engine],
+  )
+
+  const onArtifactClick = useCallback((artifactId: string): void => {
     setSelectedArtifactId(artifactId)
     setArtifactPanelOpen(true)
-  }
+  }, [])
+
+  const onCloseArtifactPanel = useCallback((): void => {
+    setArtifactPanelOpen(false)
+    setSelectedArtifactId(null)
+  }, [])
 
   return (
     <div className="cei-focus-shell">
@@ -64,7 +79,10 @@ export function Focus({
       ) : null}
 
       {engine.streamStatus === 'connecting' ? (
-        <div className="cei-connection-indicator cei-focus-connecting" data-testid="connecting-indicator">
+        <div
+          className="cei-connection-indicator cei-focus-connecting"
+          data-testid="connecting-indicator"
+        >
           <span aria-hidden="true" className="cei-spinner" />
           Connecting to CEI service...
         </div>
@@ -89,7 +107,7 @@ export function Focus({
       {/* Tool log FAB */}
       <FAB
         label={`Tools ${engine.toolLog.length > 0 ? engine.toolLog.length.toString() : ''}`}
-        badge={engine.toolLog.filter((t) => t.status === 'running').length}
+        badge={runningToolCount}
         onClick={(): void => setToolDrawerOpen(true)}
         position="bottom-left"
       />
@@ -113,25 +131,14 @@ export function Focus({
             <p className="cei-muted">No tool calls yet.</p>
           ) : (
             engine.toolLog.map((entry) => (
-              <ToolLogEntry
-                key={entry.id}
-                entry={entry}
-                onToggleExpand={onToggleToolLogExpand}
-              />
+              <ToolLogEntry key={entry.id} entry={entry} onToggleExpand={onToggleToolLogExpand} />
             ))
           )}
         </div>
       </SlideUpDrawer>
 
       {/* Artifact panel */}
-      <SlideOver
-        isOpen={artifactPanelOpen}
-        onClose={(): void => {
-          setArtifactPanelOpen(false)
-          setSelectedArtifactId(null)
-        }}
-        title="Artifacts"
-      >
+      <SlideOver isOpen={artifactPanelOpen} onClose={onCloseArtifactPanel} title="Artifacts">
         {selectedArtifact ? (
           <ArtifactExpanded
             artifact={selectedArtifact}

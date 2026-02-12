@@ -6,9 +6,23 @@
   background-color: var(--bg-primary);
 }
 
+.cei-cc-shell > .cei-topbar {
+  grid-row: 1;
+}
+
+.cei-cc-shell > .cei-error-banner {
+  grid-row: 2;
+}
+
+.cei-cc-shell > .cei-connection-indicator {
+  grid-row: 3;
+}
+
 .cei-cc-grid {
   display: grid;
   grid-template-columns: 240px 1fr 360px;
+  grid-row: 4;
+  height: 100%;
   min-height: 0;
   overflow: hidden;
 }
@@ -100,10 +114,30 @@
 /* Center */
 .cei-cc-center {
   display: grid;
-  grid-template-rows: 1fr auto;
+  grid-template-rows: auto 1fr auto;
   min-height: 0;
+  overflow: hidden;
   padding: var(--space-3);
   gap: var(--space-3);
+}
+
+.cei-cc-mobile-controls {
+  display: none;
+}
+
+.cei-cc-mobile-control-btn {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-panel-muted);
+  color: var(--text-primary);
+  cursor: pointer;
+  padding: var(--space-2) var(--space-3);
+  font-size: 0.82rem;
+  line-height: 1.2;
+}
+
+.cei-cc-mobile-control-btn:hover {
+  border-color: var(--text-muted);
 }
 
 .cei-cc-center .cei-message-list {
@@ -121,6 +155,15 @@
 @media (max-width: 1024px) {
   .cei-cc-grid {
     grid-template-columns: 1fr;
+  }
+
+  .cei-cc-mobile-controls {
+    display: flex;
+    gap: var(--space-2);
+  }
+
+  .cei-cc-mobile-control-btn {
+    flex: 1;
   }
 
   .cei-cc-left,

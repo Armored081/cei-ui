@@ -1,15 +1,27 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import type { Artifact } from '../hooks/useChatEngine'
 import { TopBar } from '../primitives/TopBar'
 import { MessageList } from '../primitives/MessageList'
 import { Composer } from '../primitives/Composer'
 import { composerPropsFromEngine } from '../primitives/composerPropsFromEngine'
+import { SlideOver } from '../primitives/SlideOver'
+import { SlideUpDrawer } from '../primitives/SlideUpDrawer'
 import { ArtifactCard } from '../primitives/ArtifactCard'
 import { ArtifactExpanded } from '../primitives/ArtifactExpanded'
 import { ToolLogEntry } from '../primitives/ToolLogEntry'
 import type { LayoutProps } from './types'
 import './layout-command-center.css'
+
+const COMPACT_VIEWPORT_QUERY = '(max-width: 1024px)'
+
+function readIsCompactLayout(): boolean {
+  if (typeof window.matchMedia !== 'function') {
+    return false
+  }
+
+  return window.matchMedia(COMPACT_VIEWPORT_QUERY).matches
+}
 
 export function CommandCenter({
   engine,
@@ -21,16 +33,62 @@ export function CommandCenter({
   const [selectedArtifactId, setSelectedArtifactId] = useState<string | null>(null)
   const [leftCollapsed, setLeftCollapsed] = useState(false)
   const [rightCollapsed, setRightCollapsed] = useState(false)
+  const [isCompactLayout, setIsCompactLayout] = useState<boolean>(readIsCompactLayout)
+  const [mobileActivityOpen, setMobileActivityOpen] = useState(false)
+  const [mobileArtifactsOpen, setMobileArtifactsOpen] = useState(false)
 
-  const selectedArtifact: Artifact | null =
-    engine.artifacts.find((a) => a.id === selectedArtifactId) ?? null
+  const selectedArtifact: Artifact | null = useMemo(
+    (): Artifact | null => engine.artifacts.find((a) => a.id === selectedArtifactId) ?? null,
+    [engine.artifacts, selectedArtifactId],
+  )
 
-  const onToggleToolLogExpand = (entryId: string): void => {
-    const entry = engine.toolLog.find((t) => t.id === entryId)
-    if (entry) {
-      engine.onToggleTool(entry.sourceMessageId, entryId)
+  useEffect((): (() => void) => {
+    if (typeof window.matchMedia !== 'function') {
+      return (): void => {}
     }
-  }
+
+    const mediaQuery = window.matchMedia(COMPACT_VIEWPORT_QUERY)
+
+    const onViewportChange = (event: MediaQueryListEvent): void => {
+      setIsCompactLayout(event.matches)
+      if (!event.matches) {
+        setMobileActivityOpen(false)
+        setMobileArtifactsOpen(false)
+      }
+    }
+
+    if (typeof mediaQuery.addEventListener === 'function') {
+      mediaQuery.addEventListener('change', onViewportChange)
+      return (): void => mediaQuery.removeEventListener('change', onViewportChange)
+    }
+
+    mediaQuery.addListener(onViewportChange)
+    return (): void => mediaQuery.removeListener(onViewportChange)
+  }, [])
+
+  const onToggleToolLogExpand = useCallback(
+    (entryId: string): void => {
+      const entry = engine.toolLog.find((t) => t.id === entryId)
+      if (entry) {
+        engine.onToggleTool(entry.sourceMessageId, entryId)
+      }
+    },
+    [engine],
+  )
+
+  const onSelectArtifact = useCallback((artifactId: string): void => {
+    setSelectedArtifactId(artifactId)
+  }, [])
+
+  const onSelectArtifactFromMessage = useCallback(
+    (artifactId: string): void => {
+      setSelectedArtifactId(artifactId)
+      if (isCompactLayout) {
+        setMobileArtifactsOpen(true)
+      }
+    },
+    [isCompactLayout],
+  )
 
   return (
     <div className="cei-cc-shell">
@@ -104,6 +162,25 @@ export function CommandCenter({
 
         {/* Center: Conversation */}
         <main className="cei-cc-center">
+          <div className="cei-cc-mobile-controls">
+            <button
+              aria-haspopup="dialog"
+              className="cei-cc-mobile-control-btn"
+              onClick={(): void => setMobileActivityOpen(true)}
+              type="button"
+            >
+              Menu Activity
+            </button>
+            <button
+              aria-haspopup="dialog"
+              className="cei-cc-mobile-control-btn"
+              onClick={(): void => setMobileArtifactsOpen(true)}
+              type="button"
+            >
+              Artifacts{' '}
+              {engine.artifacts.length > 0 ? `(${engine.artifacts.length.toString()})` : ''}
+            </button>
+          </div>
           <MessageList
             items={engine.timelineItems}
             listRef={engine.messageListRef}
@@ -112,7 +189,7 @@ export function CommandCenter({
             onToggleTool={engine.onToggleTool}
             displayMode="clean"
             blockRenderer="pill"
-            onArtifactClick={setSelectedArtifactId}
+            onArtifactClick={onSelectArtifactFromMessage}
           />
           <Composer {...composerPropsFromEngine(engine, 'full')} />
         </main>
@@ -145,7 +222,7 @@ export function CommandCenter({
                     key={artifact.id}
                     artifact={artifact}
                     isSelected={artifact.id === selectedArtifactId}
-                    onClick={setSelectedArtifactId}
+                    onClick={onSelectArtifact}
                   />
                 ))
               )}
@@ -162,6 +239,50 @@ export function CommandCenter({
           </button>
         )}
       </div>
+
+      <SlideOver
+        isOpen={isCompactLayout && mobileActivityOpen}
+        onClose={(): void => setMobileActivityOpen(false)}
+        title="Activity"
+        width="320px"
+      >
+        <div className="cei-cc-tool-log">
+          {engine.toolLog.length === 0 ? (
+            <p className="cei-muted cei-cc-empty-hint">Tool calls will appear here.</p>
+          ) : (
+            engine.toolLog.map((entry) => (
+              <ToolLogEntry key={entry.id} entry={entry} onToggleExpand={onToggleToolLogExpand} />
+            ))
+          )}
+        </div>
+      </SlideOver>
+
+      <SlideUpDrawer
+        isOpen={isCompactLayout && mobileArtifactsOpen}
+        onClose={(): void => setMobileArtifactsOpen(false)}
+        title="Artifacts"
+        maxHeight="72vh"
+      >
+        <div className="cei-cc-artifacts">
+          {selectedArtifact ? (
+            <ArtifactExpanded
+              artifact={selectedArtifact}
+              onClose={(): void => setSelectedArtifactId(null)}
+            />
+          ) : engine.artifacts.length === 0 ? (
+            <p className="cei-muted cei-cc-empty-hint">Artifacts will appear here.</p>
+          ) : (
+            engine.artifacts.map((artifact) => (
+              <ArtifactCard
+                key={artifact.id}
+                artifact={artifact}
+                isSelected={artifact.id === selectedArtifactId}
+                onClick={onSelectArtifact}
+              />
+            ))
+          )}
+        </div>
+      </SlideUpDrawer>
     </div>
   )
 }
