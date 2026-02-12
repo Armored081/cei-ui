@@ -107,10 +107,7 @@ describe('FeedbackSlideOver', (): void => {
       category: 'bug',
       title: 'Risk matrix shows duplicates',
       summary: 'Loading a second scenario duplicates rows in the output table.',
-      threadContext: {
-        stub: true,
-        message: 'Context capture not yet implemented',
-      },
+      threadContext: undefined,
     })
 
     randomUuidSpy.mockRestore()
