@@ -33,6 +33,13 @@ export function TopBar({ userEmail, onLogout }: TopBarProps): JSX.Element {
             </button>
             <button
               className="cei-topbar-nav-button"
+              onClick={(): void => navigate('/feedback')}
+              type="button"
+            >
+              Dashboard
+            </button>
+            <button
+              className="cei-topbar-nav-button"
               onClick={(): void => setIsFeedbackOpen(true)}
               type="button"
             >

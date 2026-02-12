@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { LoginPage } from './auth/LoginPage'
 import { ProtectedRoute } from './auth/ProtectedRoute'
 import { ChatPage } from './components/ChatPage'
+import { FeedbackDashboard } from './feedback/FeedbackDashboard'
 import { RoadmapPage } from './roadmap/RoadmapPage'
 
 function App(): JSX.Element {
@@ -22,6 +23,14 @@ function App(): JSX.Element {
         element={
           <ProtectedRoute>
             <RoadmapPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/feedback"
+        element={
+          <ProtectedRoute>
+            <FeedbackDashboard />
           </ProtectedRoute>
         }
       />

@@ -4,6 +4,7 @@ import type {
   FeedbackListResponse,
   FeedbackStatus,
   FeedbackSubmission,
+  FeedbackUpdateResponse,
 } from './types'
 
 interface JwtPayload {
@@ -132,6 +133,51 @@ function assertFeedbackListResponse(payload: unknown): FeedbackListResponse {
   return payload as FeedbackListResponse
 }
 
+function assertFeedbackUpdateResponse(payload: unknown): FeedbackUpdateResponse {
+  if (
+    typeof payload !== 'object' ||
+    payload === null ||
+    typeof (payload as FeedbackUpdateResponse).id !== 'string' ||
+    typeof (payload as FeedbackUpdateResponse).status !== 'string'
+  ) {
+    throw new Error('Invalid feedback update response: expected { id: string, status: string }')
+  }
+
+  return payload as FeedbackUpdateResponse
+}
+
+function buildFeedbackListEndpoint(
+  baseUrl: string,
+  params: FeedbackListParams,
+  adminView: boolean,
+): string {
+  const queryParams = new URLSearchParams()
+
+  if (adminView) {
+    queryParams.set('admin', 'true')
+  }
+
+  if (params.cursor) {
+    queryParams.set('cursor', params.cursor)
+  }
+
+  if (typeof params.limit === 'number') {
+    queryParams.set('limit', params.limit.toString())
+  }
+
+  if (params.category) {
+    queryParams.set('category', params.category)
+  }
+
+  if (params.status) {
+    queryParams.set('status', params.status)
+  }
+
+  const queryString = queryParams.toString()
+
+  return queryString ? `${baseUrl}/v1/feedback?${queryString}` : `${baseUrl}/v1/feedback`
+}
+
 /**
  * Submits a feedback record.
  *
@@ -173,26 +219,7 @@ export async function listFeedback(
   params: FeedbackListParams = {},
 ): Promise<FeedbackListResponse> {
   const baseUrl = readApiBaseUrl()
-  const queryParams = new URLSearchParams()
-
-  if (params.cursor) {
-    queryParams.set('cursor', params.cursor)
-  }
-
-  if (typeof params.limit === 'number') {
-    queryParams.set('limit', params.limit.toString())
-  }
-
-  if (params.category) {
-    queryParams.set('category', params.category)
-  }
-
-  if (params.status) {
-    queryParams.set('status', params.status)
-  }
-
-  const queryString = queryParams.toString()
-  const endpoint = queryString ? `${baseUrl}/v1/feedback?${queryString}` : `${baseUrl}/v1/feedback`
+  const endpoint = buildFeedbackListEndpoint(baseUrl, params, false)
 
   const response = await fetch(endpoint, {
     method: 'GET',
@@ -205,4 +232,62 @@ export async function listFeedback(
   }
 
   return assertFeedbackListResponse(await response.json())
+}
+
+/**
+ * Lists feedback records in admin mode across all users.
+ *
+ * @param accessToken - Bearer token for authentication
+ * @param params - Optional cursor and filter parameters
+ * @returns Paginated feedback list
+ */
+export async function listAllFeedback(
+  accessToken: string,
+  params: FeedbackListParams = {},
+): Promise<FeedbackListResponse> {
+  const baseUrl = readApiBaseUrl()
+  const endpoint = buildFeedbackListEndpoint(baseUrl, params, true)
+
+  const response = await fetch(endpoint, {
+    method: 'GET',
+    headers: buildAuthHeaders(accessToken),
+  })
+
+  if (!response.ok) {
+    const details = await readErrorMessage(response)
+    throw new Error(`Failed to list feedback: ${details}`)
+  }
+
+  return assertFeedbackListResponse(await response.json())
+}
+
+/**
+ * Updates feedback status for triage workflow.
+ *
+ * @param accessToken - Bearer token for authentication
+ * @param id - Feedback identifier
+ * @param status - New status value
+ * @returns Updated feedback status response payload
+ */
+export async function updateFeedbackStatus(
+  accessToken: string,
+  id: string,
+  status: FeedbackStatus,
+): Promise<FeedbackUpdateResponse> {
+  const baseUrl = readApiBaseUrl()
+  const response = await fetch(`${baseUrl}/v1/feedback/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    headers: {
+      ...buildAuthHeaders(accessToken),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ status }),
+  })
+
+  if (!response.ok) {
+    const details = await readErrorMessage(response)
+    throw new Error(`Failed to update feedback status: ${details}`)
+  }
+
+  return assertFeedbackUpdateResponse(await response.json())
 }
