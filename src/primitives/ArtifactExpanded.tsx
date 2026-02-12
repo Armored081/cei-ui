@@ -47,7 +47,11 @@ function renderBlock(artifact: Artifact): JSX.Element {
   if (block.kind === 'table') {
     return <TableBlock block={block} />
   }
-  return <RecommendationBlock block={block} />
+  if (block.kind === 'recommendation') {
+    return <RecommendationBlock block={block} />
+  }
+
+  return <p className="cei-muted">Expanded renderer is available from the artifact registry.</p>
 }
 
 export function ArtifactExpanded({ artifact, onClose }: ArtifactExpandedProps): JSX.Element | null {

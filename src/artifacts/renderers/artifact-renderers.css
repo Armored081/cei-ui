@@ -128,3 +128,290 @@
   height: 100%;
   align-content: start;
 }
+
+.cei-assessment-artifact-inline-table-wrap {
+  overflow: auto;
+  border: 1px solid var(--table-border);
+  border-radius: var(--radius-sm);
+}
+
+.cei-assessment-artifact-inline-table {
+  width: 100%;
+  min-width: 260px;
+  border-collapse: collapse;
+}
+
+.cei-assessment-artifact-inline-table th,
+.cei-assessment-artifact-inline-table td {
+  border-bottom: 1px solid var(--table-border);
+  padding: var(--space-1) var(--space-2);
+  text-align: left;
+  font-size: 0.76rem;
+}
+
+.cei-assessment-artifact-inline-table th {
+  color: var(--table-header-text);
+  background-color: var(--table-header-bg);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.cei-assessment-artifact-status {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 3px 10px;
+  border: 1px solid transparent;
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+
+.cei-assessment-artifact-status-draft,
+.cei-assessment-artifact-status-archived {
+  color: #d3d9e7;
+  background-color: rgba(160, 175, 204, 0.2);
+  border-color: rgba(181, 195, 223, 0.3);
+}
+
+.cei-assessment-artifact-status-in-progress {
+  color: #b8ddff;
+  background-color: rgba(79, 179, 255, 0.2);
+  border-color: rgba(101, 188, 255, 0.33);
+}
+
+.cei-assessment-artifact-status-complete {
+  color: #bdf7d5;
+  background-color: rgba(82, 196, 116, 0.22);
+  border-color: rgba(133, 245, 167, 0.34);
+}
+
+.cei-assessment-artifact-status-approved {
+  color: #e3d3ff;
+  background-color: rgba(160, 110, 255, 0.24);
+  border-color: rgba(195, 149, 255, 0.36);
+}
+
+.cei-assessment-artifact-status-mapped {
+  color: #bdf7d5;
+  background-color: rgba(82, 196, 116, 0.18);
+  border-color: rgba(133, 245, 167, 0.3);
+}
+
+.cei-assessment-artifact-status-partial {
+  color: #ffe2a5;
+  background-color: rgba(229, 165, 48, 0.16);
+  border-color: rgba(240, 184, 64, 0.35);
+}
+
+.cei-assessment-artifact-status-gap {
+  color: #ffc2d0;
+  background-color: rgba(232, 92, 111, 0.16);
+  border-color: rgba(232, 92, 111, 0.33);
+}
+
+.cei-assessment-artifact-status-generic {
+  color: var(--text-primary);
+  background-color: rgba(140, 160, 190, 0.14);
+  border-color: rgba(140, 160, 190, 0.32);
+}
+
+.cei-assessment-artifact-score {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 56px;
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  border: 1px solid transparent;
+}
+
+.cei-assessment-artifact-score-high {
+  color: #bdf7d5;
+  border-color: rgba(133, 245, 167, 0.4);
+  background-color: rgba(82, 196, 116, 0.14);
+}
+
+.cei-assessment-artifact-score-medium {
+  color: #ffe2a5;
+  border-color: rgba(240, 184, 64, 0.45);
+  background-color: rgba(229, 165, 48, 0.14);
+}
+
+.cei-assessment-artifact-score-low {
+  color: #ffc2d0;
+  border-color: rgba(232, 92, 111, 0.42);
+  background-color: rgba(232, 92, 111, 0.12);
+}
+
+.cei-assessment-artifact-table-shell {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.cei-assessment-artifact-table-shell-fullscreen {
+  gap: var(--space-4);
+}
+
+.cei-assessment-artifact-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: end;
+}
+
+.cei-assessment-artifact-filter-label {
+  display: grid;
+  gap: 4px;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  letter-spacing: 0.03em;
+}
+
+.cei-assessment-artifact-filter,
+.cei-assessment-artifact-filter-label select {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-panel-muted);
+  color: var(--text-primary);
+  padding: var(--space-2) var(--space-3);
+}
+
+.cei-assessment-artifact-filter {
+  min-width: min(360px, 100%);
+  flex: 1;
+}
+
+.cei-assessment-artifact-table-wrap {
+  overflow: auto;
+  border: 1px solid var(--table-border);
+  border-radius: var(--radius-md);
+  background: rgba(13, 18, 28, 0.72);
+}
+
+.cei-assessment-artifact-table {
+  width: 100%;
+  min-width: 860px;
+  border-collapse: collapse;
+}
+
+.cei-assessment-artifact-table th,
+.cei-assessment-artifact-table td {
+  border-bottom: 1px solid var(--table-border);
+  padding: var(--space-2) var(--space-3);
+  text-align: left;
+  vertical-align: top;
+  font-size: 0.84rem;
+}
+
+.cei-assessment-artifact-table th {
+  background-color: var(--table-header-bg);
+  color: var(--table-header-text);
+}
+
+.cei-assessment-artifact-sort-button {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-2);
+  text-align: left;
+  cursor: pointer;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.cei-assessment-artifact-table-row {
+  cursor: pointer;
+}
+
+.cei-assessment-artifact-table-row:hover,
+.cei-assessment-artifact-table-row:focus-visible {
+  background-color: var(--accent-subtle);
+  outline: none;
+}
+
+.cei-assessment-artifact-table-row-selected {
+  background-color: rgba(229, 165, 48, 0.16);
+}
+
+.cei-assessment-artifact-selection {
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: linear-gradient(160deg, rgba(39, 31, 17, 0.78), rgba(12, 18, 28, 0.92));
+  padding: var(--space-3);
+}
+
+.cei-assessment-artifact-selection p {
+  margin: 6px 0 0;
+}
+
+.cei-assessment-detail-artifact-shell {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.cei-assessment-detail-summary {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.cei-assessment-detail-summary-grid {
+  display: grid;
+  gap: var(--space-2);
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.cei-assessment-detail-summary-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background-color: rgba(15, 26, 48, 0.65);
+  padding: var(--space-3);
+}
+
+.cei-assessment-detail-summary-label {
+  margin: 0 0 var(--space-1);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.72rem;
+}
+
+.cei-assessment-detail-summary-value {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.cei-assessment-detail-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.cei-assessment-detail-sections {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.cei-assessment-detail-section-card-content {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.cei-assessment-detail-controls-shell {
+  display: grid;
+  gap: var(--space-3);
+}

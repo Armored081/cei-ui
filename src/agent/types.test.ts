@@ -75,6 +75,65 @@ describe('structuredBlockSchema chart validation', (): void => {
   })
 })
 
+describe('structuredBlockSchema assessment artifact validation', (): void => {
+  it('accepts assessment-list blocks', (): void => {
+    const parsed = structuredBlockSchema.parse({
+      kind: 'assessment-list',
+      title: 'Assessments',
+      assessments: [
+        {
+          id: 'assess-1',
+          name: 'SOC 2 Type II Review',
+          framework: 'SOC 2',
+          status: 'in-progress',
+          score: 78.5,
+          updatedAt: '2026-02-10T17:12:00.000Z',
+        },
+      ],
+    })
+
+    expect(parsed).toMatchObject({
+      kind: 'assessment-list',
+      title: 'Assessments',
+    })
+  })
+
+  it('accepts assessment-detail blocks', (): void => {
+    const parsed = structuredBlockSchema.parse({
+      kind: 'assessment-detail',
+      title: 'Assessment Detail',
+      assessment: {
+        id: 'assess-2',
+        name: 'ISO 27001 Control Review',
+        framework: 'ISO 27001',
+        status: 'complete',
+        score: 91,
+        updatedAt: '2026-02-11T09:45:00.000Z',
+        sections: [
+          {
+            name: 'Access Control',
+            score: 88,
+            controls: [
+              {
+                id: 'AC-1',
+                description: 'Access provisioning is documented',
+                status: 'mapped',
+                gap: '',
+                recommendation: '',
+              },
+            ],
+          },
+        ],
+      },
+    })
+
+    expect(parsed).toMatchObject({
+      kind: 'assessment-detail',
+      title: 'Assessment Detail',
+    })
+  })
+})
+
 describe('invokeRequestSchema attachments', (): void => {
   it('accepts invoke inputs with attachments', (): void => {
     const parsed = invokeRequestSchema.parse({
