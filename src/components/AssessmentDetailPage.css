@@ -56,6 +56,7 @@
 .cei-assessment-detail-subtitle {
   margin: 0;
   color: var(--text-muted);
+  font-family: var(--font-mono);
 }
 
 .cei-button-primary,
@@ -213,6 +214,7 @@
   margin: 0;
   font-size: 1.4rem;
   font-weight: 700;
+  font-family: var(--font-mono);
 }
 
 .cei-assessment-panel {
@@ -309,7 +311,7 @@
 }
 
 .cei-assessment-table-row:hover {
-  background-color: rgba(79, 179, 255, 0.11);
+  background-color: var(--accent-subtle);
 }
 
 .cei-assessment-table-row-selected {

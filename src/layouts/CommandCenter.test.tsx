@@ -125,13 +125,7 @@ function createEngine(onToggleTool: (messageId: string, toolId: string) => void)
 function renderLayout(engine: ChatEngine): void {
   render(
     <MemoryRouter>
-      <CommandCenter
-        activeLayout="command-center"
-        engine={engine}
-        onChangeLayout={(): void => {}}
-        onLogout={(): void => {}}
-        userEmail="analyst@example.com"
-      />
+      <CommandCenter engine={engine} onLogout={(): void => {}} userEmail="analyst@example.com" />
     </MemoryRouter>,
   )
 }

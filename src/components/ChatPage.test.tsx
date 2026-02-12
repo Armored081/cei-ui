@@ -91,13 +91,6 @@ beforeEach((): void => {
     logout: mockLogout,
     userEmail: 'analyst@example.com',
   })
-
-  // Default layout is command-center from localStorage. Reset it for consistent tests.
-  try {
-    localStorage.removeItem('cei-layout-preference')
-  } catch {
-    // OK
-  }
 })
 
 afterEach((): void => {

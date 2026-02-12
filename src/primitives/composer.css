@@ -5,7 +5,7 @@
 
 .cei-composer-v-full {
   border-top: 1px solid var(--border);
-  padding-top: var(--space-3);
+  padding-top: var(--space-2);
 }
 
 .cei-composer-v-compact .cei-composer-v-textarea {
@@ -35,8 +35,20 @@
 
 .cei-composer-v-row {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background-color: var(--bg-panel-muted);
+  padding: var(--space-2);
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.cei-composer-v-row:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent-subtle);
 }
 
 .cei-composer-v-paperclip {
@@ -50,6 +62,8 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  min-width: 32px;
+  min-height: 32px;
 }
 
 .cei-composer-v-paperclip:hover {
@@ -68,13 +82,14 @@
 .cei-composer-v-textarea {
   flex: 1;
   min-height: 40px;
-  max-height: 120px;
+  max-height: 160px;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   background-color: var(--bg-panel);
   color: var(--text-primary);
   padding: var(--space-2) var(--space-3);
-  resize: vertical;
+  resize: none;
+  line-height: 1.4;
 }
 
 .cei-composer-v-floating .cei-composer-v-textarea {
@@ -101,11 +116,53 @@
   justify-content: center;
   cursor: pointer;
   flex-shrink: 0;
+  transition: transform 150ms cubic-bezier(0.2, 0.9, 0.2, 1.1);
+}
+
+.cei-composer-v-send:hover {
+  background-color: var(--accent-hover);
+}
+
+.cei-composer-v-send:active {
+  transform: scale(0.95);
 }
 
 .cei-composer-v-send:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.cei-composer-v-new-thread-pill {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.cei-composer-v-new-thread-pill:hover {
+  color: var(--text-muted);
+  border-color: var(--border-strong);
+}
+
+.cei-composer-v-new-thread-icon {
+  width: 12px;
+  height: 12px;
+}
+
+.cei-composer-v-new-thread-text {
+  font-family: var(--font-mono);
 }
 
 .cei-composer-v-chips {
@@ -154,12 +211,12 @@
   padding: 0 var(--space-2);
 }
 
-.cei-composer-v-actions {
-  display: flex;
-  gap: var(--space-2);
-}
+@media (prefers-reduced-motion: reduce) {
+  .cei-composer-v-send {
+    transition: none;
+  }
 
-.cei-composer-v-new-thread {
-  padding: var(--space-1) var(--space-3);
-  font-size: 0.82rem;
+  .cei-composer-v-send:active {
+    transform: none;
+  }
 }

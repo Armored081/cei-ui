@@ -33,10 +33,6 @@
   color: var(--text-muted);
 }
 
-.cei-chat-header .cei-app-nav {
-  margin-top: var(--space-3);
-}
-
 .cei-meta-row {
   margin: 0;
   color: var(--text-muted);
@@ -103,6 +99,7 @@
   font-size: 0.88rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
+  font-family: var(--font-mono);
 }
 
 .cei-thread-separator::before,
@@ -116,6 +113,7 @@
 .cei-message {
   display: grid;
   gap: var(--space-2);
+  animation: cei-message-enter 200ms ease-out;
 }
 
 .cei-message-header {
@@ -238,6 +236,7 @@
   padding: var(--space-2) var(--space-3);
   white-space: pre-wrap;
   word-break: break-word;
+  font-family: var(--font-mono);
 }
 
 .cei-composer {
@@ -317,6 +316,7 @@
   margin: 0;
   color: var(--text-muted);
   font-size: 0.85rem;
+  font-family: var(--font-mono);
 }
 
 .cei-attachment-progress-wrap {
@@ -333,6 +333,7 @@
 .cei-attachment-progress-value {
   color: var(--text-muted);
   font-size: 0.78rem;
+  font-family: var(--font-mono);
 }
 
 .cei-attachment-remove {
@@ -432,6 +433,18 @@
   }
 }
 
+@keyframes cei-message-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @keyframes cei-spin {
   from {
     transform: rotate(0deg);
@@ -466,5 +479,11 @@
 
   .cei-attachment-item {
     flex-direction: column;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cei-message {
+    animation: none;
   }
 }

@@ -86,7 +86,7 @@
 
 .cei-table-sort-indicator {
   color: var(--text-muted);
-  font-family: monospace;
+  font-family: var(--font-mono);
 }
 
 .cei-recommendation {

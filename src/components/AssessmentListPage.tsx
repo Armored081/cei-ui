@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 
 import { fetchAssessments } from '../assessment/client'
 import type { AssessmentStatus, AssessmentSummary } from '../assessment/types'
-import { AppNavigation } from './AppNavigation'
 import './AssessmentListPage.css'
 
 function formatAssessmentDate(createdAt: string): string {
@@ -120,7 +119,6 @@ export function AssessmentListPage(): JSX.Element {
             Browse and open completed or in-progress regulation mappings.
           </p>
         </div>
-        <AppNavigation />
       </header>
 
       <section className="cei-assessment-list-panel">

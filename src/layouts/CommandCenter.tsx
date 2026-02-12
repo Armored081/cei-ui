@@ -23,13 +23,7 @@ function readIsCompactLayout(): boolean {
   return window.matchMedia(COMPACT_VIEWPORT_QUERY).matches
 }
 
-export function CommandCenter({
-  engine,
-  userEmail,
-  onLogout,
-  activeLayout,
-  onChangeLayout,
-}: LayoutProps): JSX.Element {
+export function CommandCenter({ engine, userEmail, onLogout }: LayoutProps): JSX.Element {
   const [selectedArtifactId, setSelectedArtifactId] = useState<string | null>(null)
   const [leftCollapsed, setLeftCollapsed] = useState(false)
   const [rightCollapsed, setRightCollapsed] = useState(false)
@@ -90,14 +84,13 @@ export function CommandCenter({
     [isCompactLayout],
   )
 
+  const gridClassName = `cei-cc-grid${leftCollapsed ? ' cei-cc-grid-left-collapsed' : ''}${
+    rightCollapsed ? ' cei-cc-grid-right-collapsed' : ''
+  }`
+
   return (
     <div className="cei-cc-shell">
-      <TopBar
-        activeLayout={activeLayout}
-        onChangeLayout={onChangeLayout}
-        userEmail={userEmail}
-        onLogout={onLogout}
-      />
+      <TopBar userEmail={userEmail} onLogout={onLogout} />
 
       {engine.errorBanner ? (
         <div className="cei-error-banner" role="alert">
@@ -120,45 +113,49 @@ export function CommandCenter({
         </div>
       ) : null}
 
-      <div className="cei-cc-grid">
+      <div className={gridClassName}>
         {/* Left rail: Activity */}
-        {!leftCollapsed ? (
-          <aside className="cei-cc-left">
-            <div className="cei-cc-rail-header">
-              <h3 className="cei-cc-rail-title">Activity</h3>
-              <button
-                className="cei-cc-collapse-btn"
-                onClick={(): void => setLeftCollapsed(true)}
-                type="button"
-                aria-label="Collapse activity rail"
-              >
-                &lsaquo;
-              </button>
-            </div>
-            <div className="cei-cc-tool-log">
-              {engine.toolLog.length === 0 ? (
-                <p className="cei-muted cei-cc-empty-hint">Tool calls will appear here.</p>
-              ) : (
-                engine.toolLog.map((entry) => (
-                  <ToolLogEntry
-                    key={entry.id}
-                    entry={entry}
-                    onToggleExpand={onToggleToolLogExpand}
-                  />
-                ))
-              )}
-            </div>
-          </aside>
-        ) : (
-          <button
-            className="cei-cc-expand-btn cei-cc-expand-left"
-            onClick={(): void => setLeftCollapsed(false)}
-            type="button"
-            aria-label="Expand activity rail"
-          >
-            &rsaquo;
-          </button>
-        )}
+        <aside className={`cei-cc-left${leftCollapsed ? ' cei-cc-rail-collapsed' : ''}`}>
+          {leftCollapsed ? (
+            <button
+              className="cei-cc-expand-btn cei-cc-expand-left"
+              onClick={(): void => setLeftCollapsed(false)}
+              title="Expand activity rail"
+              type="button"
+              aria-label="Expand activity rail"
+            >
+              &rsaquo;
+            </button>
+          ) : (
+            <>
+              <div className="cei-cc-rail-header">
+                <h3 className="cei-cc-rail-title">Activity</h3>
+                <button
+                  className="cei-cc-collapse-btn"
+                  onClick={(): void => setLeftCollapsed(true)}
+                  type="button"
+                  aria-label="Collapse activity rail"
+                >
+                  &lsaquo;
+                </button>
+              </div>
+              <div className="cei-cc-tool-log">
+                {engine.toolLog.length === 0 ? (
+                  <p className="cei-muted cei-cc-empty-hint">Tool calls will appear here.</p>
+                ) : (
+                  engine.toolLog.map((entry, index) => (
+                    <ToolLogEntry
+                      key={entry.id}
+                      entry={entry}
+                      isActive={entry.status === 'running' || index === 0}
+                      onToggleExpand={onToggleToolLogExpand}
+                    />
+                  ))
+                )}
+              </div>
+            </>
+          )}
+        </aside>
 
         {/* Center: Conversation */}
         <main className="cei-cc-center">
@@ -195,49 +192,52 @@ export function CommandCenter({
         </main>
 
         {/* Right rail: Artifacts */}
-        {!rightCollapsed ? (
-          <aside className="cei-cc-right">
-            <div className="cei-cc-rail-header">
-              <h3 className="cei-cc-rail-title">Artifacts</h3>
-              <button
-                className="cei-cc-collapse-btn"
-                onClick={(): void => setRightCollapsed(true)}
-                type="button"
-                aria-label="Collapse artifacts rail"
-              >
-                &rsaquo;
-              </button>
-            </div>
-            <div className="cei-cc-artifacts">
-              {selectedArtifact ? (
-                <ArtifactExpanded
-                  artifact={selectedArtifact}
-                  onClose={(): void => setSelectedArtifactId(null)}
-                />
-              ) : engine.artifacts.length === 0 ? (
-                <p className="cei-muted cei-cc-empty-hint">Artifacts will appear here.</p>
-              ) : (
-                engine.artifacts.map((artifact) => (
-                  <ArtifactCard
-                    key={artifact.id}
-                    artifact={artifact}
-                    isSelected={artifact.id === selectedArtifactId}
-                    onClick={onSelectArtifact}
+        <aside className={`cei-cc-right${rightCollapsed ? ' cei-cc-rail-collapsed' : ''}`}>
+          {rightCollapsed ? (
+            <button
+              className="cei-cc-expand-btn cei-cc-expand-right"
+              onClick={(): void => setRightCollapsed(false)}
+              title="Expand artifacts rail"
+              type="button"
+              aria-label="Expand artifacts rail"
+            >
+              &lsaquo;
+            </button>
+          ) : (
+            <>
+              <div className="cei-cc-rail-header">
+                <h3 className="cei-cc-rail-title">Artifacts</h3>
+                <button
+                  className="cei-cc-collapse-btn"
+                  onClick={(): void => setRightCollapsed(true)}
+                  type="button"
+                  aria-label="Collapse artifacts rail"
+                >
+                  &rsaquo;
+                </button>
+              </div>
+              <div className="cei-cc-artifacts">
+                {selectedArtifact ? (
+                  <ArtifactExpanded
+                    artifact={selectedArtifact}
+                    onClose={(): void => setSelectedArtifactId(null)}
                   />
-                ))
-              )}
-            </div>
-          </aside>
-        ) : (
-          <button
-            className="cei-cc-expand-btn cei-cc-expand-right"
-            onClick={(): void => setRightCollapsed(false)}
-            type="button"
-            aria-label="Expand artifacts rail"
-          >
-            &lsaquo;
-          </button>
-        )}
+                ) : engine.artifacts.length === 0 ? (
+                  <p className="cei-muted cei-cc-empty-hint">Artifacts will appear here.</p>
+                ) : (
+                  engine.artifacts.map((artifact) => (
+                    <ArtifactCard
+                      key={artifact.id}
+                      artifact={artifact}
+                      isSelected={artifact.id === selectedArtifactId}
+                      onClick={onSelectArtifact}
+                    />
+                  ))
+                )}
+              </div>
+            </>
+          )}
+        </aside>
       </div>
 
       <SlideOver
@@ -250,8 +250,13 @@ export function CommandCenter({
           {engine.toolLog.length === 0 ? (
             <p className="cei-muted cei-cc-empty-hint">Tool calls will appear here.</p>
           ) : (
-            engine.toolLog.map((entry) => (
-              <ToolLogEntry key={entry.id} entry={entry} onToggleExpand={onToggleToolLogExpand} />
+            engine.toolLog.map((entry, index) => (
+              <ToolLogEntry
+                key={entry.id}
+                entry={entry}
+                isActive={entry.status === 'running' || index === 0}
+                onToggleExpand={onToggleToolLogExpand}
+              />
             ))
           )}
         </div>

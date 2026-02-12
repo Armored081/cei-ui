@@ -15,4 +15,5 @@
 
 .cei-tool-sbar-item {
   white-space: nowrap;
+  font-family: var(--font-mono);
 }

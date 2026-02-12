@@ -29,7 +29,6 @@ import type {
   MappingStatus,
   UpdateMappingRecordRequest,
 } from '../assessment/types'
-import { AppNavigation } from './AppNavigation'
 import { ConfirmationModal } from './ConfirmationModal'
 import { ToastStack, type ToastMessage } from './Toast'
 import './AssessmentDetailPage.css'
@@ -934,9 +933,6 @@ export function AssessmentDetailPage(): JSX.Element {
   if (!assessment) {
     return (
       <main className="cei-assessment-detail-shell">
-        <header className="cei-assessment-detail-header">
-          <AppNavigation />
-        </header>
         <div className="cei-assessment-detail-error" role="alert">
           {errorText || 'Assessment not found.'}
         </div>
@@ -964,7 +960,6 @@ export function AssessmentDetailPage(): JSX.Element {
           </p>
         </div>
         <div className="cei-assessment-detail-header-actions">
-          <AppNavigation />
           <button className="cei-button-secondary" onClick={onExportCsv} type="button">
             {isExporting ? 'Exporting...' : 'Export CSV'}
           </button>

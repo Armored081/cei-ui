@@ -1,34 +1,50 @@
 :root {
-  font-family: 'Space Grotesk', 'Avenir Next', 'Segoe UI', sans-serif;
+  /* Surfaces — warm-tinted darks */
+  --bg-primary: #0a0e14;
+  --bg-secondary: #10151e;
+  --bg-panel: #141a26;
+  --bg-panel-muted: #0e1219;
+  --bg-elevated: #1a2233;
 
-  --bg-primary: #0b1220;
-  --bg-secondary: #111b2f;
-  --bg-panel: #13233f;
-  --bg-panel-muted: #0f1a30;
-  --text-primary: #e6edf9;
-  --text-muted: #9eb0cc;
-  --accent: #4fb3ff;
-  --accent-strong: #79ffc5;
-  --border: rgba(163, 184, 221, 0.24);
-  --danger: #ff7d9e;
-  --warning: #ffd47d;
-  --success: #89ffbe;
-  --block-bg: rgba(10, 20, 35, 0.55);
-  --block-border: rgba(122, 160, 220, 0.32);
-  --block-download-border: rgba(138, 168, 216, 0.36);
-  --chart-series-1: #4fb3ff;
-  --chart-series-2: #79ffc5;
-  --chart-series-3: #ffd47d;
-  --chart-series-4: #c4a3ff;
-  --chart-grid: rgba(143, 171, 224, 0.25);
-  --severity-critical: #ff7d9e;
-  --severity-high: #ffad7d;
-  --severity-medium: #ffd47d;
-  --severity-low: #89ffbe;
-  --table-header-bg: rgba(20, 37, 66, 0.72);
-  --table-header-text: #cddaf2;
-  --table-border: rgba(147, 171, 214, 0.24);
+  /* Text */
+  --text-primary: #e8ecf4;
+  --text-muted: #6b7a90;
+  --text-dim: #3d4a5c;
 
+  /* Accent — amber/gold */
+  --accent: #e5a530;
+  --accent-hover: #f0b840;
+  --accent-subtle: rgba(229, 165, 48, 0.12);
+  --accent-strong: #5ce0b8;
+
+  /* Borders */
+  --border: rgba(140, 160, 190, 0.1);
+  --border-strong: rgba(140, 160, 190, 0.2);
+
+  /* Status */
+  --danger: #e85c6f;
+  --warning: #d4882a;
+  --success: #5ce0b8;
+
+  /* Charts */
+  --chart-series-1: #e5a530;
+  --chart-series-2: #5ce0b8;
+  --chart-series-3: #7c93c4;
+  --chart-series-4: #c97dd6;
+  --chart-grid: rgba(120, 140, 170, 0.12);
+
+  /* Severity */
+  --severity-critical: #e85c6f;
+  --severity-high: #e89040;
+  --severity-medium: #e5a530;
+  --severity-low: #5ce0b8;
+
+  /* Table */
+  --table-header-bg: rgba(20, 26, 38, 0.85);
+  --table-header-text: #8a96aa;
+  --table-border: rgba(120, 140, 170, 0.12);
+
+  /* Keep existing spacing, radius, shadow tokens unchanged */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -36,10 +52,21 @@
   --space-5: 20px;
   --space-6: 24px;
   --space-8: 32px;
-
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
-
   --shadow-panel: 0 16px 36px rgba(2, 8, 20, 0.4);
+
+  /* NEW: Block tokens */
+  --block-bg: rgba(10, 14, 20, 0.55);
+  --block-border: rgba(140, 160, 190, 0.2);
+  --block-download-border: rgba(140, 160, 190, 0.24);
+
+  /* Fonts */
+  --font-display: 'DM Sans', 'Helvetica Neue', sans-serif;
+  --font-body: 'DM Sans', 'Helvetica Neue', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  /* Composer height (set by ResizeObserver) */
+  --composer-height: 52px;
 }

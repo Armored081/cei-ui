@@ -1,4 +1,13 @@
-import type { ChangeEvent, DragEvent, FormEvent, KeyboardEvent, RefObject } from 'react'
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  type ChangeEvent,
+  type DragEvent,
+  type FormEvent,
+  type KeyboardEvent,
+  type RefObject,
+} from 'react'
 
 import type { ComposerAttachment } from '../hooks/useChatEngine'
 import { ATTACHMENT_ACCEPT_ATTRIBUTE } from '../hooks/useChatEngine'
@@ -64,6 +73,53 @@ export function Composer(props: ComposerProps): JSX.Element {
 
   const variantClass = `cei-composer-v cei-composer-v-${variant}`
   const dragClass = isDragOver ? ' cei-composer-v-drag-over' : ''
+  const formRef = useRef<HTMLFormElement>(null)
+
+  useLayoutEffect((): void => {
+    const textareaElement = composerRef.current
+
+    if (!textareaElement) {
+      return
+    }
+
+    const minHeight = 40
+    const maxHeight = 160
+    textareaElement.style.height = 'auto'
+    const nextHeight = Math.min(maxHeight, Math.max(minHeight, textareaElement.scrollHeight))
+    textareaElement.style.height = `${nextHeight.toString()}px`
+    textareaElement.style.overflowY = textareaElement.scrollHeight > maxHeight ? 'auto' : 'hidden'
+  }, [composerRef, draftMessage, variant])
+
+  useEffect((): (() => void) | void => {
+    const formElement = formRef.current
+
+    if (!formElement) {
+      return
+    }
+
+    const syncComposerHeight = (): void => {
+      const nextHeight = Math.max(40, Math.round(formElement.getBoundingClientRect().height))
+      document.documentElement.style.setProperty('--composer-height', `${nextHeight.toString()}px`)
+    }
+
+    syncComposerHeight()
+
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', syncComposerHeight)
+      return (): void => {
+        window.removeEventListener('resize', syncComposerHeight)
+      }
+    }
+
+    const observer = new ResizeObserver((): void => {
+      syncComposerHeight()
+    })
+
+    observer.observe(formElement)
+    return (): void => {
+      observer.disconnect()
+    }
+  }, [attachments.length, attachmentError, variant])
 
   return (
     <form
@@ -73,6 +129,7 @@ export function Composer(props: ComposerProps): JSX.Element {
       onDragOver={onDragOver}
       onDrop={onDrop}
       onSubmit={onSubmit}
+      ref={formRef}
     >
       <div className="cei-composer-v-row">
         <button
@@ -115,11 +172,38 @@ export function Composer(props: ComposerProps): JSX.Element {
           onKeyDown={onKeyDown}
           placeholder="Message the agent..."
           ref={composerRef}
-          rows={variant === 'compact' ? 1 : 2}
+          rows={1}
           value={draftMessage}
           id="cei-message"
           aria-label="Instruction"
         />
+
+        {variant === 'full' ? (
+          <button
+            className="cei-composer-v-new-thread-pill"
+            onClick={onNewThread}
+            title="Start a new thread"
+            type="button"
+            aria-label="New Thread"
+          >
+            <svg
+              aria-hidden="true"
+              className="cei-composer-v-new-thread-icon"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M12 5v14M5 12h14M20 8a8 8 0 10-2.34 5.66"
+                fill="none"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="1.8"
+              />
+            </svg>
+            <span className="cei-composer-v-new-thread-text">New</span>
+          </button>
+        ) : null}
 
         <button
           className="cei-composer-v-send"
@@ -143,18 +227,6 @@ export function Composer(props: ComposerProps): JSX.Element {
         <p className="cei-error-text cei-composer-v-error" role="alert">
           {attachmentError}
         </p>
-      ) : null}
-
-      {variant === 'full' ? (
-        <div className="cei-composer-v-actions">
-          <button
-            className="cei-button-secondary cei-composer-v-new-thread"
-            onClick={onNewThread}
-            type="button"
-          >
-            New Thread
-          </button>
-        </div>
       ) : null}
     </form>
   )

@@ -1,9 +1,27 @@
 .cei-cc-shell {
+  position: relative;
+  isolation: isolate;
   display: grid;
   grid-template-rows: auto auto auto 1fr;
   height: 100vh;
   min-height: 0;
   background-color: var(--bg-primary);
+}
+
+.cei-cc-shell::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+}
+
+.cei-cc-shell > * {
+  position: relative;
+  z-index: 2;
 }
 
 .cei-cc-shell > .cei-topbar {
@@ -19,12 +37,23 @@
 }
 
 .cei-cc-grid {
+  --cei-left-rail-width: 240px;
+  --cei-right-rail-width: 360px;
   display: grid;
-  grid-template-columns: 240px 1fr 360px;
+  grid-template-columns: var(--cei-left-rail-width) 1fr var(--cei-right-rail-width);
   grid-row: 4;
   height: 100%;
   min-height: 0;
   overflow: hidden;
+  transition: grid-template-columns 200ms ease;
+}
+
+.cei-cc-grid-left-collapsed {
+  --cei-left-rail-width: 4px;
+}
+
+.cei-cc-grid-right-collapsed {
+  --cei-right-rail-width: 4px;
 }
 
 /* Rails */
@@ -34,12 +63,21 @@
   grid-template-rows: auto 1fr;
   border-right: 1px solid var(--border);
   min-height: 0;
+  min-width: 0;
   overflow: hidden;
+  transition: background-color 150ms ease;
 }
 
 .cei-cc-right {
   border-right: 0;
   border-left: 1px solid var(--border);
+}
+
+.cei-cc-rail-collapsed {
+  border-right-color: transparent;
+  border-left-color: transparent;
+  background-color: var(--bg-panel-muted);
+  display: block;
 }
 
 .cei-cc-rail-header {
@@ -73,28 +111,36 @@
 
 .cei-cc-expand-btn {
   border: 0;
-  background-color: var(--bg-panel-muted);
-  color: var(--text-muted);
+  width: 100%;
+  height: 100%;
+  min-height: 44px;
+  background: transparent;
+  color: transparent;
   cursor: pointer;
-  font-size: 1.1rem;
-  padding: var(--space-2);
-  writing-mode: vertical-rl;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  padding: 0;
+  display: block;
+  position: relative;
 }
 
-.cei-cc-expand-btn:hover {
-  color: var(--text-primary);
-  background-color: var(--bg-secondary);
+.cei-cc-expand-btn::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background-color: rgba(229, 165, 48, 0.38);
 }
 
-.cei-cc-expand-left {
-  border-right: 1px solid var(--border);
+.cei-cc-expand-left::after {
+  right: 1px;
 }
 
-.cei-cc-expand-right {
-  border-left: 1px solid var(--border);
+.cei-cc-expand-right::after {
+  left: 1px;
+}
+
+.cei-cc-expand-btn:hover::after {
+  background-color: rgba(229, 165, 48, 0.58);
 }
 
 .cei-cc-tool-log,
@@ -137,24 +183,38 @@
 }
 
 .cei-cc-mobile-control-btn:hover {
-  border-color: var(--text-muted);
+  border-color: var(--border-strong);
 }
 
 .cei-cc-center .cei-message-list {
   max-height: none;
   min-height: 0;
   border: 0;
-  padding: var(--space-3);
+  padding: var(--space-3) var(--space-3) calc(var(--composer-height) + var(--space-3));
 }
 
 .cei-cc-center .cei-empty-state {
   border: 0;
 }
 
+.cei-cc-center .cei-composer-v {
+  align-self: end;
+  position: sticky;
+  bottom: 0;
+  background: linear-gradient(180deg, rgba(10, 14, 20, 0.72), rgba(10, 14, 20, 0.95));
+  padding-bottom: var(--space-2);
+}
+
+.cei-cc-center .cei-composer-v-full {
+  border-top: 1px solid var(--border);
+  padding-top: var(--space-2);
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
   .cei-cc-grid {
     grid-template-columns: 1fr;
+    transition: none;
   }
 
   .cei-cc-mobile-controls {
@@ -167,8 +227,23 @@
   }
 
   .cei-cc-left,
-  .cei-cc-right,
-  .cei-cc-expand-btn {
+  .cei-cc-right {
     display: none;
+  }
+
+  .cei-cc-center .cei-composer-v {
+    position: static;
+    background: transparent;
+    padding-bottom: 0;
+  }
+
+  .cei-cc-center .cei-message-list {
+    padding-bottom: var(--space-3);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cei-cc-grid {
+    transition: none;
   }
 }

@@ -13,57 +13,27 @@
 .cei-topbar-left {
   display: flex;
   align-items: center;
+  gap: var(--space-2);
+}
+
+.cei-topbar-diamond {
+  color: var(--accent);
+  font-size: 0.74rem;
+  line-height: 1;
 }
 
 .cei-topbar-wordmark {
+  font-family: var(--font-mono);
+  font-size: 15px;
   font-weight: 700;
-  font-size: 1.1rem;
+  letter-spacing: 0.16em;
   color: var(--accent);
-  letter-spacing: 0.08em;
-}
-
-.cei-topbar-center {
-  display: flex;
-  align-items: center;
 }
 
 .cei-topbar-right {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-}
-
-.cei-topbar-layout-switcher {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 2px;
-}
-
-.cei-topbar-layout-btn {
-  border: 0;
-  border-radius: 4px;
-  background: transparent;
-  color: var(--text-muted);
-  padding: var(--space-1) var(--space-2);
-  cursor: pointer;
-  font-size: 0.9rem;
-  line-height: 1;
-  transition:
-    background-color 120ms ease,
-    color 120ms ease;
-}
-
-.cei-topbar-layout-btn:hover {
-  color: var(--text-primary);
-  background-color: rgba(122, 160, 220, 0.12);
-}
-
-.cei-topbar-layout-btn-active {
-  color: var(--bg-primary);
-  background-color: var(--accent);
 }
 
 .cei-topbar-user {
@@ -75,10 +45,11 @@
 .cei-topbar-email {
   color: var(--text-muted);
   font-size: 0.82rem;
-  max-width: 160px;
+  max-width: 180px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-family: var(--font-mono);
 }
 
 .cei-topbar-signout {
@@ -89,19 +60,22 @@
   padding: var(--space-1) var(--space-2);
   font-size: 0.78rem;
   cursor: pointer;
+  transition:
+    color 120ms ease,
+    border-color 120ms ease,
+    background-color 120ms ease;
 }
 
 .cei-topbar-signout:hover {
   color: var(--text-primary);
-  border-color: var(--text-muted);
+  border-color: var(--border-strong);
+  background-color: var(--bg-elevated);
 }
 
 @media (max-width: 768px) {
   .cei-topbar {
-    flex-wrap: wrap;
-    height: auto;
     padding: var(--space-2) var(--space-3);
-    gap: var(--space-2);
+    height: auto;
   }
 
   .cei-topbar-email {
