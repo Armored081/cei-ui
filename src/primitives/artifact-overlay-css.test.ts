@@ -16,9 +16,7 @@ describe('Artifact overlay scroll containment', (): void => {
 
   it('body has vertical-only scroll with stable gutter', (): void => {
     const css = readCss()
-    const bodyBlock = css.match(
-      /\.cei-artifact-overlay-body\s*{([^}]*)}/s,
-    )
+    const bodyBlock = css.match(/\.cei-artifact-overlay-body\s*{([^}]*)}/s)
 
     expect(bodyBlock).not.toBeNull()
     const body = bodyBlock![1]
@@ -30,9 +28,7 @@ describe('Artifact overlay scroll containment', (): void => {
 
   it('renderer allows independent horizontal scroll for wide content', (): void => {
     const css = readCss()
-    const rendererBlock = css.match(
-      /\.cei-artifact-overlay-renderer\s*{([^}]*)}/s,
-    )
+    const rendererBlock = css.match(/\.cei-artifact-overlay-renderer\s*{([^}]*)}/s)
 
     expect(rendererBlock).not.toBeNull()
     const renderer = rendererBlock![1]

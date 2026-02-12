@@ -27,15 +27,10 @@ function toErrorMessage(error: unknown): string {
   return 'Unable to submit feedback. Please try again.'
 }
 
-function toThreadContext(includeThreadContext: boolean): Record<string, unknown> | undefined {
-  if (!includeThreadContext) {
-    return undefined
-  }
-
-  return {
-    stub: true,
-    message: 'Context capture not yet implemented',
-  }
+function toThreadContext(_includeThreadContext: boolean): Record<string, unknown> | undefined {
+  // Thread context capture not yet implemented
+  // Omit the field entirely rather than sending a stub
+  return undefined
 }
 
 /**
@@ -44,6 +39,7 @@ function toThreadContext(includeThreadContext: boolean): Record<string, unknown>
 export function FeedbackSlideOver({ isOpen, onClose }: FeedbackSlideOverProps): JSX.Element | null {
   const { getAccessToken } = useAuth()
   const closeTimerRef = useRef<number | null>(null)
+  const isMountedRef = useRef<boolean>(true)
 
   const [isRendered, setIsRendered] = useState<boolean>(isOpen)
   const [isClosing, setIsClosing] = useState<boolean>(false)
@@ -62,7 +58,9 @@ export function FeedbackSlideOver({ isOpen, onClose }: FeedbackSlideOverProps): 
   const isSuccess = Boolean(successFeedbackId)
 
   useEffect((): (() => void) => {
+    isMountedRef.current = true
     return (): void => {
+      isMountedRef.current = false
       if (closeTimerRef.current !== null) {
         window.clearTimeout(closeTimerRef.current)
       }
@@ -137,7 +135,9 @@ export function FeedbackSlideOver({ isOpen, onClose }: FeedbackSlideOverProps): 
       }
 
       closeTimerRef.current = window.setTimeout((): void => {
-        onClose()
+        if (isMountedRef.current) {
+          onClose()
+        }
       }, SUCCESS_AUTO_CLOSE_MS)
     } catch (error: unknown) {
       setSubmissionError(toErrorMessage(error))
