@@ -288,12 +288,19 @@ export function FeedbackDashboard(): JSX.Element {
       return
     }
 
+    // Capture current request ID to detect filter changes during load
+    const requestId = requestIdRef.current
+
     setIsLoadingMore(true)
     setLoadMoreError(null)
 
     try {
       const accessToken = await getAccessToken()
       const response = await listAllFeedback(accessToken, { ...filterParams, cursor: nextCursor })
+
+      if (requestIdRef.current !== requestId) {
+        return
+      }
 
       setFeedbackItems((currentItems): FeedbackDetailItem[] => [
         ...currentItems,

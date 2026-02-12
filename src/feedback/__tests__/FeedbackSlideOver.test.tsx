@@ -91,7 +91,9 @@ describe('FeedbackSlideOver', (): void => {
   })
 
   it('submits with correct payload including thread context stub', async (): Promise<void> => {
-    const randomUuidSpy = vi.spyOn(globalThis.crypto, 'randomUUID').mockReturnValue('idempotency-1')
+    const randomUuidSpy = vi
+      .spyOn(globalThis.crypto, 'randomUUID')
+      .mockReturnValue('11111111-1111-4111-8111-111111111111')
 
     render(<FeedbackSlideOver isOpen onClose={vi.fn()} />)
 
@@ -114,7 +116,9 @@ describe('FeedbackSlideOver', (): void => {
   })
 
   it('omits thread context when checkbox is unchecked', async (): Promise<void> => {
-    const randomUuidSpy = vi.spyOn(globalThis.crypto, 'randomUUID').mockReturnValue('idempotency-2')
+    const randomUuidSpy = vi
+      .spyOn(globalThis.crypto, 'randomUUID')
+      .mockReturnValue('22222222-2222-4222-8222-222222222222')
 
     render(<FeedbackSlideOver isOpen onClose={vi.fn()} />)
 
@@ -178,7 +182,9 @@ describe('FeedbackSlideOver', (): void => {
   })
 
   it('retries failed submission with the same idempotency payload', async (): Promise<void> => {
-    vi.spyOn(globalThis.crypto, 'randomUUID').mockReturnValue('retry-idempotency')
+    vi.spyOn(globalThis.crypto, 'randomUUID').mockReturnValue(
+      '33333333-3333-4333-8333-333333333333',
+    )
     mockedSubmitFeedback
       .mockRejectedValueOnce(new Error('Temporary network failure'))
       .mockResolvedValueOnce({ id: 'feedback-002', status: 'new' })
