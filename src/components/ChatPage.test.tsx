@@ -153,6 +153,53 @@ describe('ChatPage', (): void => {
     expect(await screen.findByText('Follow-up validation complete.')).toBeInTheDocument()
   })
 
+  it('renders task-progress segments from stream events', async (): Promise<void> => {
+    mockInvokeAgentStream.mockImplementation(() =>
+      streamFromEvents([
+        {
+          type: 'task-progress',
+          taskName: 'Generate remediation plan',
+          totalSteps: 5,
+          completedSteps: 2,
+          currentStep: 'Correlating findings',
+          steps: [
+            { name: 'Load findings', status: 'complete' },
+            { name: 'Correlate findings', status: 'active' },
+            { name: 'Draft remediation', status: 'pending' },
+            { name: 'Validate impact', status: 'pending' },
+            { name: 'Finalize report', status: 'pending' },
+          ],
+        },
+        {
+          type: 'task-progress',
+          taskName: 'Generate remediation plan',
+          totalSteps: 5,
+          completedSteps: 4,
+          currentStep: 'Validating impact',
+          steps: [
+            { name: 'Load findings', status: 'complete' },
+            { name: 'Correlate findings', status: 'complete' },
+            { name: 'Draft remediation', status: 'complete' },
+            { name: 'Validate impact', status: 'active' },
+            { name: 'Finalize report', status: 'pending' },
+          ],
+        },
+        { type: 'done' },
+      ]),
+    )
+
+    renderChatPage()
+
+    fillAndSendMessage('Build a remediation plan')
+
+    expect(await screen.findByText('Generate remediation plan')).toBeInTheDocument()
+    expect(await screen.findByText('Validating impact')).toBeInTheDocument()
+    expect(await screen.findByText('4/5')).toBeInTheDocument()
+    expect(
+      await screen.findByRole('progressbar', { name: 'Generate remediation plan completion' }),
+    ).toBeInTheDocument()
+  })
+
   it('keeps session id across messages and rotates it on new thread', async (): Promise<void> => {
     mockInvokeAgentStream.mockImplementation(() => streamFromEvents([{ type: 'done' }]))
 

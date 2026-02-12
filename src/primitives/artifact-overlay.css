@@ -50,6 +50,13 @@
   white-space: nowrap;
 }
 
+.cei-artifact-overlay-title-wrap {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+}
+
 .cei-artifact-overlay-actions {
   display: flex;
   align-items: center;
@@ -76,6 +83,13 @@
   overflow: auto;
   min-height: 0;
   padding: var(--space-3);
+  display: grid;
+  align-content: start;
+  gap: var(--space-3);
+}
+
+.cei-artifact-overlay-renderer {
+  min-height: 0;
 }
 
 .cei-artifact-overlay-empty {

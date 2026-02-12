@@ -18,6 +18,9 @@ function buildTableArtifact(): Artifact {
       ],
       title: 'Service Issues',
     },
+    confidence: 'medium',
+    confidenceDecay: '2026-02-10T10:00:00.000Z',
+    reasoning: 'Prioritized by production impact and blast radius.',
     id: 'artifact-table-1',
     kind: 'table',
     segmentIndex: 1,
@@ -41,7 +44,9 @@ describe('ArtifactFullScreen', (): void => {
     expect(
       screen.getByRole('dialog', { name: 'Full-screen artifact: Service Issues' }),
     ).toBeInTheDocument()
+    expect(screen.getByText('Medium')).toBeInTheDocument()
     expect(screen.getByLabelText('Filter table rows')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Why this recommendation?' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Back' })).toHaveFocus()
   })
 
@@ -60,6 +65,11 @@ describe('ArtifactFullScreen', (): void => {
         onToggleFullScreen={onToggleFullScreen}
       />,
     )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Why this recommendation?' }))
+    expect(
+      screen.getByText('Prioritized by production impact and blast radius.'),
+    ).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Minimize artifact view' }))
     expect(onToggleFullScreen).toHaveBeenCalledTimes(1)

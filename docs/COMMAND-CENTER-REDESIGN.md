@@ -994,7 +994,8 @@ The original Phase A/B/C structure is extended:
 - Confidence indicators on artifact cards + expanded views
 - "Why?" reasoning sections on flagged findings
 - Task-level progress blocks in conversation stream
-- Integration with agent system prompt for confidence/reasoning metadata
+- UI ships first with optional/mock metadata support; artifacts without metadata still render normally
+- Backend metadata integration is future work and requires agent system prompt updates for confidence/reasoning fields
 
 #### Phase E: Agentic Action Model (NEW — Future, design now)
 

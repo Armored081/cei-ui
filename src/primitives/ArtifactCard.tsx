@@ -1,5 +1,6 @@
 import { ArtifactRegistry } from '../artifacts/ArtifactRegistry'
 import type { Artifact } from '../hooks/useChatEngine'
+import { ConfidenceBadge } from './ConfidenceBadge'
 import './artifact-card.css'
 
 interface ArtifactCardProps {
@@ -58,7 +59,13 @@ export function ArtifactCard({ artifact, isSelected, onClick }: ArtifactCardProp
       onClick={(): void => onClick(artifact.id)}
       type="button"
     >
-      {definition ? definition.renderInline(artifact) : fallbackInlineContent(artifact)}
+      <div className="cei-artifact-card-content">
+        {definition ? definition.renderInline(artifact) : fallbackInlineContent(artifact)}
+      </div>
+      <ConfidenceBadge
+        confidence={artifact.confidence}
+        confidenceDecay={artifact.confidenceDecay}
+      />
     </button>
   )
 }

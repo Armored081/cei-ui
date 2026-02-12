@@ -5,6 +5,7 @@ import type { ToolActivityItem } from '../components/ChatMessageList'
 import type { ChatMessageSegment, ChatTimelineItem } from '../components/ChatMessageList'
 import { ChartBlock } from '../components/blocks/ChartBlock'
 import { RecommendationBlock } from '../components/blocks/RecommendationBlock'
+import { TaskProgressBlock } from '../components/blocks/TaskProgressBlock'
 import { TableBlock } from '../components/blocks/TableBlock'
 import './message-list.css'
 
@@ -232,6 +233,17 @@ export function MessageList({
                         <span className="cei-message-text-segment" key={`text-${index.toString()}`}>
                           {segment.content}
                         </span>
+                      )
+                    }
+
+                    if (segment.type === 'task-progress') {
+                      return (
+                        <div
+                          className="cei-message-block-segment"
+                          key={`task-progress-${index.toString()}`}
+                        >
+                          <TaskProgressBlock block={segment.progress} />
+                        </div>
                       )
                     }
 

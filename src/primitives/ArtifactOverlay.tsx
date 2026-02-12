@@ -2,6 +2,8 @@ import { useRef, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 
 import { ArtifactRegistry } from '../artifacts/ArtifactRegistry'
 import type { Artifact } from '../hooks/useChatEngine'
+import { ConfidenceBadge } from './ConfidenceBadge'
+import { ReasoningSection } from './ReasoningSection'
 import { useDialogFocusTrap } from './useDialogFocusTrap'
 import './artifact-overlay.css'
 
@@ -79,7 +81,13 @@ export function ArtifactOverlay({
           >
             ◀
           </button>
-          <h2 className="cei-artifact-overlay-title">{artifact.title}</h2>
+          <div className="cei-artifact-overlay-title-wrap">
+            <h2 className="cei-artifact-overlay-title">{artifact.title}</h2>
+            <ConfidenceBadge
+              confidence={artifact.confidence}
+              confidenceDecay={artifact.confidenceDecay}
+            />
+          </div>
           <div className="cei-artifact-overlay-actions">
             <button
               aria-label="Open full-screen artifact view"
@@ -100,9 +108,12 @@ export function ArtifactOverlay({
           </div>
         </header>
         <div className="cei-artifact-overlay-body">
-          {definition
-            ? definition.renderExpanded(artifact, undefined, onClose)
-            : unsupportedArtifactContent(artifact.kind)}
+          <div className="cei-artifact-overlay-renderer">
+            {definition
+              ? definition.renderExpanded(artifact, undefined, onClose)
+              : unsupportedArtifactContent(artifact.kind)}
+          </div>
+          <ReasoningSection reasoning={artifact.reasoning} />
         </div>
       </div>
     </div>

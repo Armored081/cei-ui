@@ -1,0 +1,51 @@
+.cei-confidence-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  padding: 3px 10px;
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+}
+
+.cei-confidence-label {
+  font-weight: 700;
+}
+
+.cei-confidence-decay {
+  color: var(--text-muted);
+  text-transform: none;
+  letter-spacing: 0.01em;
+}
+
+.cei-confidence-warning {
+  line-height: 1;
+}
+
+.cei-confidence-high {
+  color: var(--success);
+  background-color: rgba(92, 224, 184, 0.16);
+  border-color: rgba(92, 224, 184, 0.36);
+}
+
+.cei-confidence-medium {
+  color: var(--warning);
+  background-color: rgba(212, 136, 42, 0.16);
+  border-color: rgba(212, 136, 42, 0.36);
+}
+
+.cei-confidence-low {
+  color: var(--danger);
+  background-color: rgba(232, 92, 111, 0.16);
+  border-color: rgba(232, 92, 111, 0.36);
+}
+
+.cei-confidence-unknown {
+  color: var(--text-muted);
+  background-color: rgba(140, 160, 190, 0.14);
+  border-color: rgba(140, 160, 190, 0.3);
+}
