@@ -86,7 +86,7 @@ function renderFullScreen(artifact: Artifact): JSX.Element {
               {rows.map((row, rowIndex) => (
                 <tr key={`chart-row-${rowIndex.toString()}`}>
                   {columns.map((column) => (
-                    <td key={`${column}-${rowIndex.toString()}`}>{String(row[column] || '')}</td>
+                    <td key={`${column}-${rowIndex.toString()}`}>{String(row[column] ?? '')}</td>
                   ))}
                 </tr>
               ))}
