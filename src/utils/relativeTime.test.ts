@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { relativeTime } from './relativeTime'
+import { formatRelativeTime, relativeTime } from './relativeTime'
 
 describe('relativeTime', (): void => {
   beforeEach((): void => {
@@ -26,5 +26,11 @@ describe('relativeTime', (): void => {
 
   it('returns empty string for invalid dates', (): void => {
     expect(relativeTime('not-a-date')).toBe('')
+  })
+
+  it('formats long-form relative labels for dashboard cards', (): void => {
+    expect(formatRelativeTime('2026-02-12T14:59:45.000Z')).toBe('just now')
+    expect(formatRelativeTime('2026-02-12T14:00:00.000Z')).toBe('1 hour ago')
+    expect(formatRelativeTime('2026-02-09T15:00:00.000Z')).toBe('3 days ago')
   })
 })

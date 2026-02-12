@@ -9,6 +9,10 @@ const shortDateWithYearFormatter = new Intl.DateTimeFormat('en-US', {
   year: 'numeric',
 })
 
+const longRelativeFormatter = new Intl.RelativeTimeFormat('en-US', {
+  numeric: 'always',
+})
+
 function isSameDay(left: Date, right: Date): boolean {
   return (
     left.getFullYear() === right.getFullYear() &&
@@ -63,4 +67,46 @@ export function relativeTime(isoDate: string): string {
   }
 
   return shortDateWithYearFormatter.format(targetDate)
+}
+
+/**
+ * Formats an ISO timestamp into human-readable relative text.
+ */
+export function formatRelativeTime(isoDate: string): string {
+  const targetDate = new Date(isoDate)
+
+  if (Number.isNaN(targetDate.getTime())) {
+    return ''
+  }
+
+  const diffMilliseconds = targetDate.getTime() - Date.now()
+  const diffSeconds = Math.round(diffMilliseconds / 1000)
+  const absoluteSeconds = Math.abs(diffSeconds)
+
+  if (absoluteSeconds < 60) {
+    return 'just now'
+  }
+
+  const diffMinutes = Math.round(diffSeconds / 60)
+  if (Math.abs(diffMinutes) < 60) {
+    return longRelativeFormatter.format(diffMinutes, 'minute')
+  }
+
+  const diffHours = Math.round(diffMinutes / 60)
+  if (Math.abs(diffHours) < 24) {
+    return longRelativeFormatter.format(diffHours, 'hour')
+  }
+
+  const diffDays = Math.round(diffHours / 24)
+  if (Math.abs(diffDays) < 30) {
+    return longRelativeFormatter.format(diffDays, 'day')
+  }
+
+  const diffMonths = Math.round(diffDays / 30)
+  if (Math.abs(diffMonths) < 12) {
+    return longRelativeFormatter.format(diffMonths, 'month')
+  }
+
+  const diffYears = Math.round(diffMonths / 12)
+  return longRelativeFormatter.format(diffYears, 'year')
 }

@@ -9,6 +9,11 @@ export type FeedbackCategory = 'bug' | 'idea' | 'ux'
 export type FeedbackStatus = 'new' | 'triaged' | 'in-progress' | 'resolved' | 'wont-fix'
 
 /**
+ * Agent-assigned severity for feedback triage.
+ */
+export type FeedbackSeverity = 'critical' | 'high' | 'medium' | 'low'
+
+/**
  * Payload for submitting feedback.
  */
 export interface FeedbackSubmission {
@@ -34,9 +39,35 @@ export interface FeedbackItem {
 }
 
 /**
+ * Detailed feedback record used by the admin dashboard.
+ */
+export interface FeedbackDetailItem extends FeedbackItem {
+  severity: FeedbackSeverity | null
+  summary: string
+  expected_behavior: string | null
+  actual_behavior: string | null
+  reproduction_steps: string[]
+  thread_id: string | null
+  thread_title: string | null
+  related_component: string | null
+  interview_transcript: Array<{ role: string; content: string }> | null
+  agent_classification: Record<string, unknown> | null
+  user_email: string
+  roadmap_item_id: string | null
+}
+
+/**
  * Feedback creation response payload.
  */
 export interface FeedbackCreateResponse {
+  id: string
+  status: string
+}
+
+/**
+ * Feedback status update response payload.
+ */
+export interface FeedbackUpdateResponse {
   id: string
   status: string
 }
