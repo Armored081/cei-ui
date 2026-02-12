@@ -24,10 +24,9 @@ export function RoadmapCard({ item }: RoadmapCardProps): JSX.Element {
 }
 
 function formatShippedDate(dateStr: string): string {
-  try {
-    const date = new Date(dateStr + 'T00:00:00Z')
-    return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' })
-  } catch {
+  const date = new Date(dateStr.length === 10 ? dateStr + 'T00:00:00Z' : dateStr)
+  if (isNaN(date.getTime())) {
     return dateStr
   }
+  return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' })
 }

@@ -11,12 +11,18 @@ import './roadmap.css'
 
 type LoadState = 'loading' | 'loaded' | 'error'
 
+function isRetryableError(message: string): boolean {
+  const nonRetryable = ['Missing VITE_', 'Authentication required', '401', '403', 'Forbidden']
+  return !nonRetryable.some((term) => message.includes(term))
+}
+
 export function RoadmapPage(): JSX.Element {
   const navigate = useNavigate()
   const { getAccessToken } = useAuth()
   const [items, setItems] = useState<RoadmapItem[]>([])
   const [loadState, setLoadState] = useState<LoadState>('loading')
   const [error, setError] = useState<string | null>(null)
+  const [retryable, setRetryable] = useState(true)
 
   const loadRoadmap = useCallback(async () => {
     try {
@@ -31,7 +37,9 @@ export function RoadmapPage(): JSX.Element {
       setItems(response.items)
       setLoadState('loaded')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load roadmap')
+      const message = err instanceof Error ? err.message : 'Failed to load roadmap'
+      setError(message)
+      setRetryable(isRetryableError(message))
       setLoadState('error')
     }
   }, [getAccessToken])
@@ -73,13 +81,15 @@ export function RoadmapPage(): JSX.Element {
         {loadState === 'error' && (
           <div className="roadmap-error" role="alert">
             <p>{error}</p>
-            <button
-              className="roadmap-retry-button"
-              onClick={() => void loadRoadmap()}
-              type="button"
-            >
-              Retry
-            </button>
+            {retryable && (
+              <button
+                className="roadmap-retry-button"
+                onClick={() => void loadRoadmap()}
+                type="button"
+              >
+                Retry
+              </button>
+            )}
           </div>
         )}
 
@@ -140,10 +150,9 @@ export function RoadmapPage(): JSX.Element {
 }
 
 function formatShippedDate(dateStr: string): string {
-  try {
-    const date = new Date(dateStr + 'T00:00:00Z')
-    return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' })
-  } catch {
+  const date = new Date(dateStr.length === 10 ? dateStr + 'T00:00:00Z' : dateStr)
+  if (isNaN(date.getTime())) {
     return dateStr
   }
+  return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' })
 }
