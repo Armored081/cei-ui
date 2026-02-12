@@ -10,6 +10,8 @@ interface ArtifactPillProps {
 function kindIcon(kind: string): string {
   if (kind === 'chart') return '\u{1F4CA}'
   if (kind === 'table') return '\u{1F4CB}'
+  if (kind === 'assessment-list') return '\u{1F4DD}'
+  if (kind === 'assessment-detail') return '\u{1F4DC}'
   return '\u{1F6E1}'
 }
 

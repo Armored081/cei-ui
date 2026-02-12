@@ -100,7 +100,18 @@ function renderStructuredBlock(block: StructuredBlock): JSX.Element {
     return <TableBlock block={block} />
   }
 
-  return <RecommendationBlock block={block} />
+  if (block.kind === 'recommendation') {
+    return <RecommendationBlock block={block} />
+  }
+
+  return (
+    <section className="cei-block">
+      <header className="cei-block-header">
+        <h4 className="cei-block-title">{block.title}</h4>
+      </header>
+      <p className="cei-muted">Expanded preview available from the artifacts rail.</p>
+    </section>
+  )
 }
 
 function hasRenderableSegments(segments: ChatMessageSegment[]): boolean {

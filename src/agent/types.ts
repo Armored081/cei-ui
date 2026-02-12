@@ -53,6 +53,49 @@ const chartBlockSchema = z
     },
   )
 
+const assessmentListItemSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  framework: z.string().min(1),
+  status: z.string().min(1),
+  score: z.number(),
+  updatedAt: z.string().min(1),
+})
+
+const assessmentListBlockSchema = z.object({
+  kind: z.literal('assessment-list'),
+  title: z.string(),
+  assessments: z.array(assessmentListItemSchema),
+})
+
+const assessmentControlSchema = z.object({
+  id: z.string().min(1),
+  description: z.string().min(1),
+  status: z.string().min(1),
+  gap: z.string().optional(),
+  recommendation: z.string().optional(),
+})
+
+const assessmentSectionSchema = z.object({
+  name: z.string().min(1),
+  score: z.number(),
+  controls: z.array(assessmentControlSchema),
+})
+
+const assessmentDetailBlockSchema = z.object({
+  kind: z.literal('assessment-detail'),
+  title: z.string(),
+  assessment: z.object({
+    id: z.string().min(1),
+    name: z.string().min(1),
+    framework: z.string().min(1),
+    status: z.string().min(1),
+    score: z.number(),
+    updatedAt: z.string().min(1),
+    sections: z.array(assessmentSectionSchema),
+  }),
+})
+
 export const structuredBlockSchema = z.discriminatedUnion('kind', [
   chartBlockSchema,
   z.object({
@@ -67,6 +110,8 @@ export const structuredBlockSchema = z.discriminatedUnion('kind', [
     title: z.string(),
     body: z.string(),
   }),
+  assessmentListBlockSchema,
+  assessmentDetailBlockSchema,
 ])
 
 export const streamEventSchema = z.discriminatedUnion('type', [

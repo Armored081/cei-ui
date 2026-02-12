@@ -21,6 +21,14 @@ function fallbackPreviewSnippet(artifact: Artifact): string {
     return artifact.block.severity.toUpperCase()
   }
 
+  if (artifact.block.kind === 'assessment-list') {
+    return `${artifact.block.assessments.length.toString()} assessments`
+  }
+
+  if (artifact.block.kind === 'assessment-detail') {
+    return `${artifact.block.assessment.framework} • ${artifact.block.assessment.score.toFixed(1)}`
+  }
+
   return artifact.kind
 }
 
