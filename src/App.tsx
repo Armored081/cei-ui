@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { LoginPage } from './auth/LoginPage'
 import { ProtectedRoute } from './auth/ProtectedRoute'
 import { ChatPage } from './components/ChatPage'
+import { RoadmapPage } from './roadmap/RoadmapPage'
 
 function App(): JSX.Element {
   return (
@@ -13,6 +14,14 @@ function App(): JSX.Element {
         element={
           <ProtectedRoute>
             <ChatPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/roadmap"
+        element={
+          <ProtectedRoute>
+            <RoadmapPage />
           </ProtectedRoute>
         }
       />
