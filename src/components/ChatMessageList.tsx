@@ -3,10 +3,39 @@ import type { CSSProperties, RefObject } from 'react'
 import type { AttachmentInput, StructuredBlock } from '../agent/types'
 import { ChartBlock } from './blocks/ChartBlock'
 import { RecommendationBlock } from './blocks/RecommendationBlock'
+import { TaskProgressBlock } from './blocks/TaskProgressBlock'
 import { TableBlock } from './blocks/TableBlock'
 
 export type ChatMessageRole = 'user' | 'agent'
 export type ToolActivityStatus = 'running' | 'complete'
+/**
+ * Optional confidence level associated with artifact-producing segments.
+ */
+export type ArtifactConfidence = 'high' | 'medium' | 'low' | 'unknown'
+/**
+ * Optional transparency payload attached to artifact-producing segments.
+ */
+export type ArtifactReasoning = string | Record<string, unknown>
+export type TaskProgressStepStatus = 'complete' | 'active' | 'pending'
+
+/**
+ * Individual progress step in a task-progress segment.
+ */
+export interface TaskProgressStep {
+  name: string
+  status: TaskProgressStepStatus
+}
+
+/**
+ * In-stream task progress payload for long-running agent operations.
+ */
+export interface TaskProgressSegment {
+  taskName: string
+  totalSteps: number
+  completedSteps: number
+  currentStep: string
+  steps: TaskProgressStep[]
+}
 
 export interface ToolActivityItem {
   args: Record<string, unknown>
@@ -27,6 +56,13 @@ export type ChatMessageSegment =
   | {
       block: StructuredBlock
       type: 'block'
+      confidence?: ArtifactConfidence
+      confidenceDecay?: string
+      reasoning?: ArtifactReasoning
+    }
+  | {
+      progress: TaskProgressSegment
+      type: 'task-progress'
     }
 
 export interface ChatMessageItem {
@@ -183,6 +219,17 @@ export function ChatMessageList({
                         <span className="cei-message-text-segment" key={`text-${index.toString()}`}>
                           {segment.content}
                         </span>
+                      )
+                    }
+
+                    if (segment.type === 'task-progress') {
+                      return (
+                        <div
+                          className="cei-message-block-segment"
+                          key={`task-progress-${index.toString()}`}
+                        >
+                          <TaskProgressBlock block={segment.progress} />
+                        </div>
                       )
                     }
 

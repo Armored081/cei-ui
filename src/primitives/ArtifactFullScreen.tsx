@@ -2,6 +2,8 @@ import { useRef, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 
 import { ArtifactRegistry } from '../artifacts/ArtifactRegistry'
 import type { Artifact } from '../hooks/useChatEngine'
+import { ConfidenceBadge } from './ConfidenceBadge'
+import { ReasoningSection } from './ReasoningSection'
 import { useDialogFocusTrap } from './useDialogFocusTrap'
 import './artifact-fullscreen.css'
 
@@ -60,7 +62,13 @@ export function ArtifactFullScreen({
           >
             ◀
           </button>
-          <h2 className="cei-artifact-fullscreen-title">{artifact.title}</h2>
+          <div className="cei-artifact-fullscreen-title-wrap">
+            <h2 className="cei-artifact-fullscreen-title">{artifact.title}</h2>
+            <ConfidenceBadge
+              confidence={artifact.confidence}
+              confidenceDecay={artifact.confidenceDecay}
+            />
+          </div>
           <div className="cei-artifact-fullscreen-actions">
             <button
               aria-label="Minimize artifact view"
@@ -82,9 +90,12 @@ export function ArtifactFullScreen({
         </header>
 
         <div className="cei-artifact-fullscreen-body">
-          {definition
-            ? definition.renderFullScreen(artifact, undefined, onClose, onToggleFullScreen)
-            : unsupportedArtifactContent(artifact.kind)}
+          <div className="cei-artifact-fullscreen-renderer">
+            {definition
+              ? definition.renderFullScreen(artifact, undefined, onClose, onToggleFullScreen)
+              : unsupportedArtifactContent(artifact.kind)}
+          </div>
+          <ReasoningSection reasoning={artifact.reasoning} />
         </div>
       </div>
     </div>

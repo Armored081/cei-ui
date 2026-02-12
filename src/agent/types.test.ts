@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { invokeRequestSchema, structuredBlockSchema } from './types'
+import { invokeRequestSchema, streamEventSchema, structuredBlockSchema } from './types'
 
 describe('structuredBlockSchema chart validation', (): void => {
   it('accepts existing single-series charts unchanged', (): void => {
@@ -175,5 +175,49 @@ describe('invokeRequestSchema attachments', (): void => {
     })
 
     expect(parsed.success).toBe(false)
+  })
+})
+
+describe('streamEventSchema agent metadata extensions', (): void => {
+  it('accepts block events with optional confidence and reasoning metadata', (): void => {
+    const parsed = streamEventSchema.parse({
+      type: 'block',
+      confidence: 'high',
+      confidenceDecay: '2026-02-12T10:00:00.000Z',
+      reasoning: 'Evidence from IAM scan and policy drift analysis.',
+      block: {
+        kind: 'recommendation',
+        severity: 'high',
+        title: 'Require MFA for all admins',
+        body: 'Enable MFA and enforce policy controls.',
+      },
+    })
+
+    expect(parsed).toMatchObject({
+      type: 'block',
+      confidence: 'high',
+      confidenceDecay: '2026-02-12T10:00:00.000Z',
+    })
+  })
+
+  it('accepts task-progress events', (): void => {
+    const parsed = streamEventSchema.parse({
+      type: 'task-progress',
+      taskName: 'Generating remediation plan',
+      totalSteps: 5,
+      completedSteps: 2,
+      currentStep: 'Correlating findings',
+      steps: [
+        { name: 'Load findings', status: 'complete' },
+        { name: 'Correlate findings', status: 'active' },
+        { name: 'Draft remediation', status: 'pending' },
+      ],
+    })
+
+    expect(parsed).toMatchObject({
+      type: 'task-progress',
+      taskName: 'Generating remediation plan',
+      completedSteps: 2,
+    })
   })
 })

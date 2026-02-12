@@ -15,8 +15,11 @@ import { invokeAgentStream } from '../agent/AgentClient'
 import type { AttachmentInput, StructuredBlock } from '../agent/types'
 import { describeAuthError } from '../auth/AuthProvider'
 import type {
+  ArtifactConfidence,
+  ArtifactReasoning,
   ChatMessageItem,
   ChatMessageSegment,
+  TaskProgressSegment,
   ChatTimelineItem,
   ToolActivityItem,
 } from '../components/ChatMessageList'
@@ -54,6 +57,9 @@ export interface Artifact {
   block: StructuredBlock
   kind: string
   title: string
+  confidence?: ArtifactConfidence
+  confidenceDecay?: string
+  reasoning?: ArtifactReasoning
 }
 
 export interface ToolLogItem extends ToolActivityItem {
@@ -217,14 +223,49 @@ function appendTextSegment(segments: ChatMessageSegment[], content: string): Cha
 function appendBlockSegment(
   segments: ChatMessageSegment[],
   block: StructuredBlock,
+  metadata?: {
+    confidence?: ArtifactConfidence
+    confidenceDecay?: string
+    reasoning?: ArtifactReasoning
+  },
 ): ChatMessageSegment[] {
   return [
     ...segments,
     {
       block,
+      confidence: metadata?.confidence,
+      confidenceDecay: metadata?.confidenceDecay,
+      reasoning: metadata?.reasoning,
       type: 'block',
     },
   ]
+}
+
+function appendOrUpdateTaskProgressSegment(
+  segments: ChatMessageSegment[],
+  progress: TaskProgressSegment,
+): ChatMessageSegment[] {
+  const nextSegments = [...segments]
+
+  for (let index = nextSegments.length - 1; index >= 0; index -= 1) {
+    const segment = nextSegments[index]
+
+    if (segment.type === 'task-progress' && segment.progress.taskName === progress.taskName) {
+      nextSegments[index] = {
+        progress,
+        type: 'task-progress',
+      }
+
+      return nextSegments
+    }
+  }
+
+  nextSegments.push({
+    progress,
+    type: 'task-progress',
+  })
+
+  return nextSegments
 }
 
 function hasRenderableSegment(segments: ChatMessageSegment[]): boolean {
@@ -460,6 +501,9 @@ export function useChatEngine(params: UseChatEngineParams): ChatEngine {
             block: seg.block,
             kind: seg.block.kind,
             title: seg.block.title,
+            confidence: seg.confidence,
+            confidenceDecay: seg.confidenceDecay,
+            reasoning: seg.reasoning,
           })
         }
       })
@@ -926,7 +970,30 @@ export function useChatEngine(params: UseChatEngineParams): ChatEngine {
             (currentMessage: ChatMessageItem): ChatMessageItem => ({
               ...currentMessage,
               isStreaming: true,
-              segments: appendBlockSegment(currentMessage.segments, streamEvent.block),
+              segments: appendBlockSegment(currentMessage.segments, streamEvent.block, {
+                confidence: streamEvent.confidence,
+                confidenceDecay: streamEvent.confidenceDecay,
+                reasoning: streamEvent.reasoning,
+              }),
+            }),
+          )
+          continue
+        }
+
+        if (streamEvent.type === 'task-progress') {
+          setStreamStatus('streaming')
+          setAgentMessageState(
+            agentMessage.id,
+            (currentMessage: ChatMessageItem): ChatMessageItem => ({
+              ...currentMessage,
+              isStreaming: true,
+              segments: appendOrUpdateTaskProgressSegment(currentMessage.segments, {
+                taskName: streamEvent.taskName,
+                totalSteps: streamEvent.totalSteps,
+                completedSteps: streamEvent.completedSteps,
+                currentStep: streamEvent.currentStep,
+                steps: streamEvent.steps,
+              }),
             }),
           )
           continue

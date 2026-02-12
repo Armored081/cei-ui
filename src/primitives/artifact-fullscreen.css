@@ -36,6 +36,13 @@
   white-space: nowrap;
 }
 
+.cei-artifact-fullscreen-title-wrap {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+}
+
 .cei-artifact-fullscreen-actions {
   display: flex;
   align-items: center;
@@ -62,6 +69,13 @@
   min-height: 0;
   overflow: auto;
   padding: var(--space-4);
+  display: grid;
+  align-content: start;
+  gap: var(--space-4);
+}
+
+.cei-artifact-fullscreen-renderer {
+  min-height: 0;
 }
 
 .cei-artifact-fullscreen-empty {

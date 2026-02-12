@@ -67,4 +67,49 @@ describe('ChatMessageList', (): void => {
     expect(screen.getByText('Enable MFA')).toBeInTheDocument()
     expect(screen.getByText('Enable MFA for all admin accounts.')).toBeInTheDocument()
   })
+
+  it('renders task-progress segments inline for agent messages', (): void => {
+    const items: ChatTimelineItem[] = [
+      {
+        errorText: '',
+        id: 'agent-progress-1',
+        isStreaming: true,
+        role: 'agent',
+        segments: [
+          {
+            progress: {
+              taskName: 'Investigate drift',
+              totalSteps: 4,
+              completedSteps: 1,
+              currentStep: 'Checking IAM baselines',
+              steps: [
+                { name: 'Collect inputs', status: 'complete' },
+                { name: 'Compare baselines', status: 'active' },
+                { name: 'Draft findings', status: 'pending' },
+                { name: 'Publish summary', status: 'pending' },
+              ],
+            },
+            type: 'task-progress',
+          },
+        ],
+        tools: [],
+        type: 'message',
+      },
+    ]
+
+    const listRef = createRef<HTMLDivElement>()
+
+    render(
+      <ChatMessageList
+        items={items}
+        listRef={listRef}
+        onScroll={(): void => {}}
+        onToggleTool={(): void => {}}
+      />,
+    )
+
+    expect(screen.getByText('Investigate drift')).toBeInTheDocument()
+    expect(screen.getByText('1/4')).toBeInTheDocument()
+    expect(screen.getByText('Checking IAM baselines')).toBeInTheDocument()
+  })
 })

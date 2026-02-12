@@ -96,6 +96,23 @@ const assessmentDetailBlockSchema = z.object({
   }),
 })
 
+const confidenceSchema = z.enum(['high', 'medium', 'low', 'unknown'])
+
+const reasoningSchema = z.union([z.string(), z.record(z.string(), z.unknown())])
+
+const taskProgressStepSchema = z.object({
+  name: z.string().min(1),
+  status: z.enum(['complete', 'active', 'pending']),
+})
+
+const taskProgressPayloadSchema = z.object({
+  taskName: z.string().min(1),
+  totalSteps: z.number().int().positive(),
+  completedSteps: z.number().int().nonnegative(),
+  currentStep: z.string().min(1),
+  steps: z.array(taskProgressStepSchema),
+})
+
 export const structuredBlockSchema = z.discriminatedUnion('kind', [
   chartBlockSchema,
   z.object({
@@ -122,6 +139,13 @@ export const streamEventSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('block'),
     block: structuredBlockSchema,
+    confidence: confidenceSchema.optional(),
+    confidenceDecay: z.string().optional(),
+    reasoning: reasoningSchema.optional(),
+  }),
+  z.object({
+    type: z.literal('task-progress'),
+    ...taskProgressPayloadSchema.shape,
   }),
   z.object({
     type: z.literal('tool_call'),

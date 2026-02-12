@@ -15,6 +15,10 @@ function buildRecommendationArtifact(): Artifact {
       severity: 'medium',
       title: 'Patch vulnerable package',
     },
+    confidence: 'high',
+    confidenceDecay: '2026-02-12T08:00:00.000Z',
+    reasoning:
+      '**Patch urgency** was derived from exploitability and package exposure.\\n- CVE score > 8\\n- Public exploit available',
     id: 'artifact-1',
     kind: 'recommendation',
     segmentIndex: 1,
@@ -37,7 +41,9 @@ describe('ArtifactOverlay', (): void => {
     expect(
       screen.getByRole('dialog', { name: 'Expanded artifact: Patch vulnerable package' }),
     ).toBeInTheDocument()
+    expect(screen.getByText('High')).toBeInTheDocument()
     expect(screen.getByText('Update dependency xyz to 3.2.1.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Why this recommendation?' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Back to artifact list' })).toHaveFocus()
   })
 
@@ -58,6 +64,9 @@ describe('ArtifactOverlay', (): void => {
     const dialog = screen.getByRole('dialog', {
       name: 'Expanded artifact: Patch vulnerable package',
     })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Why this recommendation?' }))
+    expect(screen.getByText('Patch urgency')).toBeInTheDocument()
 
     fireEvent.keyDown(dialog, { key: 'f' })
     expect(onToggleFullScreen).toHaveBeenCalledTimes(1)
