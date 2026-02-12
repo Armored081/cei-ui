@@ -1,0 +1,88 @@
+.cei-artifact-fullscreen-root {
+  grid-row: 2 / -1;
+  z-index: 28;
+  min-height: 0;
+  position: relative;
+}
+
+.cei-artifact-fullscreen-panel {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-height: 0;
+  background-color: var(--bg-primary);
+  border-top: 1px solid var(--border);
+  animation: cei-artifact-fullscreen-zoom-in 200ms ease;
+}
+
+.cei-artifact-fullscreen-toolbar {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--border);
+  background-color: var(--bg-panel-muted);
+}
+
+.cei-artifact-fullscreen-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cei-artifact-fullscreen-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.cei-artifact-fullscreen-btn {
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  padding: var(--space-1) var(--space-2);
+  cursor: pointer;
+  line-height: 1;
+  font-size: 1rem;
+}
+
+.cei-artifact-fullscreen-btn:hover {
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+
+.cei-artifact-fullscreen-body {
+  min-height: 0;
+  overflow: auto;
+  padding: var(--space-4);
+}
+
+.cei-artifact-fullscreen-empty {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+@keyframes cei-artifact-fullscreen-zoom-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cei-artifact-fullscreen-panel {
+    animation: none;
+  }
+}

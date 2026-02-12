@@ -140,18 +140,47 @@ describe('CommandCenter compact layout', (): void => {
     mockCompactViewport()
   })
 
-  it('opens artifacts drawer when an artifact pill is clicked', (): void => {
-    const onToggleTool = vi.fn()
-    renderLayout(createEngine(onToggleTool))
+  it('opens expanded overlay when an artifact pill is clicked', (): void => {
+    renderLayout(createEngine(vi.fn()))
 
-    expect(screen.queryByRole('dialog', { name: 'Artifacts' })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('dialog', { name: 'Expanded artifact: Patch vulnerable package' }),
+    ).not.toBeInTheDocument()
 
     const conversation = screen.getByRole('log', { name: 'Conversation' })
     fireEvent.click(within(conversation).getByRole('button', { name: /Patch vulnerable package/ }))
 
-    const artifactsDialog = screen.getByRole('dialog', { name: 'Artifacts' })
-    expect(artifactsDialog).toBeInTheDocument()
-    expect(within(artifactsDialog).getByRole('button', { name: 'JSON' })).toBeInTheDocument()
+    expect(
+      screen.getByRole('dialog', { name: 'Expanded artifact: Patch vulnerable package' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Open full-screen artifact view' }),
+    ).toBeInTheDocument()
+  })
+
+  it('transitions between expanded and full-screen with keyboard shortcuts', (): void => {
+    renderLayout(createEngine(vi.fn()))
+
+    const conversation = screen.getByRole('log', { name: 'Conversation' })
+    fireEvent.click(within(conversation).getByRole('button', { name: /Patch vulnerable package/ }))
+
+    fireEvent.keyDown(window, { key: 'f' })
+
+    expect(
+      screen.getByRole('dialog', { name: 'Full-screen artifact: Patch vulnerable package' }),
+    ).toBeInTheDocument()
+
+    fireEvent.keyDown(window, { key: 'Escape' })
+
+    expect(
+      screen.getByRole('dialog', { name: 'Expanded artifact: Patch vulnerable package' }),
+    ).toBeInTheDocument()
+
+    fireEvent.keyDown(window, { key: 'Escape' })
+
+    expect(
+      screen.queryByRole('dialog', { name: 'Expanded artifact: Patch vulnerable package' }),
+    ).not.toBeInTheDocument()
   })
 
   it('opens the thread drawer through compact controls', (): void => {
