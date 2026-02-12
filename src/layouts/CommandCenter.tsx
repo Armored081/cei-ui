@@ -237,6 +237,42 @@ export function CommandCenter({ engine, userEmail, onLogout }: LayoutProps): JSX
     })
   }, [])
 
+  const onPrevArtifact = useCallback((): void => {
+    setArtifactZoomState((current): ArtifactZoomState => {
+      if (!current.artifactId || current.zoomLevel === 'inline') return current
+      const currentIndex = engine.artifacts.findIndex((a) => a.id === current.artifactId)
+      if (currentIndex <= 0) return current
+      return {
+        artifactId: engine.artifacts[currentIndex - 1].id,
+        zoomLevel: current.zoomLevel,
+        previousZoomLevel: current.previousZoomLevel,
+      }
+    })
+  }, [engine.artifacts])
+
+  const onNextArtifact = useCallback((): void => {
+    setArtifactZoomState((current): ArtifactZoomState => {
+      if (!current.artifactId || current.zoomLevel === 'inline') return current
+      const currentIndex = engine.artifacts.findIndex((a) => a.id === current.artifactId)
+      if (currentIndex < 0 || currentIndex >= engine.artifacts.length - 1) return current
+      return {
+        artifactId: engine.artifacts[currentIndex + 1].id,
+        zoomLevel: current.zoomLevel,
+        previousZoomLevel: current.previousZoomLevel,
+      }
+    })
+  }, [engine.artifacts])
+
+  const selectedArtifactIndex = useMemo((): number => {
+    if (!artifactZoomState.artifactId) return -1
+    return engine.artifacts.findIndex((a) => a.id === artifactZoomState.artifactId)
+  }, [artifactZoomState.artifactId, engine.artifacts])
+
+  const artifactPositionLabel = useMemo((): string | undefined => {
+    if (selectedArtifactIndex < 0 || engine.artifacts.length <= 1) return undefined
+    return `${(selectedArtifactIndex + 1).toString()}/${engine.artifacts.length.toString()}`
+  }, [selectedArtifactIndex, engine.artifacts.length])
+
   const onStepBackArtifactZoom = useCallback((): void => {
     setArtifactZoomState((currentZoomState): ArtifactZoomState => {
       if (currentZoomState.zoomLevel === 'inline') {
@@ -682,8 +718,13 @@ export function CommandCenter({ engine, userEmail, onLogout }: LayoutProps): JSX
         {selectedArtifact && artifactZoomState.zoomLevel === 'expanded' ? (
           <ArtifactOverlay
             artifact={selectedArtifact}
+            artifactPosition={artifactPositionLabel}
             onBack={onStepBackArtifactZoom}
             onClose={onResetArtifactZoom}
+            onNextArtifact={
+              selectedArtifactIndex < engine.artifacts.length - 1 ? onNextArtifact : null
+            }
+            onPrevArtifact={selectedArtifactIndex > 0 ? onPrevArtifact : null}
             onToggleFullScreen={onEnterArtifactFullScreen}
           />
         ) : null}

@@ -85,4 +85,57 @@ describe('ArtifactOverlay', (): void => {
     fireEvent.click(backdrop)
     expect(onClose).toHaveBeenCalledTimes(2)
   })
+
+  it('renders prev/next navigation and responds to arrow keys', (): void => {
+    const onPrev = vi.fn()
+    const onNext = vi.fn()
+
+    render(
+      <ArtifactOverlay
+        artifact={buildRecommendationArtifact()}
+        artifactPosition="2/5"
+        onBack={vi.fn()}
+        onClose={vi.fn()}
+        onNextArtifact={onNext}
+        onPrevArtifact={onPrev}
+        onToggleFullScreen={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByText('2/5')).toBeInTheDocument()
+
+    const prevBtn = screen.getByRole('button', { name: 'Previous artifact' })
+    const nextBtn = screen.getByRole('button', { name: 'Next artifact' })
+    expect(prevBtn).not.toBeDisabled()
+    expect(nextBtn).not.toBeDisabled()
+
+    fireEvent.click(prevBtn)
+    expect(onPrev).toHaveBeenCalledTimes(1)
+
+    fireEvent.click(nextBtn)
+    expect(onNext).toHaveBeenCalledTimes(1)
+
+    const dialog = screen.getByRole('dialog')
+    fireEvent.keyDown(dialog, { key: 'ArrowLeft' })
+    expect(onPrev).toHaveBeenCalledTimes(2)
+
+    fireEvent.keyDown(dialog, { key: 'ArrowRight' })
+    expect(onNext).toHaveBeenCalledTimes(2)
+  })
+
+  it('disables prev/next buttons when handlers are null', (): void => {
+    render(
+      <ArtifactOverlay
+        artifact={buildRecommendationArtifact()}
+        onBack={vi.fn()}
+        onClose={vi.fn()}
+        onNextArtifact={null}
+        onPrevArtifact={null}
+        onToggleFullScreen={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByRole('button', { name: 'Previous artifact' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Next artifact' })).toBeDisabled()
+  })
 })

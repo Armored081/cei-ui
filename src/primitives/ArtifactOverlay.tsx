@@ -12,6 +12,9 @@ interface ArtifactOverlayProps {
   onBack: () => void
   onClose: () => void
   onToggleFullScreen: () => void
+  onPrevArtifact?: (() => void) | null
+  onNextArtifact?: (() => void) | null
+  artifactPosition?: string
   closeOnBackdropClick?: boolean
 }
 
@@ -24,6 +27,9 @@ export function ArtifactOverlay({
   onBack,
   onClose,
   onToggleFullScreen,
+  onPrevArtifact,
+  onNextArtifact,
+  artifactPosition,
   closeOnBackdropClick = true,
 }: ArtifactOverlayProps): JSX.Element {
   const panelRef = useRef<HTMLDivElement>(null)
@@ -46,6 +52,20 @@ export function ArtifactOverlay({
       event.preventDefault()
       event.stopPropagation()
       onToggleFullScreen()
+      return
+    }
+
+    if (event.key === 'ArrowLeft' && onPrevArtifact) {
+      event.preventDefault()
+      event.stopPropagation()
+      onPrevArtifact()
+      return
+    }
+
+    if (event.key === 'ArrowRight' && onNextArtifact) {
+      event.preventDefault()
+      event.stopPropagation()
+      onNextArtifact()
     }
   }
 
@@ -73,14 +93,39 @@ export function ArtifactOverlay({
         tabIndex={-1}
       >
         <header className="cei-artifact-overlay-toolbar">
-          <button
-            aria-label="Back to artifact list"
-            className="cei-artifact-overlay-btn"
-            onClick={onBack}
-            type="button"
-          >
-            ◀
-          </button>
+          <div className="cei-artifact-overlay-nav">
+            <button
+              aria-label="Back to artifact list"
+              className="cei-artifact-overlay-btn"
+              onClick={onBack}
+              type="button"
+            >
+              ◀
+            </button>
+            <div className="cei-artifact-overlay-nav-arrows">
+              <button
+                aria-label="Previous artifact"
+                className="cei-artifact-overlay-btn cei-artifact-overlay-nav-btn"
+                disabled={!onPrevArtifact}
+                onClick={onPrevArtifact ?? undefined}
+                type="button"
+              >
+                ‹
+              </button>
+              {artifactPosition ? (
+                <span className="cei-artifact-overlay-position">{artifactPosition}</span>
+              ) : null}
+              <button
+                aria-label="Next artifact"
+                className="cei-artifact-overlay-btn cei-artifact-overlay-nav-btn"
+                disabled={!onNextArtifact}
+                onClick={onNextArtifact ?? undefined}
+                type="button"
+              >
+                ›
+              </button>
+            </div>
+          </div>
           <div className="cei-artifact-overlay-title-wrap">
             <h2 className="cei-artifact-overlay-title">{artifact.title}</h2>
             <ConfidenceBadge
