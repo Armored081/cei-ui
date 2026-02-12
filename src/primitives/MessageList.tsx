@@ -2,10 +2,7 @@ import type { CSSProperties, RefObject } from 'react'
 
 import type { StructuredBlock } from '../agent/types'
 import type { ToolActivityItem } from '../components/ChatMessageList'
-import type {
-  ChatMessageSegment,
-  ChatTimelineItem,
-} from '../components/ChatMessageList'
+import type { ChatMessageSegment, ChatTimelineItem } from '../components/ChatMessageList'
 import { ChartBlock } from '../components/blocks/ChartBlock'
 import { RecommendationBlock } from '../components/blocks/RecommendationBlock'
 import { TableBlock } from '../components/blocks/TableBlock'

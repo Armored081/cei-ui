@@ -31,7 +31,11 @@ export function Workspace({
   const tabs = useMemo(
     (): TabItem[] => [
       { id: 'artifacts', label: 'Artifacts', badge: engine.artifacts.length },
-      { id: 'tools', label: 'Tool Log', badge: engine.toolLog.filter((t) => t.status === 'running').length },
+      {
+        id: 'tools',
+        label: 'Tool Log',
+        badge: engine.toolLog.filter((t) => t.status === 'running').length,
+      },
       { id: 'tasks', label: 'Tasks' },
     ],
     [engine.artifacts.length, engine.toolLog],
@@ -123,11 +127,7 @@ export function Workspace({
               <p className="cei-muted">No tool calls yet.</p>
             ) : (
               engine.toolLog.map((entry) => (
-                <ToolLogEntry
-                  key={entry.id}
-                  entry={entry}
-                  onToggleExpand={onToggleToolLogExpand}
-                />
+                <ToolLogEntry key={entry.id} entry={entry} onToggleExpand={onToggleToolLogExpand} />
               ))
             )}
           </div>

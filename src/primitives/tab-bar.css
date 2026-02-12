@@ -19,7 +19,9 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
-  transition: color 120ms ease, border-color 120ms ease;
+  transition:
+    color 120ms ease,
+    border-color 120ms ease;
 }
 
 .cei-tab-bar-item:hover {

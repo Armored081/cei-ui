@@ -9,7 +9,13 @@ interface SlideUpDrawerProps {
   children: ReactNode
 }
 
-export function SlideUpDrawer({ isOpen, onClose, title, maxHeight, children }: SlideUpDrawerProps): JSX.Element | null {
+export function SlideUpDrawer({
+  isOpen,
+  onClose,
+  title,
+  maxHeight,
+  children,
+}: SlideUpDrawerProps): JSX.Element | null {
   useEffect(() => {
     if (!isOpen) return
 
@@ -35,7 +41,12 @@ export function SlideUpDrawer({ isOpen, onClose, title, maxHeight, children }: S
       >
         <div className="cei-slide-up-header">
           {title ? <h3 className="cei-slide-up-title">{title}</h3> : null}
-          <button className="cei-slide-up-close" onClick={onClose} type="button" aria-label="Close drawer">
+          <button
+            className="cei-slide-up-close"
+            onClick={onClose}
+            type="button"
+            aria-label="Close drawer"
+          >
             &times;
           </button>
         </div>

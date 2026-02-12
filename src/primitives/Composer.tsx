@@ -83,7 +83,16 @@ export function Composer(props: ComposerProps): JSX.Element {
           type="button"
           aria-label="Attach files"
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" />
           </svg>
         </button>
@@ -138,7 +147,11 @@ export function Composer(props: ComposerProps): JSX.Element {
 
       {variant === 'full' ? (
         <div className="cei-composer-v-actions">
-          <button className="cei-button-secondary cei-composer-v-new-thread" onClick={onNewThread} type="button">
+          <button
+            className="cei-button-secondary cei-composer-v-new-thread"
+            onClick={onNewThread}
+            type="button"
+          >
             New Thread
           </button>
         </div>

@@ -4,12 +4,7 @@ import { describe, expect, it, vi, afterEach, beforeEach } from 'vitest'
 
 import { AuthProvider, useAuth } from './AuthProvider'
 
-const {
-  mockFetchAuthSession,
-  mockGetCurrentUser,
-  mockSignIn,
-  mockSignOut,
-} = vi.hoisted(
+const { mockFetchAuthSession, mockGetCurrentUser, mockSignIn, mockSignOut } = vi.hoisted(
   (): {
     mockFetchAuthSession: ReturnType<typeof vi.fn>
     mockGetCurrentUser: ReturnType<typeof vi.fn>

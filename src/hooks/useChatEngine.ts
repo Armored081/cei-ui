@@ -1029,7 +1029,12 @@ export function useChatEngine(params: UseChatEngineParams): ChatEngine {
         }
       }
 
-      if (!sawDoneEvent && !sawErrorEvent && !abortController.signal.aborted && isMountedRef.current) {
+      if (
+        !sawDoneEvent &&
+        !sawErrorEvent &&
+        !abortController.signal.aborted &&
+        isMountedRef.current
+      ) {
         setStreamStatus('done')
         setAgentMessageState(
           agentMessage.id,

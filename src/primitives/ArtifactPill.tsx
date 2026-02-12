@@ -15,11 +15,7 @@ function kindIcon(kind: string): string {
 
 export function ArtifactPill({ artifactId, kind, title, onClick }: ArtifactPillProps): JSX.Element {
   return (
-    <button
-      className="cei-artifact-pill"
-      onClick={(): void => onClick(artifactId)}
-      type="button"
-    >
+    <button className="cei-artifact-pill" onClick={(): void => onClick(artifactId)} type="button">
       <span className="cei-artifact-pill-icon">{kindIcon(kind)}</span>
       <span className="cei-artifact-pill-title">{title}</span>
     </button>

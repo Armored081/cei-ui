@@ -51,7 +51,9 @@
   cursor: pointer;
   font-size: 0.9rem;
   line-height: 1;
-  transition: background-color 120ms ease, color 120ms ease;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
 }
 
 .cei-topbar-layout-btn:hover {

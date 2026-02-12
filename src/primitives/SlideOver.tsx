@@ -9,7 +9,13 @@ interface SlideOverProps {
   children: ReactNode
 }
 
-export function SlideOver({ isOpen, onClose, title, width, children }: SlideOverProps): JSX.Element | null {
+export function SlideOver({
+  isOpen,
+  onClose,
+  title,
+  width,
+  children,
+}: SlideOverProps): JSX.Element | null {
   const panelRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -71,7 +77,12 @@ export function SlideOver({ isOpen, onClose, title, width, children }: SlideOver
       >
         <div className="cei-slide-over-header">
           {title ? <h3 className="cei-slide-over-title">{title}</h3> : null}
-          <button className="cei-slide-over-close" onClick={onClose} type="button" aria-label="Close panel">
+          <button
+            className="cei-slide-over-close"
+            onClick={onClose}
+            type="button"
+            aria-label="Close panel"
+          >
             &times;
           </button>
         </div>

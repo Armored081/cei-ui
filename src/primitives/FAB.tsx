@@ -18,9 +18,7 @@ export function FAB({ label, badge, onClick, position }: FABProps): JSX.Element 
       aria-label={label}
     >
       <span className="cei-fab-label">{label}</span>
-      {badge !== undefined && badge > 0 ? (
-        <span className="cei-fab-badge">{badge}</span>
-      ) : null}
+      {badge !== undefined && badge > 0 ? <span className="cei-fab-badge">{badge}</span> : null}
     </button>
   )
 }

@@ -74,7 +74,12 @@ export function ArtifactExpanded({ artifact, onClose }: ArtifactExpandedProps): 
               CSV
             </button>
           ) : null}
-          <button className="cei-artifact-expanded-close" onClick={onClose} type="button" aria-label="Close">
+          <button
+            className="cei-artifact-expanded-close"
+            onClick={onClose}
+            type="button"
+            aria-label="Close"
+          >
             &times;
           </button>
         </div>

@@ -70,6 +70,7 @@ npx tsc --noEmit     # Type check only
 ## Coding Rules (MANDATORY)
 
 ### TypeScript
+
 - Explicit return types on exported and non-trivial functions
 - No `any`; use `unknown` + narrowing where needed
 - Zod schemas at external boundaries (API payloads, stream events)
@@ -77,6 +78,7 @@ npx tsc --noEmit     # Type check only
 - TSDoc for exported functions/types
 
 ### React
+
 - Functional components only
 - Props interfaces defined above component
 - Event handlers prefixed with `on` (e.g., `onRetryMessage`)
@@ -84,6 +86,7 @@ npx tsc --noEmit     # Type check only
 - Cleanup effects in `useEffect` return
 
 ### Testing
+
 - Use Vitest (NOT Jest — no `--runInBand` or other Jest flags)
 - Use `@testing-library/react` for component tests
 - Test files colocated with source: `Component.test.tsx`
@@ -91,6 +94,7 @@ npx tsc --noEmit     # Type check only
 - Always run `npm run format` before committing (not `format:check`)
 
 ### Patterns
+
 - SSE streaming via `ReadableStream` in AgentClient
 - Structured output: agent emits `<!--block-->` markers → parsed into typed blocks → rendered by block components
 - Error handling: separate 401 (auth expiry) from 403 (forbidden) — never force logout on transient errors
@@ -99,6 +103,7 @@ npx tsc --noEmit     # Type check only
 - Color overrides: optional `colors: string[]` with fallback to CSS `--chart-series-N` variables
 
 ### Schema Contract (with cei-agent)
+
 - `AttachmentInput`: `{ name: string, mime: string, data: string (base64), sizeBytes: number }`
 - `StreamEvent`: delta | done | error | block
 - `StructuredBlock`: chart | table | recommendation (with Zod refinement validation)
@@ -106,6 +111,7 @@ npx tsc --noEmit     # Type check only
 - Data shape must match chartType (enforced via Zod refinement, not discriminatedUnion)
 
 ## Key Architecture Decisions
+
 - **SSE over WebSocket:** Simpler, works through API Gateway HTTP API, sufficient for request-response streaming
 - **No state management library:** App state is simple enough for React hooks
 - **Zod at boundaries:** Type-safe parsing of all API responses and structured blocks
