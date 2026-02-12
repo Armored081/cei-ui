@@ -25,7 +25,6 @@ export function composerPropsFromEngine(
     onDragOver: engine.onComposerDragOver,
     onDragLeave: engine.onComposerDragLeave,
     onDrop: engine.onComposerDrop,
-    onNewThread: engine.createNewThread,
     composerRef: engine.composerRef,
   }
 }

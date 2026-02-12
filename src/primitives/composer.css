@@ -132,39 +132,6 @@
   cursor: not-allowed;
 }
 
-.cei-composer-v-new-thread-pill {
-  min-width: 44px;
-  min-height: 44px;
-  padding: 4px 10px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: transparent;
-  color: var(--text-dim);
-  font-size: 11px;
-  line-height: 1;
-  letter-spacing: 0.04em;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  justify-content: center;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.cei-composer-v-new-thread-pill:hover {
-  color: var(--text-muted);
-  border-color: var(--border-strong);
-}
-
-.cei-composer-v-new-thread-icon {
-  width: 12px;
-  height: 12px;
-}
-
-.cei-composer-v-new-thread-text {
-  font-family: var(--font-mono);
-}
-
 .cei-composer-v-chips {
   display: flex;
   flex-wrap: wrap;

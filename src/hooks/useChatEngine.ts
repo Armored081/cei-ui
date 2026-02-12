@@ -60,6 +60,11 @@ export interface ToolLogItem extends ToolActivityItem {
   sourceMessageId: string
 }
 
+export interface ConversationSnapshot {
+  sessionId: string
+  timelineItems: ChatTimelineItem[]
+}
+
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
@@ -361,6 +366,8 @@ export interface ChatEngine {
   submitPrompt: (msg: string, retryAttachments?: AttachmentInput[]) => Promise<void>
   cancelActiveStream: () => void
   createNewThread: () => void
+  getConversationSnapshot: () => ConversationSnapshot
+  restoreConversationSnapshot: (snapshot: ConversationSnapshot) => void
   onRetryMessage: (messageId: string) => void
   onToggleTool: (messageId: string, toolId: string) => void
 
@@ -587,16 +594,18 @@ export function useChatEngine(params: UseChatEngineParams): ChatEngine {
     }
   }, [isStreaming])
 
-  const createNewThread = (): void => {
+  const getConversationSnapshot = (): ConversationSnapshot => {
+    return {
+      sessionId,
+      timelineItems: [...timelineItems],
+    }
+  }
+
+  const restoreConversationSnapshot = (snapshot: ConversationSnapshot): void => {
     cancelActiveStream()
-    setSessionId(uuidv4())
-    setTimelineItems([
-      {
-        id: uuidv4(),
-        label: 'New thread started',
-        type: 'thread_separator',
-      },
-    ])
+    activeAgentMessageIdRef.current = null
+    setSessionId(snapshot.sessionId)
+    setTimelineItems([...snapshot.timelineItems])
     setDraftMessage('')
     setAttachmentError('')
     setAttachments([])
@@ -604,6 +613,13 @@ export function useChatEngine(params: UseChatEngineParams): ChatEngine {
     setErrorBanner('')
     setStreamStatus('idle')
     composerRef.current?.focus()
+  }
+
+  const createNewThread = (): void => {
+    restoreConversationSnapshot({
+      sessionId: uuidv4(),
+      timelineItems: [],
+    })
   }
 
   // Attachment helpers
@@ -1188,6 +1204,8 @@ export function useChatEngine(params: UseChatEngineParams): ChatEngine {
     submitPrompt,
     cancelActiveStream,
     createNewThread,
+    getConversationSnapshot,
+    restoreConversationSnapshot,
     onRetryMessage,
     onToggleTool,
 

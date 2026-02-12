@@ -60,12 +60,19 @@
 .cei-cc-left,
 .cei-cc-right {
   display: grid;
-  grid-template-rows: auto 1fr;
   border-right: 1px solid var(--border);
   min-height: 0;
   min-width: 0;
   overflow: hidden;
   transition: background-color 150ms ease;
+}
+
+.cei-cc-left {
+  grid-template-rows: auto 1fr;
+}
+
+.cei-cc-right {
+  grid-template-rows: auto 1fr auto;
 }
 
 .cei-cc-right {
@@ -143,7 +150,6 @@
   background-color: rgba(229, 165, 48, 0.58);
 }
 
-.cei-cc-tool-log,
 .cei-cc-artifacts {
   overflow-y: auto;
   padding: var(--space-3);

@@ -176,13 +176,15 @@ describe('ChatPage', (): void => {
 
     expect(firstCall.sessionId).toBe(secondCall.sessionId)
 
-    fireEvent.click(screen.getByRole('button', { name: 'New Thread' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Create New Thread' }))
 
     await waitFor((): void => {
-      expect(screen.getByText('New thread started')).toBeInTheDocument()
+      expect(screen.getByText('Welcome to CEI Agent')).toBeInTheDocument()
     })
 
-    expect(screen.queryByText('First')).not.toBeInTheDocument()
+    expect(
+      screen.queryByText('First', { selector: '.cei-message-text-segment' }),
+    ).not.toBeInTheDocument()
 
     fillAndSendMessage('Third')
 
@@ -348,7 +350,7 @@ describe('ChatPage', (): void => {
 
     const firstCall = mockInvokeAgentStream.mock.calls[0][0] as InvokeCall
 
-    fireEvent.click(screen.getByRole('button', { name: 'New Thread' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Create New Thread' }))
 
     await waitFor((): void => {
       expect(firstCall.signal.aborted).toBe(true)

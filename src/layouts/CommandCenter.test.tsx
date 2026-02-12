@@ -102,6 +102,11 @@ function createEngine(onToggleTool: (messageId: string, toolId: string) => void)
     submitPrompt: async (): Promise<void> => {},
     cancelActiveStream: (): void => {},
     createNewThread: (): void => {},
+    getConversationSnapshot: () => ({
+      sessionId: 'session-1',
+      timelineItems: [message],
+    }),
+    restoreConversationSnapshot: (): void => {},
     onRetryMessage: (): void => {},
     onToggleTool,
     addFilesToAttachments: (): void => {},
@@ -149,17 +154,25 @@ describe('CommandCenter compact layout', (): void => {
     expect(within(artifactsDialog).getByRole('button', { name: 'JSON' })).toBeInTheDocument()
   })
 
-  it('exposes tool log actions through the compact activity drawer', (): void => {
-    const onToggleTool = vi.fn()
-    renderLayout(createEngine(onToggleTool))
+  it('opens the thread drawer through compact controls', (): void => {
+    renderLayout(createEngine(vi.fn()))
 
-    fireEvent.click(screen.getByRole('button', { name: 'Menu Activity' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Menu Threads' }))
 
-    const activityDialog = screen.getByRole('dialog', { name: 'Activity' })
-    const toggleButton = within(activityDialog).getByRole('button', { name: /db_lookup/i })
+    const threadDialog = screen.getByRole('dialog', { name: 'Threads' })
+    expect(
+      within(threadDialog).getByRole('button', {
+        name: 'Create New Thread',
+      }),
+    ).toBeInTheDocument()
+    expect(within(threadDialog).getByPlaceholderText('Search threads')).toBeInTheDocument()
+  })
 
-    fireEvent.click(toggleButton)
+  it('shows activity summary in the artifacts rail', (): void => {
+    renderLayout(createEngine(vi.fn()))
 
-    expect(onToggleTool).toHaveBeenCalledWith('agent-1', 'tool-1')
+    const summaryBar = screen.getByRole('button', { name: 'Activity summary' })
+    expect(summaryBar).toHaveTextContent('Last tool: db lookup')
+    expect(within(summaryBar).getByText('1')).toBeInTheDocument()
   })
 })

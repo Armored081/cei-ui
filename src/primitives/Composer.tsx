@@ -41,8 +41,6 @@ export interface ComposerProps {
   onDragLeave: (e: DragEvent<HTMLFormElement>) => void
   onDrop: (e: DragEvent<HTMLFormElement>) => void
 
-  // Actions
-  onNewThread: () => void
   composerRef: RefObject<HTMLTextAreaElement>
 }
 
@@ -67,7 +65,6 @@ export function Composer(props: ComposerProps): JSX.Element {
     onDragOver,
     onDragLeave,
     onDrop,
-    onNewThread,
     composerRef,
   } = props
 
@@ -177,33 +174,6 @@ export function Composer(props: ComposerProps): JSX.Element {
           id="cei-message"
           aria-label="Instruction"
         />
-
-        {variant === 'full' ? (
-          <button
-            className="cei-composer-v-new-thread-pill"
-            onClick={onNewThread}
-            title="Start a new thread"
-            type="button"
-            aria-label="New Thread"
-          >
-            <svg
-              aria-hidden="true"
-              className="cei-composer-v-new-thread-icon"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M12 5v14M5 12h14M20 8a8 8 0 10-2.34 5.66"
-                fill="none"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="1.8"
-              />
-            </svg>
-            <span className="cei-composer-v-new-thread-text">New</span>
-          </button>
-        ) : null}
 
         <button
           className="cei-composer-v-send"
