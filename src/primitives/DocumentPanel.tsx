@@ -32,7 +32,6 @@ function truncateId(id: string): string {
 
 export function DocumentPanel({
   artifact,
-  onClose,
   onRegenerate,
   fullScreen,
 }: DocumentPanelProps): JSX.Element {
