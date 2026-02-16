@@ -12,6 +12,7 @@ function kindIcon(kind: string): string {
   if (kind === 'table') return '\u{1F4CB}'
   if (kind === 'assessment-list') return '\u{1F4DD}'
   if (kind === 'assessment-detail') return '\u{1F4DC}'
+  if (kind === 'document') return '\u{1F4C4}'
   return '\u{1F6E1}'
 }
 

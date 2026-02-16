@@ -2,6 +2,7 @@ import { ArtifactRegistry } from './ArtifactRegistry'
 import { assessmentDetailArtifactDefinition } from './renderers/AssessmentDetailArtifact'
 import { assessmentListArtifactDefinition } from './renderers/AssessmentListArtifact'
 import { chartArtifactDefinition } from './renderers/ChartArtifact'
+import { documentArtifactDefinition } from './renderers/DocumentArtifact'
 import { recommendationArtifactDefinition } from './renderers/RecommendationArtifact'
 import { tableArtifactDefinition } from './renderers/TableArtifact'
 
@@ -13,6 +14,7 @@ const builtinDefinitions = [
   recommendationArtifactDefinition,
   assessmentListArtifactDefinition,
   assessmentDetailArtifactDefinition,
+  documentArtifactDefinition,
 ]
 
 /**
