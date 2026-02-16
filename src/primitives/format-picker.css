@@ -1,0 +1,71 @@
+.cei-doc-format-picker {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.cei-doc-format-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--doc-surface);
+  cursor: pointer;
+  transition: all 180ms ease;
+  color: var(--text-primary);
+  min-width: 140px;
+  font-family: var(--font-body);
+  text-align: left;
+}
+
+.cei-doc-format-option:hover {
+  border-color: var(--doc-border-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 12px rgba(2, 8, 20, 0.3);
+}
+
+.cei-doc-format-option--selected {
+  border-color: var(--accent) !important;
+  background: var(--accent-subtle);
+}
+
+.cei-doc-format-option-icon {
+  font-size: 1.3rem;
+}
+
+.cei-doc-format-option-details {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.cei-doc-format-option-label {
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.cei-doc-format-option-label--pdf {
+  color: var(--doc-format-pdf);
+}
+
+.cei-doc-format-option-label--docx {
+  color: var(--doc-format-docx);
+}
+
+.cei-doc-format-option-label--pptx {
+  color: var(--doc-format-pptx);
+}
+
+.cei-doc-format-option-label--csv {
+  color: var(--doc-format-csv);
+}
+
+.cei-doc-format-option-desc {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+}

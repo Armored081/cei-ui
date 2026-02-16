@@ -1,0 +1,58 @@
+.cei-doc-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--doc-border);
+  border-radius: 999px;
+  background: var(--doc-surface);
+  padding: 4px 14px 4px 8px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  color: var(--text-primary);
+  transition: all 150ms ease;
+  text-decoration: none;
+  vertical-align: middle;
+  font-family: var(--font-body);
+}
+
+.cei-doc-pill:hover {
+  border-color: var(--doc-border-hover);
+  background: var(--doc-surface-hover);
+}
+
+.cei-doc-pill-format {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.cei-doc-pill-format--pdf {
+  color: var(--doc-format-pdf);
+  background: rgba(232, 92, 111, 0.12);
+}
+
+.cei-doc-pill-format--docx {
+  color: var(--doc-format-docx);
+  background: rgba(91, 141, 239, 0.12);
+}
+
+.cei-doc-pill-format--pptx {
+  color: var(--doc-format-pptx);
+  background: rgba(232, 144, 64, 0.12);
+}
+
+.cei-doc-pill-format--csv {
+  color: var(--doc-format-csv);
+  background: rgba(92, 224, 184, 0.12);
+}
+
+.cei-doc-pill-title {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

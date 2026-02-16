@@ -1,0 +1,236 @@
+.cei-doc-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 56px 1fr auto;
+  align-items: start;
+  gap: 16px;
+  border: 1px solid var(--doc-border);
+  border-radius: var(--radius-md);
+  background: var(--doc-surface);
+  padding: 20px;
+  cursor: pointer;
+  color: var(--text-primary);
+  width: 100%;
+  transition: all 200ms cubic-bezier(0.22, 1, 0.36, 1);
+  overflow: hidden;
+  text-align: left;
+  font-family: var(--font-body);
+}
+
+.cei-doc-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-md);
+  background: radial-gradient(ellipse at 20% 30%, var(--doc-glow), transparent 70%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 300ms ease;
+}
+
+.cei-doc-card:hover {
+  border-color: var(--doc-border-hover);
+  transform: translateY(-2px);
+  box-shadow:
+    0 4px 20px rgba(2, 8, 20, 0.35),
+    0 0 0 1px var(--doc-border);
+}
+
+.cei-doc-card:hover::before {
+  opacity: 1;
+}
+
+.cei-doc-card--selected {
+  border-color: var(--doc-border-hover);
+}
+
+/* Format icon area */
+.cei-doc-card-icon {
+  width: 56px;
+  height: 64px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+.cei-doc-card-icon::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.cei-doc-card-icon--pdf {
+  background: linear-gradient(145deg, rgba(232, 92, 111, 0.18), rgba(232, 92, 111, 0.06));
+}
+
+.cei-doc-card-icon--docx {
+  background: linear-gradient(145deg, rgba(91, 141, 239, 0.18), rgba(91, 141, 239, 0.06));
+}
+
+.cei-doc-card-icon--pptx {
+  background: linear-gradient(145deg, rgba(232, 144, 64, 0.18), rgba(232, 144, 64, 0.06));
+}
+
+.cei-doc-card-icon--csv {
+  background: linear-gradient(145deg, rgba(92, 224, 184, 0.18), rgba(92, 224, 184, 0.06));
+}
+
+.cei-doc-card-icon-glyph {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.cei-doc-card-icon-label {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.8;
+}
+
+.cei-doc-card-icon--pdf .cei-doc-card-icon-glyph {
+  color: var(--doc-format-pdf);
+}
+.cei-doc-card-icon--pdf .cei-doc-card-icon-label {
+  color: var(--doc-format-pdf);
+}
+.cei-doc-card-icon--docx .cei-doc-card-icon-glyph {
+  color: var(--doc-format-docx);
+}
+.cei-doc-card-icon--docx .cei-doc-card-icon-label {
+  color: var(--doc-format-docx);
+}
+.cei-doc-card-icon--pptx .cei-doc-card-icon-glyph {
+  color: var(--doc-format-pptx);
+}
+.cei-doc-card-icon--pptx .cei-doc-card-icon-label {
+  color: var(--doc-format-pptx);
+}
+.cei-doc-card-icon--csv .cei-doc-card-icon-glyph {
+  color: var(--doc-format-csv);
+}
+.cei-doc-card-icon--csv .cei-doc-card-icon-label {
+  color: var(--doc-format-csv);
+}
+
+/* Content area */
+.cei-doc-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.cei-doc-card-agent {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+.cei-doc-card-title {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+
+.cei-doc-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+
+.cei-doc-card-meta-sep {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  flex-shrink: 0;
+}
+
+.cei-doc-card-profile {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--accent);
+  opacity: 0.85;
+}
+
+/* Download / actions area */
+.cei-doc-card-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  padding-top: 2px;
+}
+
+.cei-doc-card-download {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 500;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: all 150ms ease;
+  white-space: nowrap;
+}
+
+.cei-doc-card-download:hover {
+  color: var(--text-primary);
+  border-color: var(--accent);
+  background: var(--accent-subtle);
+}
+
+.cei-doc-card-download-icon {
+  font-size: 0.85rem;
+}
+
+/* QA badge */
+.cei-doc-card-qa {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.cei-doc-card-qa--pass {
+  color: var(--doc-qa-pass);
+  background: rgba(92, 224, 184, 0.1);
+}
+
+.cei-doc-card-qa--warn {
+  color: var(--doc-qa-warn);
+  background: rgba(229, 165, 48, 0.1);
+}
+
+.cei-doc-card-error {
+  padding: 12px;
+  color: var(--danger);
+  font-size: 0.88rem;
+}
