@@ -67,6 +67,21 @@
   --font-body: 'DM Sans', 'Helvetica Neue', sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 
+  /* Document artifact */
+  --doc-surface: rgba(26, 34, 51, 0.65);
+  --doc-surface-hover: rgba(26, 34, 51, 0.85);
+  --doc-border: rgba(229, 165, 48, 0.18);
+  --doc-border-hover: rgba(229, 165, 48, 0.4);
+  --doc-glow: rgba(229, 165, 48, 0.06);
+  --doc-format-pdf: #e85c6f;
+  --doc-format-docx: #5b8def;
+  --doc-format-pptx: #e89040;
+  --doc-format-csv: #5ce0b8;
+  --doc-qa-pass: #5ce0b8;
+  --doc-qa-warn: #e5a530;
+  --doc-qa-fail: #e85c6f;
+  --font-document: 'Fraunces', 'Georgia', serif;
+
   /* Composer height (set by ResizeObserver) */
   --composer-height: 52px;
 }

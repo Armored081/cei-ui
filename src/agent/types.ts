@@ -129,6 +129,29 @@ export const structuredBlockSchema = z.discriminatedUnion('kind', [
   }),
   assessmentListBlockSchema,
   assessmentDetailBlockSchema,
+  z.object({
+    kind: z.literal('document'),
+    format: z.enum(['pdf', 'docx', 'pptx', 'csv']),
+    title: z.string(),
+    documentId: z.string(),
+    downloadUrl: z.string().url(),
+    profileName: z.string().optional(),
+    templateName: z.string().optional(),
+    pageCount: z.number().optional(),
+    fileSizeBytes: z.number(),
+    agentId: z.string().optional(),
+    useCaseId: z.string().optional(),
+    qaMetadata: z
+      .object({
+        mode: z.enum(['off', 'content', 'full']),
+        iterations: z.number(),
+        contentPass: z.boolean(),
+        visualPass: z.boolean().optional(),
+        warnings: z.array(z.string()),
+        adjustments: z.array(z.string()),
+      })
+      .optional(),
+  }),
 ])
 
 export const streamEventSchema = z.discriminatedUnion('type', [
