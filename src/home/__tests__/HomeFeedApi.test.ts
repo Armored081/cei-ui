@@ -124,7 +124,7 @@ describe('fetchHomeFeed', (): void => {
     expect(options.method).toBe('POST')
     expect(JSON.parse(options.body as string)).toEqual({
       action: 'home_feed',
-      inputs: { role: 'ciso', tenantId: 'default' },
+      inputs: { role: 'ciso', tenantId: 'demo' },
       stream: false,
     })
   })
