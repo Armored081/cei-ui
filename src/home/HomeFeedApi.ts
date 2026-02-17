@@ -105,7 +105,7 @@ export async function fetchHomeFeed(accessToken: string): Promise<CuratedFeed> {
       action: 'home_feed',
       inputs: {
         role: 'ciso',
-        tenantId: 'default',
+        tenantId: 'demo',
       },
       stream: false,
     }),
