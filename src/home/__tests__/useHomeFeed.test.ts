@@ -10,11 +10,11 @@ const {
 }: {
   mockFetchHomeFeed: ReturnType<typeof vi.fn>
   mockGetMockFeedData: ReturnType<typeof vi.fn>
-  mockGetAccessToken: ReturnType<typeof vi.fn>
+  mockGetAccessToken: ReturnType<typeof vi.fn<() => Promise<string>>>
 } = vi.hoisted(() => ({
   mockFetchHomeFeed: vi.fn(),
   mockGetMockFeedData: vi.fn(),
-  mockGetAccessToken: vi.fn(),
+  mockGetAccessToken: vi.fn<() => Promise<string>>(),
 }))
 
 vi.mock('../HomeFeedApi', () => ({

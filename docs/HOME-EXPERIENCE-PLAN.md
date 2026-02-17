@@ -57,18 +57,20 @@ const feedCandidateSchema = z.object({
   agentDomain: z.string().optional(),
   title: z.string(),
   summary: z.string(),
-  confidence: z.enum(['high', 'medium', 'low', 'unknown']),  // matches existing UI types
+  confidence: z.enum(['high', 'medium', 'low', 'unknown']), // matches existing UI types
   significanceScore: z.number(),
   metricId: z.string().optional(),
   entityId: z.string().optional(),
   entityPath: z.string().optional(),
   value: z.number().optional(),
   previousValue: z.number().optional(),
-  threshold: z.object({
-    red: z.number(),
-    amber: z.number(),
-    direction: z.enum(['above', 'below']),
-  }).optional(),
+  threshold: z
+    .object({
+      red: z.number(),
+      amber: z.number(),
+      direction: z.enum(['above', 'below']),
+    })
+    .optional(),
   deepLink: z.string().optional(),
   metadata: z.record(z.string(), z.unknown()).optional(),
 })
@@ -137,6 +139,7 @@ const curatedFeedSchema = z.object({
    - Responsive: single column on mobile (≤768px), multi-col on desktop
 
 ### Constraints
+
 - Named exports only
 - Extensionless imports (match existing codebase convention)
 - All CSS uses existing design token variables from `tokens.css`
@@ -179,6 +182,7 @@ const curatedFeedSchema = z.object({
    - Same pre-fill pattern as Quick Start
 
 ### Constraints
+
 - Follow existing API client patterns from `FeedbackApi.ts` and `RoadmapFetch.ts`
 - Error messages follow existing `isRetryableError` pattern
 - Tests: 20+ (Zod validation, API error handling, hook lifecycle, draft param parsing)
@@ -193,7 +197,7 @@ const curatedFeedSchema = z.object({
 2. **Error states** per section (retry button, non-retryable message)
 3. **Mobile layout refinements**
    - ≤768px: single column, cards stack vertically, QuickStart 1-col
-   - >768px: MetricsGlance 3-col, QuickStart 2×2
+   - > 768px: MetricsGlance 3-col, QuickStart 2×2
 4. **Threshold color tokens** — extend `tokens.css`:
    - `--cei-threshold-red`, `--cei-threshold-amber`, `--cei-threshold-green`
 5. **Keyboard navigation** — cards are focusable, Enter to navigate
@@ -204,12 +208,12 @@ const curatedFeedSchema = z.object({
 
 ## Quick Start Use Case Mapping
 
-| Card | Draft Message | Agent Profile |
-|------|--------------|---------------|
-| Risk Assessment | "Run a risk assessment for my organization" | risk-compliance |
-| Compliance Gap | "Analyze compliance gaps against our active frameworks" | risk-compliance |
-| Control Review | "Review control effectiveness and attestation health" | risk-compliance |
-| DR Readiness | "Assess our disaster recovery readiness" | disaster-recovery |
+| Card            | Draft Message                                           | Agent Profile     |
+| --------------- | ------------------------------------------------------- | ----------------- |
+| Risk Assessment | "Run a risk assessment for my organization"             | risk-compliance   |
+| Compliance Gap  | "Analyze compliance gaps against our active frameworks" | risk-compliance   |
+| Control Review  | "Review control effectiveness and attestation health"   | risk-compliance   |
+| DR Readiness    | "Assess our disaster recovery readiness"                | disaster-recovery |
 
 ---
 
@@ -241,12 +245,12 @@ src/home/
 
 ## Timing
 
-| Phase | Scope | Tests | Est. Duration |
-|-------|-------|-------|---------------|
-| H1 | Shell + routing + mock data | 20+ | ~35 min |
-| H2 | Feed API + Zod validation + draft param | 20+ | ~25 min |
-| H3 | Polish + responsive + skeleton + a11y | 15+ | ~20 min |
-| **Total** | | **55+** | **~80 min** |
+| Phase     | Scope                                   | Tests   | Est. Duration |
+| --------- | --------------------------------------- | ------- | ------------- |
+| H1        | Shell + routing + mock data             | 20+     | ~35 min       |
+| H2        | Feed API + Zod validation + draft param | 20+     | ~25 min       |
+| H3        | Polish + responsive + skeleton + a11y   | 15+     | ~20 min       |
+| **Total** |                                         | **55+** | **~80 min**   |
 
 ---
 
