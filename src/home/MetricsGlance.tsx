@@ -4,6 +4,9 @@ import type { HomeMetricItem, HomeMetricThreshold } from './mockFeedData'
 
 interface MetricsGlanceProps {
   items: HomeMetricItem[]
+  loading?: boolean
+  error?: string | null
+  onRetry?: () => void
 }
 
 type TrendDirection = 'up' | 'down' | 'flat'
@@ -69,8 +72,18 @@ function trendSymbol(direction: TrendDirection): string {
 /**
  * Renders deterministic metric cards for quick health checks.
  */
-export function MetricsGlance({ items }: MetricsGlanceProps): JSX.Element {
+export function MetricsGlance({
+  items,
+  loading = false,
+  error = null,
+  onRetry,
+}: MetricsGlanceProps): JSX.Element {
   const navigate = useNavigate()
+
+  const onOpenMetric = (item: HomeMetricItem): void => {
+    const prompt = `Analyze the ${item.label} metric which is currently ${item.valueDisplay}`
+    navigate(`/chat?draft=${encodeURIComponent(prompt)}`)
+  }
 
   return (
     <section className="cei-home-section" aria-labelledby="cei-home-metrics-title">
@@ -78,7 +91,18 @@ export function MetricsGlance({ items }: MetricsGlanceProps): JSX.Element {
         Metrics at a Glance
       </h2>
 
-      {items.length === 0 ? (
+      {loading ? (
+        <p className="cei-home-empty-state">Loading...</p>
+      ) : error ? (
+        <div className="cei-home-status-state">
+          <p className="cei-home-empty-state" role="alert">
+            {error}
+          </p>
+          <button className="cei-home-retry-button" onClick={onRetry} type="button">
+            Retry
+          </button>
+        </div>
+      ) : items.length === 0 ? (
         <p className="cei-home-empty-state">No metrics available yet</p>
       ) : (
         <div className="cei-home-metrics-grid">
@@ -90,7 +114,7 @@ export function MetricsGlance({ items }: MetricsGlanceProps): JSX.Element {
               <button
                 className="cei-home-card cei-home-metric-card"
                 key={item.id}
-                onClick={(): void => navigate('/chat')}
+                onClick={(): void => onOpenMetric(item)}
                 type="button"
               >
                 <div className="cei-home-metric-topline">

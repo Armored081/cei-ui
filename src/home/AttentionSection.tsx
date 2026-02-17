@@ -5,6 +5,9 @@ import type { HomeAgenticItem } from './mockFeedData'
 
 interface AttentionSectionProps {
   items: HomeAgenticItem[]
+  loading?: boolean
+  error?: string | null
+  onRetry?: () => void
 }
 
 /**
@@ -17,8 +20,18 @@ function severityClassName(severity: HomeAgenticItem['severity']): string {
 /**
  * Renders prioritized agentic feed items that need user attention.
  */
-export function AttentionSection({ items }: AttentionSectionProps): JSX.Element {
+export function AttentionSection({
+  items,
+  loading = false,
+  error = null,
+  onRetry,
+}: AttentionSectionProps): JSX.Element {
   const navigate = useNavigate()
+
+  const onOpenItem = (item: HomeAgenticItem): void => {
+    const prompt = `Tell me more about: ${item.title}. ${item.summary}`
+    navigate(`/chat?draft=${encodeURIComponent(prompt)}`)
+  }
 
   return (
     <section className="cei-home-section" aria-labelledby="cei-home-attention-title">
@@ -26,7 +39,18 @@ export function AttentionSection({ items }: AttentionSectionProps): JSX.Element 
         Attention Needed
       </h2>
 
-      {items.length === 0 ? (
+      {loading ? (
+        <p className="cei-home-empty-state">Loading...</p>
+      ) : error ? (
+        <div className="cei-home-status-state">
+          <p className="cei-home-empty-state" role="alert">
+            {error}
+          </p>
+          <button className="cei-home-retry-button" onClick={onRetry} type="button">
+            Retry
+          </button>
+        </div>
+      ) : items.length === 0 ? (
         <p className="cei-home-empty-state">All clear — no urgent items right now</p>
       ) : (
         <div className="cei-home-attention-grid">
@@ -35,7 +59,7 @@ export function AttentionSection({ items }: AttentionSectionProps): JSX.Element 
               <button
                 className="cei-home-card cei-home-attention-card"
                 key={item.id}
-                onClick={(): void => navigate('/chat')}
+                onClick={(): void => onOpenItem(item)}
                 type="button"
               >
                 <div className="cei-home-attention-header">

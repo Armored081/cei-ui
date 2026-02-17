@@ -5,18 +5,28 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { HomePage } from '../HomePage'
 import type { HomeAgenticItem, HomeMetricItem } from '../mockFeedData'
 
-const { mockUseAuth, mockLogout } = vi.hoisted(
+const { mockUseAuth, mockLogout, mockGetAccessToken, mockUseHomeFeed, mockRefresh } = vi.hoisted(
   (): {
     mockUseAuth: ReturnType<typeof vi.fn>
     mockLogout: ReturnType<typeof vi.fn>
+    mockGetAccessToken: ReturnType<typeof vi.fn>
+    mockUseHomeFeed: ReturnType<typeof vi.fn>
+    mockRefresh: ReturnType<typeof vi.fn>
   } => ({
     mockUseAuth: vi.fn(),
     mockLogout: vi.fn(),
+    mockGetAccessToken: vi.fn(),
+    mockUseHomeFeed: vi.fn(),
+    mockRefresh: vi.fn(),
   }),
 )
 
 vi.mock('../../auth/AuthProvider', (): { useAuth: typeof mockUseAuth } => ({
   useAuth: mockUseAuth,
+}))
+
+vi.mock('../useHomeFeed', (): { useHomeFeed: typeof mockUseHomeFeed } => ({
+  useHomeFeed: mockUseHomeFeed,
 }))
 
 function renderHomePage(
@@ -29,14 +39,64 @@ function renderHomePage(
   )
 }
 
+const FEED_DATA = {
+  agentic: [
+    {
+      id: 'feed-agentic-1',
+      type: 'agentic' as const,
+      category: 'compliance',
+      title: 'Feed attention item',
+      summary: 'Feed summary text',
+      confidence: 'high' as const,
+      significanceScore: 0.9,
+    },
+  ],
+  deterministic: [
+    {
+      id: 'feed-metric-1',
+      type: 'deterministic' as const,
+      category: 'metrics',
+      title: 'Feed metric label',
+      summary: 'Feed metric summary',
+      confidence: 'medium' as const,
+      significanceScore: 0.5,
+      value: 91,
+      previousValue: 88,
+      threshold: {
+        direction: 'below' as const,
+        amber: 90,
+        red: 85,
+      },
+    },
+  ],
+  generatedAt: '2026-02-17T08:00:00.000Z',
+  cadenceState: {
+    currentPeriod: '2026-W07',
+    isReviewWeek: false,
+    dayOfWeek: 2,
+    activeTargets: 3,
+  },
+}
+
 beforeEach((): void => {
   mockUseAuth.mockReset()
   mockLogout.mockReset()
+  mockGetAccessToken.mockReset()
+  mockUseHomeFeed.mockReset()
+  mockRefresh.mockReset()
 
   mockLogout.mockResolvedValue(undefined)
+  mockGetAccessToken.mockResolvedValue('access-token')
   mockUseAuth.mockReturnValue({
+    getAccessToken: mockGetAccessToken,
     logout: mockLogout,
     userEmail: 'analyst@example.com',
+  })
+  mockUseHomeFeed.mockReturnValue({
+    feed: FEED_DATA,
+    loading: false,
+    error: null,
+    refresh: mockRefresh,
   })
 })
 
@@ -58,15 +118,40 @@ describe('HomePage', (): void => {
     expect(screen.getByRole('heading', { name: 'Quick Start' })).toBeInTheDocument()
   })
 
-  it('renders development mock feed items by default', (): void => {
+  it('renders feed items returned by useHomeFeed', (): void => {
     renderHomePage()
 
-    expect(
-      screen.getByRole('button', {
-        name: /Vektora NIS2 logging coverage gap needs executive review/i,
-      }),
-    ).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /OT findings count/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Feed attention item/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Feed metric label/i })).toBeInTheDocument()
+  })
+
+  it('renders loading state from useHomeFeed', (): void => {
+    mockUseHomeFeed.mockReturnValue({
+      feed: null,
+      loading: true,
+      error: null,
+      refresh: mockRefresh,
+    })
+
+    renderHomePage()
+
+    expect(screen.getAllByText('Loading...')).toHaveLength(2)
+  })
+
+  it('renders error state from useHomeFeed and retries via refresh callback', (): void => {
+    mockUseHomeFeed.mockReturnValue({
+      feed: null,
+      loading: false,
+      error: 'Failed to load home feed',
+      refresh: mockRefresh,
+    })
+
+    renderHomePage()
+
+    expect(screen.getAllByRole('alert')).toHaveLength(2)
+    fireEvent.click(screen.getAllByRole('button', { name: 'Retry' })[0])
+
+    expect(mockRefresh).toHaveBeenCalledTimes(1)
   })
 
   it('shows empty section states when feed arrays are empty', (): void => {
@@ -74,6 +159,7 @@ describe('HomePage', (): void => {
 
     expect(screen.getByText('All clear — no urgent items right now')).toBeInTheDocument()
     expect(screen.getByText('No metrics available yet')).toBeInTheDocument()
+    expect(mockUseHomeFeed).not.toHaveBeenCalled()
   })
 
   it('shows authenticated user email in the top bar', (): void => {
@@ -102,5 +188,37 @@ describe('HomePage', (): void => {
     }
 
     expect(within(quickStartSection).getAllByRole('button')).toHaveLength(4)
+  })
+
+  it('skips useHomeFeed when explicit section props are provided', (): void => {
+    renderHomePage({
+      agenticItems: [
+        {
+          id: 'override-agentic',
+          severity: 'amber',
+          title: 'Override attention',
+          summary: 'Override summary',
+          confidence: 'low',
+        },
+      ],
+      metricItems: [
+        {
+          id: 'override-metric',
+          label: 'Override metric',
+          value: 11,
+          valueDisplay: '11',
+          previousValue: 10,
+          threshold: {
+            direction: 'above',
+            amber: 8,
+            red: 12,
+          },
+        },
+      ],
+    })
+
+    expect(screen.getByRole('button', { name: /Override attention/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Override metric/i })).toBeInTheDocument()
+    expect(mockUseHomeFeed).not.toHaveBeenCalled()
   })
 })

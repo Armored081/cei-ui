@@ -1,15 +1,20 @@
 import { fireEvent, render, screen } from '@testing-library/react'
-import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
 
 import { QuickStartGrid } from '../QuickStartGrid'
+
+function ChatRouteDebug(): JSX.Element {
+  const location = useLocation()
+  return <div>{`Chat route ${location.search}`}</div>
+}
 
 function renderQuickStartWithRoutes(): void {
   render(
     <MemoryRouter initialEntries={['/']}>
       <Routes>
         <Route path="/" element={<QuickStartGrid />} />
-        <Route path="/chat" element={<div>Chat route</div>} />
+        <Route path="/chat" element={<ChatRouteDebug />} />
       </Routes>
     </MemoryRouter>,
   )
@@ -25,8 +30,10 @@ describe('QuickStartGrid', (): void => {
 
     expect(screen.getByRole('heading', { name: 'Quick Start' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Risk Assessment/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Compliance Gap/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Control Review/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Compliance Gap Analysis/i })).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: /Control Effectiveness Review/i }),
+    ).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /DR Readiness/i })).toBeInTheDocument()
   })
 
@@ -53,14 +60,21 @@ describe('QuickStartGrid', (): void => {
     expect(screen.getAllByRole('button')).toHaveLength(4)
   })
 
-  it.each(['Risk Assessment', 'Compliance Gap', 'Control Review', 'DR Readiness'])(
-    'navigates to chat when %s is clicked',
-    (cardTitle: string): void => {
+  it.each([
+    ['Risk Assessment', 'Run a risk assessment for my organization'],
+    ['Compliance Gap Analysis', 'Analyze compliance gaps against our active frameworks'],
+    ['Control Effectiveness Review', 'Review control effectiveness and attestation health'],
+    ['DR Readiness', 'Assess our disaster recovery readiness'],
+  ])(
+    'navigates to chat with draft param when %s is clicked',
+    (cardTitle: string, draftMessage: string): void => {
       renderQuickStartWithRoutes()
 
       fireEvent.click(screen.getByRole('button', { name: new RegExp(cardTitle, 'i') }))
 
-      expect(screen.getByText('Chat route')).toBeInTheDocument()
+      expect(
+        screen.getByText(`Chat route ?draft=${encodeURIComponent(draftMessage)}`),
+      ).toBeInTheDocument()
     },
   )
 })

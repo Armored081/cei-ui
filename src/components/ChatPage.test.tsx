@@ -69,9 +69,9 @@ function attachFiles(files: File[]): void {
   fireEvent.change(input, { target: { files } })
 }
 
-function renderChatPage(): void {
+function renderChatPage(initialEntry = '/chat'): void {
   render(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={[initialEntry]}>
       <ChatPage />
     </MemoryRouter>,
   )
@@ -98,6 +98,14 @@ afterEach((): void => {
 })
 
 describe('ChatPage', (): void => {
+  it('prefills draft message from draft query param', async (): Promise<void> => {
+    renderChatPage('/chat?draft=Run%20a%20risk%20assessment')
+
+    await waitFor((): void => {
+      expect(screen.getByLabelText('Instruction')).toHaveValue('Run a risk assessment')
+    })
+  })
+
   it('shows an empty welcome state with suggestions', (): void => {
     renderChatPage()
 

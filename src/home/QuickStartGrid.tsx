@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 
 interface QuickStartItem {
   description: string
+  draftMessage: string
   icon: string
   id: string
   title: string
@@ -13,24 +14,28 @@ const QUICK_START_ITEMS: QuickStartItem[] = [
     icon: '🔍',
     title: 'Risk Assessment',
     description: 'Evaluate cyber risk posture against frameworks',
+    draftMessage: 'Run a risk assessment for my organization',
   },
   {
     id: 'quick-start-compliance-gap',
     icon: '📋',
-    title: 'Compliance Gap',
+    title: 'Compliance Gap Analysis',
     description: 'Identify regulatory gaps and remediation actions',
+    draftMessage: 'Analyze compliance gaps against our active frameworks',
   },
   {
     id: 'quick-start-control-review',
     icon: '🛡️',
-    title: 'Control Review',
+    title: 'Control Effectiveness Review',
     description: 'Assess control maturity and attestation health',
+    draftMessage: 'Review control effectiveness and attestation health',
   },
   {
     id: 'quick-start-dr-readiness',
     icon: '⚡',
     title: 'DR Readiness',
     description: 'Assess disaster recovery readiness',
+    draftMessage: 'Assess our disaster recovery readiness',
   },
 ]
 
@@ -52,7 +57,7 @@ export function QuickStartGrid(): JSX.Element {
             <button
               className="cei-home-card cei-home-quickstart-card"
               key={item.id}
-              onClick={(): void => navigate('/chat')}
+              onClick={(): void => navigate(`/chat?draft=${encodeURIComponent(item.draftMessage)}`)}
               type="button"
             >
               <span aria-hidden="true" className="cei-home-quickstart-icon">

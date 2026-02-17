@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react'
-import { MemoryRouter, Route, Routes } from 'react-router-dom'
-import { describe, expect, it } from 'vitest'
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
+import { describe, expect, it, vi } from 'vitest'
 
 import { MetricsGlance } from '../MetricsGlance'
 import type { HomeMetricItem } from '../mockFeedData'
@@ -44,12 +44,28 @@ const METRIC_ITEMS: HomeMetricItem[] = [
   },
 ]
 
-function renderMetrics(items: HomeMetricItem[]): void {
+interface RenderMetricsOptions {
+  loading?: boolean
+  error?: string | null
+  onRetry?: () => void
+}
+
+function renderMetrics(items: HomeMetricItem[], options: RenderMetricsOptions = {}): void {
   render(
     <MemoryRouter>
-      <MetricsGlance items={items} />
+      <MetricsGlance
+        items={items}
+        loading={options.loading}
+        error={options.error}
+        onRetry={options.onRetry}
+      />
     </MemoryRouter>,
   )
+}
+
+function ChatRouteDebug(): JSX.Element {
+  const location = useLocation()
+  return <div>{`Chat route ${location.search}`}</div>
 }
 
 describe('MetricsGlance', (): void => {
@@ -92,19 +108,46 @@ describe('MetricsGlance', (): void => {
     expect(screen.getByText('No metrics available yet')).toBeInTheDocument()
   })
 
-  it('navigates to chat when a metric card is clicked', (): void => {
+  it('renders loading state when loading is true', (): void => {
+    renderMetrics(METRIC_ITEMS, { loading: true })
+
+    expect(screen.getByText('Loading...')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /OT findings count/i })).not.toBeInTheDocument()
+  })
+
+  it('renders error state and triggers retry callback', (): void => {
+    const onRetry = vi.fn()
+    renderMetrics(METRIC_ITEMS, {
+      error: 'Failed to load metrics',
+      onRetry,
+    })
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Failed to load metrics')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }))
+
+    expect(onRetry).toHaveBeenCalledTimes(1)
+  })
+
+  it('navigates to chat with draft param when a metric card is clicked', (): void => {
     render(
       <MemoryRouter initialEntries={['/']}>
         <Routes>
           <Route path="/" element={<MetricsGlance items={METRIC_ITEMS} />} />
-          <Route path="/chat" element={<div>Chat route</div>} />
+          <Route path="/chat" element={<ChatRouteDebug />} />
         </Routes>
       </MemoryRouter>,
     )
 
     fireEvent.click(screen.getByRole('button', { name: /OT findings count/i }))
 
-    expect(screen.getByText('Chat route')).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        `Chat route ?draft=${encodeURIComponent(
+          'Analyze the OT findings count metric which is currently 12',
+        )}`,
+      ),
+    ).toBeInTheDocument()
   })
 
   it('treats values below red threshold as red for below-direction metrics', (): void => {
