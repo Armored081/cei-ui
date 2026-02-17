@@ -3,6 +3,9 @@ import { ZodError } from 'zod'
 import type { CuratedFeed } from './feedSchema'
 import { curatedFeedSchema } from './feedSchema'
 
+const agentCoreSessionIdPrefix = 'cei-session-'
+const minimumSessionIdLength = 33
+
 function readApiBaseUrl(): string {
   const baseUrl = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
 
@@ -11,6 +14,27 @@ function readApiBaseUrl(): string {
   }
 
   return baseUrl
+}
+
+function shouldUseDirectAgentCore(): boolean {
+  return import.meta.env.VITE_USE_DIRECT_AGENTCORE === 'true'
+}
+
+function buildDirectAgentCoreUrl(): string {
+  const region = import.meta.env.VITE_AGENTCORE_REGION || ''
+  const runtimeArn = import.meta.env.VITE_AGENT_RUNTIME_ARN || ''
+
+  if (!region || !runtimeArn) {
+    throw new Error('Missing VITE_AGENTCORE_REGION or VITE_AGENT_RUNTIME_ARN')
+  }
+
+  const encodedArn = encodeURIComponent(runtimeArn)
+  return `https://bedrock-agentcore.${region}.amazonaws.com/runtimes/${encodedArn}/invocations?qualifier=cei_dev_endpoint`
+}
+
+function generateSessionId(): string {
+  const base = `${agentCoreSessionIdPrefix}home-feed-${Date.now()}`
+  return base.length >= minimumSessionIdLength ? base : base.padEnd(minimumSessionIdLength, '0')
 }
 
 async function readErrorMessage(response: Response): Promise<string> {
@@ -52,25 +76,38 @@ function parseCuratedFeed(payload: unknown): CuratedFeed {
 }
 
 /**
- * Fetches curated home feed candidates from the agent proxy invoke endpoint.
+ * Fetches curated home feed candidates from the agent.
  *
- * @param accessToken - Bearer token used by the API proxy
+ * In direct AgentCore mode, calls the AgentCore HTTP endpoint with a Bearer
+ * (Cognito ID) token. Otherwise falls back to the Lambda proxy.
+ *
+ * @param accessToken - Cognito ID token (direct mode) or access token (proxy mode)
  * @returns Validated curated feed payload
  */
 export async function fetchHomeFeed(accessToken: string): Promise<CuratedFeed> {
-  const baseUrl = readApiBaseUrl()
-  const response = await fetch(`${baseUrl}/invoke`, {
+  const useDirect = shouldUseDirectAgentCore()
+  const url = useDirect ? buildDirectAgentCoreUrl() : `${readApiBaseUrl()}/invoke`
+
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${accessToken}`,
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+  }
+
+  if (useDirect) {
+    headers['X-Amzn-Bedrock-AgentCore-Runtime-Session-Id'] = generateSessionId()
+  }
+
+  const response = await fetch(url, {
     method: 'POST',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-    },
+    headers,
     body: JSON.stringify({
       action: 'home_feed',
       inputs: {
         role: 'ciso',
+        tenantId: 'default',
       },
+      stream: false,
     }),
   })
 
