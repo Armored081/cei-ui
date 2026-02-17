@@ -64,13 +64,16 @@ export function ToolLogEntry({ entry, isActive, onToggleExpand }: ToolLogEntryPr
       return
     }
 
-    setShowPulse(true)
+    const startPulseTimeoutId = window.setTimeout((): void => {
+      setShowPulse(true)
+    }, 0)
 
     const timeoutId = window.setTimeout((): void => {
       setShowPulse(false)
     }, 420)
 
     return (): void => {
+      window.clearTimeout(startPulseTimeoutId)
       window.clearTimeout(timeoutId)
     }
   }, [entry.id, status])

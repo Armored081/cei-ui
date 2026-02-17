@@ -27,7 +27,11 @@ function toErrorMessage(error: unknown): string {
   return 'Unable to submit feedback. Please try again.'
 }
 
-function toThreadContext(_includeThreadContext: boolean): Record<string, unknown> | undefined {
+function toThreadContext(includeThreadContext: boolean): Record<string, unknown> | undefined {
+  if (!includeThreadContext) {
+    return undefined
+  }
+
   // Thread context capture not yet implemented
   // Omit the field entirely rather than sending a stub
   return undefined

@@ -45,7 +45,13 @@ export function RoadmapPage(): JSX.Element {
   }, [getAccessToken])
 
   useEffect(() => {
-    void loadRoadmap()
+    const timeoutId = window.setTimeout((): void => {
+      void loadRoadmap()
+    }, 0)
+
+    return (): void => {
+      window.clearTimeout(timeoutId)
+    }
   }, [loadRoadmap])
 
   const shipped = items.filter((i) => i.status === 'shipped')
