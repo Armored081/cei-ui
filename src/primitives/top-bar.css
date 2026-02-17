@@ -16,6 +16,17 @@
   gap: var(--space-2);
 }
 
+.cei-topbar-brand-button {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+
+.cei-topbar-brand-button:hover .cei-topbar-wordmark {
+  color: var(--accent-hover);
+}
+
 .cei-topbar-diamond {
   color: var(--accent);
   font-size: 0.74rem;

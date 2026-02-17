@@ -31,8 +31,8 @@ vi.mock('../useHomeFeed', (): { useHomeFeed: typeof mockUseHomeFeed } => ({
 
 function renderHomePage(
   props: Partial<{ agenticItems: HomeAgenticItem[]; metricItems: HomeMetricItem[] }> = {},
-): void {
-  render(
+): ReturnType<typeof render> {
+  return render(
     <MemoryRouter>
       <HomePage {...props} />
     </MemoryRouter>,
@@ -133,9 +133,10 @@ describe('HomePage', (): void => {
       refresh: mockRefresh,
     })
 
-    renderHomePage()
+    const { container } = renderHomePage()
 
-    expect(screen.getAllByText('Loading...')).toHaveLength(2)
+    expect(container.querySelectorAll('.cei-home-attention-card--skeleton')).toHaveLength(3)
+    expect(container.querySelectorAll('.cei-home-metric-card--skeleton')).toHaveLength(3)
   })
 
   it('renders error state from useHomeFeed and retries via refresh callback', (): void => {
@@ -149,7 +150,7 @@ describe('HomePage', (): void => {
     renderHomePage()
 
     expect(screen.getAllByRole('alert')).toHaveLength(2)
-    fireEvent.click(screen.getAllByRole('button', { name: 'Retry' })[0])
+    fireEvent.click(screen.getAllByRole('button', { name: 'Try again' })[0])
 
     expect(mockRefresh).toHaveBeenCalledTimes(1)
   })

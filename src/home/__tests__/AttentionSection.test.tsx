@@ -73,10 +73,14 @@ describe('AttentionSection', (): void => {
     expect(screen.getByText('All clear — no urgent items right now')).toBeInTheDocument()
   })
 
-  it('renders loading state when loading is true', (): void => {
-    renderAttention(ATTENTION_ITEMS, { loading: true })
+  it('renders loading skeleton cards when loading is true', (): void => {
+    const { container } = render(
+      <MemoryRouter>
+        <AttentionSection items={ATTENTION_ITEMS} loading />
+      </MemoryRouter>,
+    )
 
-    expect(screen.getByText('Loading...')).toBeInTheDocument()
+    expect(container.querySelectorAll('.cei-home-attention-card--skeleton')).toHaveLength(3)
     expect(screen.queryByRole('button', { name: /Immediate supplier/i })).not.toBeInTheDocument()
   })
 
@@ -89,7 +93,7 @@ describe('AttentionSection', (): void => {
 
     expect(screen.getByRole('alert')).toHaveTextContent('Unable to load home feed')
 
-    fireEvent.click(screen.getByRole('button', { name: 'Retry' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
 
     expect(onRetry).toHaveBeenCalledTimes(1)
   })

@@ -81,9 +81,9 @@ describe('MetricsGlance', (): void => {
   it('applies red, amber, and green threshold classes', (): void => {
     renderMetrics(METRIC_ITEMS)
 
-    expect(screen.getByText('12')).toHaveClass('cei-home-metric-value-red')
-    expect(screen.getByText('84%')).toHaveClass('cei-home-metric-value-amber')
-    expect(screen.getByText('95%')).toHaveClass('cei-home-metric-value-green')
+    expect(screen.getByText('12')).toHaveClass('cei-metric-value--red')
+    expect(screen.getByText('84%')).toHaveClass('cei-metric-value--amber')
+    expect(screen.getByText('95%')).toHaveClass('cei-metric-value--green')
   })
 
   it('renders up, down, and flat trend arrows', (): void => {
@@ -108,10 +108,14 @@ describe('MetricsGlance', (): void => {
     expect(screen.getByText('No metrics available yet')).toBeInTheDocument()
   })
 
-  it('renders loading state when loading is true', (): void => {
-    renderMetrics(METRIC_ITEMS, { loading: true })
+  it('renders loading skeleton cards when loading is true', (): void => {
+    const { container } = render(
+      <MemoryRouter>
+        <MetricsGlance items={METRIC_ITEMS} loading />
+      </MemoryRouter>,
+    )
 
-    expect(screen.getByText('Loading...')).toBeInTheDocument()
+    expect(container.querySelectorAll('.cei-home-metric-card--skeleton')).toHaveLength(3)
     expect(screen.queryByRole('button', { name: /OT findings count/i })).not.toBeInTheDocument()
   })
 
@@ -124,7 +128,7 @@ describe('MetricsGlance', (): void => {
 
     expect(screen.getByRole('alert')).toHaveTextContent('Failed to load metrics')
 
-    fireEvent.click(screen.getByRole('button', { name: 'Retry' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
 
     expect(onRetry).toHaveBeenCalledTimes(1)
   })
@@ -168,6 +172,6 @@ describe('MetricsGlance', (): void => {
 
     renderMetrics(belowRedItem)
 
-    expect(screen.getByText('68%')).toHaveClass('cei-home-metric-value-red')
+    expect(screen.getByText('68%')).toHaveClass('cei-metric-value--red')
   })
 })

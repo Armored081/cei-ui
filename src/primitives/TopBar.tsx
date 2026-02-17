@@ -12,16 +12,24 @@ interface TopBarProps {
 export function TopBar({ userEmail, onLogout }: TopBarProps): JSX.Element {
   const navigate = useNavigate()
   const [isFeedbackOpen, setIsFeedbackOpen] = useState<boolean>(false)
+  const onNavigateHome = (): void => {
+    navigate('/')
+  }
 
   return (
     <>
       <header className="cei-topbar">
-        <div className="cei-topbar-left">
+        <button
+          aria-label="Go to home"
+          className="cei-topbar-brand-button cei-topbar-left"
+          onClick={onNavigateHome}
+          type="button"
+        >
           <span className="cei-topbar-diamond" aria-hidden="true">
             ◆
           </span>
           <span className="cei-topbar-wordmark">CEI</span>
-        </div>
+        </button>
         <div className="cei-topbar-right">
           <nav className="cei-topbar-nav">
             <button

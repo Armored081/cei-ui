@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 
-import type { HomeMetricItem, HomeMetricThreshold } from './mockFeedData'
+import type { HomeMetricItem } from './mockFeedData'
 
 interface MetricsGlanceProps {
   items: HomeMetricItem[]
@@ -10,39 +10,55 @@ interface MetricsGlanceProps {
 }
 
 type TrendDirection = 'up' | 'down' | 'flat'
-type MetricState = 'red' | 'amber' | 'green'
 
 /**
- * Computes threshold state for deterministic metrics.
+ * Computes threshold class from deterministic metric thresholds.
  */
-function metricStateFromThreshold(value: number, threshold: HomeMetricThreshold): MetricState {
+function getThresholdClass(item: HomeMetricItem): string {
+  const { value, threshold } = item
+
   if (threshold.direction === 'above') {
     if (value >= threshold.red) {
-      return 'red'
+      return 'cei-metric-value--red'
     }
 
     if (value >= threshold.amber) {
-      return 'amber'
+      return 'cei-metric-value--amber'
     }
 
-    return 'green'
+    return 'cei-metric-value--green'
   }
 
   if (value <= threshold.red) {
-    return 'red'
+    return 'cei-metric-value--red'
   }
 
   if (value <= threshold.amber) {
-    return 'amber'
+    return 'cei-metric-value--amber'
   }
 
-  return 'green'
+  return 'cei-metric-value--green'
 }
 
 /**
- * Computes trend direction from current and previous values.
+ * Renders a trend arrow symbol from current and previous values.
  */
-function trendDirection(value: number, previousValue: number): TrendDirection {
+function getTrendArrow(value: number, previousValue: number): string {
+  if (value > previousValue) {
+    return '↑'
+  }
+
+  if (value < previousValue) {
+    return '↓'
+  }
+
+  return '→'
+}
+
+/**
+ * Computes trend direction class from metric values.
+ */
+function getTrendDirection(value: number, previousValue: number): TrendDirection {
   if (value > previousValue) {
     return 'up'
   }
@@ -55,18 +71,21 @@ function trendDirection(value: number, previousValue: number): TrendDirection {
 }
 
 /**
- * Renders a trend arrow symbol.
+ * Skeleton card shown while metrics are loading.
  */
-function trendSymbol(direction: TrendDirection): string {
-  if (direction === 'up') {
-    return '↑'
-  }
-
-  if (direction === 'down') {
-    return '↓'
-  }
-
-  return '→'
+function MetricSkeleton(): JSX.Element {
+  return (
+    <div
+      className="cei-home-card cei-home-metric-card cei-home-metric-card--skeleton"
+      aria-hidden="true"
+    >
+      <div className="cei-home-metric-topline">
+        <div className="cei-skeleton cei-skeleton-title" />
+        <div className="cei-skeleton cei-skeleton-title" />
+      </div>
+      <div className="cei-skeleton cei-skeleton-text" />
+    </div>
+  )
 }
 
 /**
@@ -92,44 +111,56 @@ export function MetricsGlance({
       </h2>
 
       {loading ? (
-        <p className="cei-home-empty-state">Loading...</p>
+        <div className="cei-home-metrics-grid" aria-label="Metrics loading">
+          {[0, 1, 2].map(
+            (index): JSX.Element => (
+              <MetricSkeleton key={`metric-skeleton-${index}`} />
+            ),
+          )}
+        </div>
       ) : error ? (
-        <div className="cei-home-status-state">
-          <p className="cei-home-empty-state" role="alert">
-            {error}
-          </p>
-          <button className="cei-home-retry-button" onClick={onRetry} type="button">
-            Retry
-          </button>
+        <div className="cei-home-metrics-error" role="alert">
+          <p>{error}</p>
+          {onRetry ? (
+            <button onClick={onRetry} className="cei-home-retry-btn" type="button">
+              Try again
+            </button>
+          ) : null}
         </div>
       ) : items.length === 0 ? (
         <p className="cei-home-empty-state">No metrics available yet</p>
       ) : (
         <div className="cei-home-metrics-grid">
           {items.map((item): JSX.Element => {
-            const metricState = metricStateFromThreshold(item.value, item.threshold)
-            const trend = trendDirection(item.value, item.previousValue)
+            const trend = getTrendDirection(item.value, item.previousValue)
+            const trendArrow = getTrendArrow(item.value, item.previousValue)
 
             return (
-              <button
+              <div
                 className="cei-home-card cei-home-metric-card"
                 key={item.id}
+                role="button"
+                tabIndex={0}
                 onClick={(): void => onOpenMetric(item)}
-                type="button"
+                onKeyDown={(event): void => {
+                  if (event.key === 'Enter') {
+                    onOpenMetric(item)
+                  }
+                }}
               >
                 <div className="cei-home-metric-topline">
-                  <p className={`cei-home-metric-value cei-home-metric-value-${metricState}`}>
+                  <p className={`cei-home-metric-value ${getThresholdClass(item)}`}>
                     {item.valueDisplay}
                   </p>
                   <span
                     className={`cei-home-trend-arrow cei-home-trend-${trend}`}
                     aria-label={`Trend ${trend}`}
                   >
-                    {trendSymbol(trend)}
+                    {trendArrow}
                   </span>
                 </div>
                 <p className="cei-home-metric-label">{item.label}</p>
-              </button>
+              </div>
             )
           })}
         </div>

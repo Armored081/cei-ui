@@ -84,4 +84,10 @@
 
   /* Composer height (set by ResizeObserver) */
   --composer-height: 52px;
+
+  /* === Threshold / Alert Colors === */
+  --cei-threshold-red: #dc2626;
+  --cei-threshold-amber: #d97706;
+  --cei-threshold-green: #16a34a;
+  --cei-threshold-neutral: var(--text-muted);
 }

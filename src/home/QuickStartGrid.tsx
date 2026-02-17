@@ -44,6 +44,9 @@ const QUICK_START_ITEMS: QuickStartItem[] = [
  */
 export function QuickStartGrid(): JSX.Element {
   const navigate = useNavigate()
+  const onOpenQuickStart = (draftMessage: string): void => {
+    navigate(`/chat?draft=${encodeURIComponent(draftMessage)}`)
+  }
 
   return (
     <section className="cei-home-section" aria-labelledby="cei-home-quick-start-title">
@@ -54,18 +57,24 @@ export function QuickStartGrid(): JSX.Element {
       <div className="cei-home-quickstart-grid">
         {QUICK_START_ITEMS.map(
           (item): JSX.Element => (
-            <button
+            <div
               className="cei-home-card cei-home-quickstart-card"
               key={item.id}
-              onClick={(): void => navigate(`/chat?draft=${encodeURIComponent(item.draftMessage)}`)}
-              type="button"
+              role="button"
+              tabIndex={0}
+              onClick={(): void => onOpenQuickStart(item.draftMessage)}
+              onKeyDown={(event): void => {
+                if (event.key === 'Enter') {
+                  onOpenQuickStart(item.draftMessage)
+                }
+              }}
             >
               <span aria-hidden="true" className="cei-home-quickstart-icon">
                 {item.icon}
               </span>
               <h3 className="cei-home-card-title">{item.title}</h3>
               <p className="cei-home-card-summary">{item.description}</p>
-            </button>
+            </div>
           ),
         )}
       </div>

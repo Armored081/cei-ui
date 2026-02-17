@@ -18,6 +18,21 @@ function severityClassName(severity: HomeAgenticItem['severity']): string {
 }
 
 /**
+ * Skeleton card shown while attention items are loading.
+ */
+function AttentionSkeleton(): JSX.Element {
+  return (
+    <div
+      className="cei-home-card cei-home-attention-card cei-home-attention-card--skeleton"
+      aria-hidden="true"
+    >
+      <div className="cei-skeleton cei-skeleton-title" />
+      <div className="cei-skeleton cei-skeleton-text" />
+    </div>
+  )
+}
+
+/**
  * Renders prioritized agentic feed items that need user attention.
  */
 export function AttentionSection({
@@ -40,15 +55,21 @@ export function AttentionSection({
       </h2>
 
       {loading ? (
-        <p className="cei-home-empty-state">Loading...</p>
+        <div className="cei-home-attention-grid" aria-label="Attention loading">
+          {[0, 1, 2].map(
+            (index): JSX.Element => (
+              <AttentionSkeleton key={`attention-skeleton-${index}`} />
+            ),
+          )}
+        </div>
       ) : error ? (
-        <div className="cei-home-status-state">
-          <p className="cei-home-empty-state" role="alert">
-            {error}
-          </p>
-          <button className="cei-home-retry-button" onClick={onRetry} type="button">
-            Retry
-          </button>
+        <div className="cei-home-attention-error" role="alert">
+          <p>{error}</p>
+          {onRetry ? (
+            <button onClick={onRetry} className="cei-home-retry-btn" type="button">
+              Try again
+            </button>
+          ) : null}
         </div>
       ) : items.length === 0 ? (
         <p className="cei-home-empty-state">All clear — no urgent items right now</p>
@@ -56,11 +77,17 @@ export function AttentionSection({
         <div className="cei-home-attention-grid">
           {items.map(
             (item): JSX.Element => (
-              <button
+              <div
                 className="cei-home-card cei-home-attention-card"
                 key={item.id}
+                role="button"
+                tabIndex={0}
                 onClick={(): void => onOpenItem(item)}
-                type="button"
+                onKeyDown={(event): void => {
+                  if (event.key === 'Enter') {
+                    onOpenItem(item)
+                  }
+                }}
               >
                 <div className="cei-home-attention-header">
                   <div className="cei-home-attention-title-wrap">
@@ -73,7 +100,7 @@ export function AttentionSection({
                   <ConfidenceBadge confidence={item.confidence} />
                 </div>
                 <p className="cei-home-card-summary">{item.summary}</p>
-              </button>
+              </div>
             ),
           )}
         </div>
