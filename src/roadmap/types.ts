@@ -17,6 +17,7 @@ export interface RoadmapItem {
 
 export interface RoadmapItemsResponse {
   items: RoadmapItem[]
+  total: number
 }
 
 export const CATEGORY_LABELS: Record<RoadmapCategory, string> = {
