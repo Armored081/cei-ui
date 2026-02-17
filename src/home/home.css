@@ -1,0 +1,240 @@
+.cei-home-page {
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.cei-home-main {
+  overflow-y: auto;
+  padding: var(--space-6) var(--space-4) var(--space-8);
+}
+
+.cei-home-main-content {
+  width: min(1160px, 100%);
+  margin: 0 auto;
+  display: grid;
+  gap: var(--space-4);
+}
+
+.cei-home-welcome,
+.cei-home-section {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background-color: var(--bg-panel);
+  box-shadow: var(--shadow-panel);
+  padding: var(--space-6);
+}
+
+.cei-home-welcome-title {
+  margin: 0;
+  font-size: 1.8rem;
+  line-height: 1.2;
+  font-family: var(--font-display);
+}
+
+.cei-home-welcome-date {
+  margin: var(--space-2) 0 0;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+}
+
+.cei-home-section-title {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-family: var(--font-mono);
+}
+
+.cei-home-attention-grid,
+.cei-home-metrics-grid {
+  margin-top: var(--space-4);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.cei-home-quickstart-grid {
+  margin-top: var(--space-4);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.cei-home-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background-color: var(--bg-elevated);
+  color: var(--text-primary);
+  text-align: left;
+  padding: var(--space-4);
+  cursor: pointer;
+  transition:
+    border-color 140ms ease,
+    background-color 140ms ease,
+    transform 140ms ease;
+}
+
+.cei-home-card:hover {
+  border-color: var(--accent);
+  background-color: color-mix(in srgb, var(--bg-elevated) 78%, var(--accent) 22%);
+  transform: translateY(-1px);
+}
+
+.cei-home-attention-card,
+.cei-home-quickstart-card {
+  display: grid;
+  align-content: start;
+  gap: var(--space-3);
+}
+
+.cei-home-card-title {
+  margin: 0;
+  font-size: 0.98rem;
+  line-height: 1.35;
+}
+
+.cei-home-card-summary {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.84rem;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cei-home-attention-header {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.cei-home-attention-title-wrap {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.cei-home-severity-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+.cei-home-severity-dot-red {
+  background-color: var(--danger);
+}
+
+.cei-home-severity-dot-amber {
+  background-color: var(--warning);
+}
+
+.cei-home-metric-card {
+  display: grid;
+  gap: var(--space-2);
+  align-content: start;
+}
+
+.cei-home-metric-topline {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.cei-home-metric-value {
+  margin: 0;
+  font-size: 2rem;
+  line-height: 1;
+  font-weight: 700;
+  font-family: var(--font-mono);
+}
+
+.cei-home-metric-value-red {
+  color: var(--danger);
+}
+
+.cei-home-metric-value-amber {
+  color: var(--warning);
+}
+
+.cei-home-metric-value-green {
+  color: var(--success);
+}
+
+.cei-home-metric-label {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.cei-home-trend-arrow {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.cei-home-trend-up {
+  color: var(--warning);
+}
+
+.cei-home-trend-down {
+  color: var(--danger);
+}
+
+.cei-home-trend-flat {
+  color: var(--text-muted);
+}
+
+.cei-home-quickstart-icon {
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.cei-home-empty-state {
+  margin: var(--space-4) 0 0;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  background-color: var(--bg-elevated);
+}
+
+@media (max-width: 960px) {
+  .cei-home-attention-grid,
+  .cei-home-metrics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .cei-home-main {
+    padding: var(--space-4) var(--space-3) var(--space-6);
+  }
+
+  .cei-home-main-content {
+    gap: var(--space-3);
+  }
+
+  .cei-home-welcome,
+  .cei-home-section {
+    padding: var(--space-4);
+  }
+
+  .cei-home-attention-grid,
+  .cei-home-metrics-grid,
+  .cei-home-quickstart-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cei-home-welcome-title {
+    font-size: 1.4rem;
+  }
+}

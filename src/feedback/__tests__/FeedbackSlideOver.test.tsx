@@ -105,7 +105,7 @@ describe('FeedbackSlideOver', (): void => {
     })
 
     expect(mockedSubmitFeedback).toHaveBeenCalledWith('access-token', {
-      idempotencyKey: 'idempotency-1',
+      idempotencyKey: '11111111-1111-4111-8111-111111111111',
       category: 'bug',
       title: 'Risk matrix shows duplicates',
       summary: 'Loading a second scenario duplicates rows in the output table.',
@@ -131,7 +131,7 @@ describe('FeedbackSlideOver', (): void => {
     })
 
     expect(mockedSubmitFeedback.mock.calls[0][1]).toMatchObject({
-      idempotencyKey: 'idempotency-2',
+      idempotencyKey: '22222222-2222-4222-8222-222222222222',
       threadContext: undefined,
     })
 

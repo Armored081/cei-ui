@@ -4,14 +4,23 @@ import { LoginPage } from './auth/LoginPage'
 import { ProtectedRoute } from './auth/ProtectedRoute'
 import { ChatPage } from './components/ChatPage'
 import { FeedbackDashboard } from './feedback/FeedbackDashboard'
+import { HomePage } from './home/HomePage'
 import { RoadmapPage } from './roadmap/RoadmapPage'
 
-function App(): JSX.Element {
+export function App(): JSX.Element {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route
         path="/"
+        element={
+          <ProtectedRoute>
+            <HomePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/chat"
         element={
           <ProtectedRoute>
             <ChatPage />
@@ -38,5 +47,3 @@ function App(): JSX.Element {
     </Routes>
   )
 }
-
-export default App
