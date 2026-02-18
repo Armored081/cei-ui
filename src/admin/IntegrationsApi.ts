@@ -163,7 +163,7 @@ function buildDirectAgentCoreHeaders(accessToken: string): Record<string, string
     Authorization: `Bearer ${accessToken}`,
     Accept: 'application/json',
     'Content-Type': 'application/json',
-    'x-amzn-bedrock-agentcore-session-id': generateSessionId(),
+    'X-Amzn-Bedrock-AgentCore-Runtime-Session-Id': generateSessionId(),
   }
 }
 
