@@ -25,7 +25,7 @@ export const feedCandidateSchema = z.object({
   significanceScore: z.number(),
   metricId: z.string().optional(),
   entityId: z.string().optional(),
-  entityPath: z.string().optional(),
+  entityPath: z.union([z.string(), z.array(z.string())]).optional(),
   value: z.number().optional(),
   previousValue: z.number().optional(),
   threshold: z
