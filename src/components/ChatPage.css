@@ -50,6 +50,7 @@
   background-color: var(--bg-panel);
   min-height: 320px;
   max-height: min(56vh, 560px);
+  overflow-x: hidden;
   overflow-y: auto;
   padding: var(--space-4);
   display: grid;
@@ -155,8 +156,10 @@
 
 .cei-message-text-segment {
   white-space: pre-wrap;
-  overflow-wrap: break-word;
+  overflow-wrap: anywhere;
+  word-break: break-word;
   min-width: 0;
+  max-width: 100%;
 }
 
 .cei-message-block-segment {

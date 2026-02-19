@@ -6,6 +6,8 @@
   height: 100vh;
   height: 100dvh;
   min-height: 0;
+  max-width: 100vw;
+  overflow: hidden;
   background-color: var(--bg-primary);
 }
 
@@ -231,7 +233,7 @@
 /* Responsive */
 @media (max-width: 1024px) {
   .cei-cc-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     transition: none;
   }
 
