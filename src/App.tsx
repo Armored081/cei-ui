@@ -8,6 +8,7 @@ import { ProtectedRoute } from './auth/ProtectedRoute'
 import { ChatPage } from './components/ChatPage'
 import { FeedbackDashboard } from './feedback/FeedbackDashboard'
 import { HomePage } from './home/HomePage'
+import { OperationsPage } from './operations/OperationsPage'
 import { RoadmapPage } from './roadmap/RoadmapPage'
 
 export function App(): JSX.Element {
@@ -41,6 +42,7 @@ export function App(): JSX.Element {
         <Route index element={<AdminDashboard />} />
         <Route path="integrations" element={<IntegrationsPage />} />
         <Route path="feedback" element={<FeedbackDashboard />} />
+        <Route path="operations" element={<OperationsPage />} />
         <Route path="roadmap" element={<RoadmapPage />} />
       </Route>
       <Route path="/roadmap" element={<Navigate replace to="/admin/roadmap" />} />

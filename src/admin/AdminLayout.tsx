@@ -39,6 +39,7 @@ export function AdminLayout(): JSX.Element {
         <AdminNavLink to="/admin" end label="Overview" icon="⚙️" />
         <AdminNavLink to="/admin/integrations" label="Integrations" icon="🔗" />
         <AdminNavLink to="/admin/feedback" label="Feedback" icon="💬" />
+        <AdminNavLink to="/admin/operations" label="Operations" icon="⚙️" />
         <AdminNavLink to="/admin/roadmap" label="Roadmap" icon="🗺️" />
       </nav>
 
