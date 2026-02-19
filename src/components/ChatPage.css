@@ -137,6 +137,9 @@
   background-color: var(--bg-panel-muted);
   padding: var(--space-3);
   word-break: break-word;
+  overflow-wrap: break-word;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .cei-message-user {
@@ -146,10 +149,13 @@
 .cei-message-content {
   display: grid;
   gap: var(--space-3);
+  min-width: 0;
 }
 
 .cei-message-text-segment {
   white-space: pre-wrap;
+  overflow-wrap: break-word;
+  min-width: 0;
 }
 
 .cei-message-block-segment {
