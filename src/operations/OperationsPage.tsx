@@ -239,12 +239,6 @@ export function OperationsPage(): JSX.Element {
     return Array.from(cats).sort()
   }, [services])
 
-  const processMap = useMemo(() => {
-    const map = new Map<string, OperatingProcess>()
-    processes.forEach((p) => map.set(p.id, p))
-    return map
-  }, [processes])
-
   const filteredProcessesWithProcedures = useMemo(() => {
     let procs = processes.filter((p) => p.process_level <= 2)
     if (domainFilter) {
