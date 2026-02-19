@@ -8,6 +8,8 @@ import { ProtectedRoute } from './auth/ProtectedRoute'
 import { ChatPage } from './components/ChatPage'
 import { FeedbackDashboard } from './feedback/FeedbackDashboard'
 import { HomePage } from './home/HomePage'
+import { AppLayout } from './layout/AppLayout'
+import { MetricsPage } from './metrics/MetricsPage'
 import { OperationsPage } from './operations/OperationsPage'
 import { RoadmapPage } from './roadmap/RoadmapPage'
 
@@ -16,21 +18,18 @@ export function App(): JSX.Element {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route
-        path="/"
         element={
           <ProtectedRoute>
-            <HomePage />
+            <AppLayout />
           </ProtectedRoute>
         }
-      />
-      <Route
-        path="/chat"
-        element={
-          <ProtectedRoute>
-            <ChatPage />
-          </ProtectedRoute>
-        }
-      />
+      >
+        <Route index element={<HomePage />} />
+        <Route path="chat" element={<ChatPage />} />
+        <Route path="metrics" element={<MetricsPage />} />
+        <Route path="operations" element={<OperationsPage />} />
+        <Route path="roadmap" element={<RoadmapPage />} />
+      </Route>
       <Route
         path="/admin"
         element={
@@ -42,10 +41,9 @@ export function App(): JSX.Element {
         <Route index element={<AdminDashboard />} />
         <Route path="integrations" element={<IntegrationsPage />} />
         <Route path="feedback" element={<FeedbackDashboard />} />
-        <Route path="operations" element={<OperationsPage />} />
-        <Route path="roadmap" element={<RoadmapPage />} />
       </Route>
-      <Route path="/roadmap" element={<Navigate replace to="/admin/roadmap" />} />
+      <Route path="/admin/operations" element={<Navigate replace to="/operations" />} />
+      <Route path="/admin/roadmap" element={<Navigate replace to="/roadmap" />} />
       <Route path="/feedback" element={<Navigate replace to="/admin/feedback" />} />
       <Route path="*" element={<Navigate replace to="/" />} />
     </Routes>

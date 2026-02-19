@@ -34,27 +34,6 @@ export function TopBar({ userEmail, onLogout }: TopBarProps): JSX.Element {
           <nav className="cei-topbar-nav">
             <button
               className="cei-topbar-nav-button"
-              onClick={(): void => navigate('/admin/roadmap')}
-              type="button"
-            >
-              Roadmap
-            </button>
-            <button
-              className="cei-topbar-nav-button"
-              onClick={(): void => navigate('/admin/feedback')}
-              type="button"
-            >
-              Dashboard
-            </button>
-            <button
-              className="cei-topbar-nav-button"
-              onClick={(): void => navigate('/admin')}
-              type="button"
-            >
-              ⚙️ Admin
-            </button>
-            <button
-              className="cei-topbar-nav-button"
               onClick={(): void => setIsFeedbackOpen(true)}
               type="button"
             >

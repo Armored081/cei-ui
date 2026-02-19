@@ -163,20 +163,6 @@ describe('HomePage', (): void => {
     expect(mockUseHomeFeed).not.toHaveBeenCalled()
   })
 
-  it('shows authenticated user email in the top bar', (): void => {
-    renderHomePage()
-
-    expect(screen.getByText('analyst@example.com')).toBeInTheDocument()
-  })
-
-  it('calls logout when sign out is clicked', (): void => {
-    renderHomePage()
-
-    fireEvent.click(screen.getByRole('button', { name: 'Sign out' }))
-
-    expect(mockLogout).toHaveBeenCalledTimes(1)
-  })
-
   it('renders exactly four quick start cards', (): void => {
     renderHomePage()
 

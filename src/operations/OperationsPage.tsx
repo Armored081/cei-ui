@@ -4,16 +4,8 @@
 
 import { useCallback, useMemo, useState } from 'react'
 
-import type {
-  OperatingProcess,
-  OperatingProcedure,
-  OperationsTab,
-  SharedService,
-} from './types'
-import {
-  MATURITY_LABELS,
-  SERVICE_CATEGORY_ICONS,
-} from './types'
+import type { OperatingProcess, OperatingProcedure, OperationsTab, SharedService } from './types'
+import { MATURITY_LABELS, SERVICE_CATEGORY_ICONS } from './types'
 import { useOperations } from './useOperations'
 import './operations.css'
 
@@ -94,9 +86,7 @@ function ServiceCard({ service }: { service: SharedService }): JSX.Element {
           <span className="ops-svc-card-category">{formatCategory(service.service_category)}</span>
         </div>
       </div>
-      {service.description ? (
-        <p className="ops-svc-card-desc">{service.description}</p>
-      ) : null}
+      {service.description ? <p className="ops-svc-card-desc">{service.description}</p> : null}
       <div className="ops-svc-card-footer">
         <StatusBadge status={service.status} />
         {service.service_owner ? (
@@ -191,11 +181,7 @@ function ProcessGroup({
         <div className="ops-process-group-body">
           <div className="ops-grid">
             {procedures.map((proc) => (
-              <ProcedureCard
-                key={proc.id}
-                procedure={proc}
-                processName={process.process_name}
-              />
+              <ProcedureCard key={proc.id} procedure={proc} processName={process.process_name} />
             ))}
           </div>
           {procedures.length === 0 ? (
@@ -259,7 +245,11 @@ export function OperationsPage(): JSX.Element {
         return { process, procedures: matching }
       })
       .filter((g) => !search || g.procedures.length > 0)
-      .sort((a, b) => a.process.process_level - b.process.process_level || a.process.process_name.localeCompare(b.process.process_name))
+      .sort(
+        (a, b) =>
+          a.process.process_level - b.process.process_level ||
+          a.process.process_name.localeCompare(b.process.process_name),
+      )
   }, [processes, procedures, domainFilter, search])
 
   const processDomains = useMemo(() => {
@@ -275,19 +265,13 @@ export function OperationsPage(): JSX.Element {
       ? (procedures.reduce((sum, p) => sum + p.maturity_level, 0) / procedures.length).toFixed(1)
       : '—'
 
-  const onToggleCategory = useCallback(
-    (cat: string) => {
-      setCategoryFilter((prev) => (prev === cat ? null : cat))
-    },
-    [],
-  )
+  const onToggleCategory = useCallback((cat: string) => {
+    setCategoryFilter((prev) => (prev === cat ? null : cat))
+  }, [])
 
-  const onToggleDomain = useCallback(
-    (dom: string) => {
-      setDomainFilter((prev) => (prev === dom ? null : dom))
-    },
-    [],
-  )
+  const onToggleDomain = useCallback((dom: string) => {
+    setDomainFilter((prev) => (prev === dom ? null : dom))
+  }, [])
 
   /* ── Render ──────────────────────────────────────────────────── */
 
@@ -357,11 +341,7 @@ export function OperationsPage(): JSX.Element {
           <input
             className="ops-search"
             onChange={(e): void => setSearch(e.target.value)}
-            placeholder={
-              activeTab === 'services'
-                ? 'Search services...'
-                : 'Search procedures...'
-            }
+            placeholder={activeTab === 'services' ? 'Search services...' : 'Search procedures...'}
             type="text"
             value={search}
           />

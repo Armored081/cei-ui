@@ -1,0 +1,65 @@
+.cei-metrics-page {
+  color: var(--text-primary);
+}
+
+.cei-metrics-page-content {
+  width: min(1080px, 100%);
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-4) var(--space-8);
+  display: grid;
+  gap: var(--space-4);
+}
+
+.cei-metrics-page-header {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.cei-metrics-page-title {
+  margin: 0;
+  font-size: 2rem;
+  font-family: var(--font-display);
+}
+
+.cei-metrics-page-subtitle {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.cei-metrics-coming-soon {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  background-color: var(--bg-panel);
+  box-shadow: var(--shadow-panel);
+  display: grid;
+  gap: var(--space-2);
+}
+
+.cei-metrics-coming-soon-title {
+  margin: 0;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.cei-metrics-coming-soon-copy {
+  margin: 0;
+  line-height: 1.5;
+}
+
+@media (max-width: 768px) {
+  .cei-metrics-page-content {
+    padding: var(--space-4) var(--space-3) var(--space-6);
+  }
+
+  .cei-metrics-page-title {
+    font-size: 1.5rem;
+  }
+
+  .cei-metrics-coming-soon {
+    padding: var(--space-4);
+  }
+}
