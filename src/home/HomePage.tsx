@@ -1,5 +1,4 @@
 import { useAuth } from '../auth/AuthProvider'
-import { TopBar } from '../primitives/TopBar'
 import { AttentionSection } from './AttentionSection'
 import type { CuratedFeed } from './feedSchema'
 import { HomeWelcome } from './HomeWelcome'
@@ -20,8 +19,6 @@ interface HomePageContentProps {
   loading: boolean
   error: string | null
   onRetry: () => void
-  userEmail: string
-  onLogout: () => void
 }
 
 function mapAgenticItems(feed: CuratedFeed | null): HomeAgenticItem[] {
@@ -63,12 +60,9 @@ function HomePageContent({
   loading,
   error,
   onRetry,
-  userEmail,
-  onLogout,
 }: HomePageContentProps): JSX.Element {
   return (
     <div className="cei-home-page">
-      <TopBar userEmail={userEmail} onLogout={onLogout} />
       <main className="cei-home-main" aria-label="Home">
         <div className="cei-home-main-content">
           <HomeWelcome />
@@ -88,15 +82,9 @@ function HomePageContent({
 
 interface LiveHomePageContentProps {
   getAccessToken: () => Promise<string>
-  onLogout: () => void
-  userEmail: string
 }
 
-function LiveHomePageContent({
-  getAccessToken,
-  onLogout,
-  userEmail,
-}: LiveHomePageContentProps): JSX.Element {
+function LiveHomePageContent({ getAccessToken }: LiveHomePageContentProps): JSX.Element {
   const { feed, loading, error, refresh } = useHomeFeed(getAccessToken)
   const agenticItems = mapAgenticItems(feed)
   const metricItems = mapMetricItems(feed)
@@ -108,8 +96,6 @@ function LiveHomePageContent({
       loading={loading}
       error={error}
       onRetry={refresh}
-      userEmail={userEmail}
-      onLogout={onLogout}
     />
   )
 }
@@ -118,7 +104,7 @@ function LiveHomePageContent({
  * Top-level home page shell with welcome, attention, metrics, and quick-start sections.
  */
 export function HomePage({ agenticItems, metricItems }: HomePageProps): JSX.Element {
-  const { getAccessToken, logout, userEmail } = useAuth()
+  const { getAccessToken } = useAuth()
   const hasOverrides = agenticItems !== undefined || metricItems !== undefined
 
   if (hasOverrides) {
@@ -129,17 +115,9 @@ export function HomePage({ agenticItems, metricItems }: HomePageProps): JSX.Elem
         loading={false}
         error={null}
         onRetry={(): void => undefined}
-        userEmail={userEmail}
-        onLogout={(): void => void logout()}
       />
     )
   }
 
-  return (
-    <LiveHomePageContent
-      getAccessToken={getAccessToken}
-      onLogout={(): void => void logout()}
-      userEmail={userEmail}
-    />
-  )
+  return <LiveHomePageContent getAccessToken={getAccessToken} />
 }

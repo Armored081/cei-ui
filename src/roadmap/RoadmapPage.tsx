@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 
 import { useAuth } from '../auth/AuthProvider'
 import { fetchRoadmapItems } from './RoadmapFetch'
@@ -17,7 +16,6 @@ function isRetryableError(message: string): boolean {
 }
 
 export function RoadmapPage(): JSX.Element {
-  const navigate = useNavigate()
   const { getAccessToken } = useAuth()
   const [items, setItems] = useState<RoadmapItem[]>([])
   const [loadState, setLoadState] = useState<LoadState>('loading')
@@ -65,12 +63,6 @@ export function RoadmapPage(): JSX.Element {
 
   return (
     <div className="roadmap-page">
-      <div className="roadmap-page-header">
-        <button className="roadmap-back-button" onClick={() => navigate('/')} type="button">
-          ← Back to Command Center
-        </button>
-      </div>
-
       <div className="roadmap-page-content">
         <h1 className="roadmap-page-title">Product Roadmap</h1>
         <p className="roadmap-page-subtitle">

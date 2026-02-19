@@ -22,15 +22,17 @@ describe('AdminLayout', (): void => {
     renderAdminLayout()
 
     expect(screen.getByText('Administration')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: '← Back' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /overview/i })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /integrations/i })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /feedback/i })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /roadmap/i })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /roadmap/i })).not.toBeInTheDocument()
   })
 
   it('uses the expected admin route paths', (): void => {
     renderAdminLayout()
 
+    expect(screen.getByRole('link', { name: '← Back' })).toHaveAttribute('href', '/')
     expect(screen.getByRole('link', { name: /overview/i })).toHaveAttribute('href', '/admin')
     expect(screen.getByRole('link', { name: /integrations/i })).toHaveAttribute(
       'href',
@@ -40,7 +42,6 @@ describe('AdminLayout', (): void => {
       'href',
       '/admin/feedback',
     )
-    expect(screen.getByRole('link', { name: /roadmap/i })).toHaveAttribute('href', '/admin/roadmap')
   })
 })
 

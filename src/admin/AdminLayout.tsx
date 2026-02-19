@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
+import { Link, NavLink, Outlet } from 'react-router-dom'
 
 /**
  * Shared layout for admin routes with a persistent sidebar.
@@ -26,6 +26,23 @@ export function AdminLayout(): JSX.Element {
       >
         <div
           style={{
+            padding: '0 16px',
+            marginBottom: '8px',
+          }}
+        >
+          <Link
+            to="/"
+            style={{
+              color: 'var(--text-muted)',
+              textDecoration: 'none',
+              fontSize: '13px',
+            }}
+          >
+            ← Back
+          </Link>
+        </div>
+        <div
+          style={{
             padding: '0 16px 16px',
             fontSize: '11px',
             fontWeight: 600,
@@ -39,8 +56,6 @@ export function AdminLayout(): JSX.Element {
         <AdminNavLink to="/admin" end label="Overview" icon="⚙️" />
         <AdminNavLink to="/admin/integrations" label="Integrations" icon="🔗" />
         <AdminNavLink to="/admin/feedback" label="Feedback" icon="💬" />
-        <AdminNavLink to="/admin/operations" label="Operations" icon="⚙️" />
-        <AdminNavLink to="/admin/roadmap" label="Roadmap" icon="🗺️" />
       </nav>
 
       <div style={{ flex: 1, overflow: 'auto' }}>
