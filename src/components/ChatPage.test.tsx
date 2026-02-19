@@ -380,7 +380,9 @@ describe('ChatPage', (): void => {
     const secondCall = mockInvokeAgentStream.mock.calls[1][0] as InvokeCall
 
     expect(secondCall.sessionId).toBe(firstCall.sessionId)
-    expect(secondCall.message).toBe(firstCall.message)
+    expect(secondCall.message).toBe(
+      'Please continue your previous response from where you left off.',
+    )
     expect(await screen.findByText('Retried response complete.')).toBeInTheDocument()
   })
 

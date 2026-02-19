@@ -1075,17 +1075,32 @@ export function useChatEngine(params: UseChatEngineParams): ChatEngine {
         if (streamEvent.type === 'error') {
           sawErrorEvent = true
           activeAgentMessageIdRef.current = null
+          const isStreamInterruption =
+            streamEvent.code === 'stream_error' ||
+            streamEvent.code === 'stream_interrupted' ||
+            streamEvent.code === 'connection_error'
           const friendlyError = toFriendlyError(streamEvent.code, streamEvent.message)
           setErrorBanner(friendlyError.bannerText)
           setStreamStatus('error')
           setAgentMessageState(
             agentMessage.id,
-            (currentMessage: ChatMessageItem): ChatMessageItem => ({
-              ...currentMessage,
-              canRetry: friendlyError.canRetry,
-              errorText: friendlyError.messageText,
-              isStreaming: false,
-            }),
+            (currentMessage: ChatMessageItem): ChatMessageItem => {
+              const hasPartialContent = hasRenderableSegment(currentMessage.segments)
+              const continuationPrompt =
+                isStreamInterruption && hasPartialContent
+                  ? 'Please continue your previous response from where you left off.'
+                  : currentMessage.retryPrompt
+
+              return {
+                ...currentMessage,
+                canRetry: friendlyError.canRetry,
+                errorText: isStreamInterruption && hasPartialContent
+                  ? 'Response interrupted — tap Retry to continue.'
+                  : friendlyError.messageText,
+                isStreaming: false,
+                retryPrompt: continuationPrompt,
+              }
+            },
           )
 
           if (friendlyError.shouldRelogin) {
@@ -1126,14 +1141,28 @@ export function useChatEngine(params: UseChatEngineParams): ChatEngine {
         !abortController.signal.aborted &&
         isMountedRef.current
       ) {
-        setStreamStatus('done')
         setAgentMessageState(
           agentMessage.id,
-          (currentMessage: ChatMessageItem): ChatMessageItem => ({
-            ...currentMessage,
-            isStreaming: false,
-          }),
+          (currentMessage: ChatMessageItem): ChatMessageItem => {
+            const hasPartialContent = hasRenderableSegment(currentMessage.segments)
+
+            if (hasPartialContent) {
+              return {
+                ...currentMessage,
+                canRetry: true,
+                errorText: 'Response interrupted — tap Retry to continue.',
+                isStreaming: false,
+                retryPrompt: 'Please continue your previous response from where you left off.',
+              }
+            }
+
+            return {
+              ...currentMessage,
+              isStreaming: false,
+            }
+          },
         )
+        setStreamStatus(sawDoneEvent ? 'done' : 'error')
       }
     } catch (submitError) {
       if (
