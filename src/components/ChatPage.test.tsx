@@ -386,6 +386,137 @@ describe('ChatPage', (): void => {
     expect(await screen.findByText('Retried response complete.')).toBeInTheDocument()
   })
 
+  it('sends continuation prompt on stream_error with partial content', async (): Promise<void> => {
+    let invocation = 0
+
+    mockInvokeAgentStream.mockImplementation(() => {
+      invocation += 1
+
+      if (invocation === 1) {
+        return streamFromEvents([
+          { type: 'delta', content: 'Partial data before error...' },
+          {
+            type: 'error',
+            code: 'stream_error',
+            message: 'read ECONNRESET',
+          },
+        ])
+      }
+
+      return streamFromEvents([
+        { type: 'delta', content: 'Continued after stream_error.' },
+        { type: 'done' },
+      ])
+    })
+
+    renderChatPage()
+
+    fillAndSendMessage('Analyze compliance gaps')
+
+    expect(await screen.findByText('Partial data before error...')).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: 'Retry' })).toBeInTheDocument()
+    expect(
+      await screen.findByText('Response interrupted — tap Retry to continue.'),
+    ).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }))
+
+    await waitFor((): void => {
+      expect(mockInvokeAgentStream).toHaveBeenCalledTimes(2)
+    })
+
+    const secondCall = mockInvokeAgentStream.mock.calls[1][0] as InvokeCall
+    expect(secondCall.message).toBe(
+      'Please continue your previous response from where you left off.',
+    )
+    expect(await screen.findByText('Continued after stream_error.')).toBeInTheDocument()
+  })
+
+  it('sends continuation prompt on connection_error with partial content', async (): Promise<void> => {
+    let invocation = 0
+
+    mockInvokeAgentStream.mockImplementation(() => {
+      invocation += 1
+
+      if (invocation === 1) {
+        return streamFromEvents([
+          { type: 'delta', content: 'Started receiving...' },
+          {
+            type: 'error',
+            code: 'connection_error',
+            message: 'network timeout',
+          },
+        ])
+      }
+
+      return streamFromEvents([
+        { type: 'delta', content: 'Resumed after connection loss.' },
+        { type: 'done' },
+      ])
+    })
+
+    renderChatPage()
+
+    fillAndSendMessage('Run DR readiness check')
+
+    expect(await screen.findByText('Started receiving...')).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: 'Retry' })).toBeInTheDocument()
+    expect(
+      await screen.findByText('Response interrupted — tap Retry to continue.'),
+    ).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }))
+
+    await waitFor((): void => {
+      expect(mockInvokeAgentStream).toHaveBeenCalledTimes(2)
+    })
+
+    const secondCall = mockInvokeAgentStream.mock.calls[1][0] as InvokeCall
+    expect(secondCall.message).toBe(
+      'Please continue your previous response from where you left off.',
+    )
+    expect(await screen.findByText('Resumed after connection loss.')).toBeInTheDocument()
+  })
+
+  it('uses original prompt for retry when stream_error occurs with no partial content', async (): Promise<void> => {
+    let invocation = 0
+
+    mockInvokeAgentStream.mockImplementation(() => {
+      invocation += 1
+
+      if (invocation === 1) {
+        return streamFromEvents([
+          {
+            type: 'error',
+            code: 'stream_error',
+            message: 'connection refused',
+          },
+        ])
+      }
+
+      return streamFromEvents([
+        { type: 'delta', content: 'Full response on retry.' },
+        { type: 'done' },
+      ])
+    })
+
+    renderChatPage()
+
+    fillAndSendMessage('Check control effectiveness')
+
+    expect(await screen.findByRole('button', { name: 'Retry' })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }))
+
+    await waitFor((): void => {
+      expect(mockInvokeAgentStream).toHaveBeenCalledTimes(2)
+    })
+
+    const secondCall = mockInvokeAgentStream.mock.calls[1][0] as InvokeCall
+    expect(secondCall.message).toBe('Check control effectiveness')
+    expect(await screen.findByText('Full response on retry.')).toBeInTheDocument()
+  })
+
   it('aborts the active stream when creating a new thread', async (): Promise<void> => {
     mockInvokeAgentStream.mockImplementation((params: InvokeCall) =>
       (async function* (): AsyncGenerator<StreamEvent, void, undefined> {
