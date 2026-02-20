@@ -43,7 +43,10 @@ function renderExpanded(artifact: Artifact): JSX.Element {
   }
 
   return (
-    <div className="cei-artifact-expanded-content">
+    <div
+      className="cei-artifact-expanded-content"
+      style={{ height: 'calc(100vh - 140px)', minHeight: '300px' }}
+    >
       <ChartBlock block={artifact.block} />
     </div>
   )
