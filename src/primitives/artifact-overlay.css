@@ -20,12 +20,12 @@
   top: 0;
   right: 0;
   bottom: 0;
-  left: 15%;
+  left: 0;
   display: grid;
   grid-template-rows: auto 1fr;
   min-height: 0;
   overflow: hidden;
-  background: linear-gradient(180deg, rgba(9, 14, 20, 0.96), rgba(7, 11, 17, 0.96));
+  background: linear-gradient(180deg, rgba(9, 14, 20, 1), rgba(7, 11, 17, 1));
   border-left: 1px solid var(--border);
   box-shadow: -8px 0 28px rgba(0, 0, 0, 0.4);
   animation: cei-artifact-overlay-slide-in 250ms ease;
@@ -157,7 +157,7 @@
   min-height: 0;
   padding: var(--space-3);
   display: grid;
-  align-content: start;
+  grid-template-rows: 1fr auto;
   gap: var(--space-3);
   scrollbar-gutter: stable;
 }
@@ -166,6 +166,7 @@
   min-height: 0;
   overflow-x: auto;
   overflow-y: visible;
+  display: grid;
 }
 
 .cei-artifact-overlay-empty {

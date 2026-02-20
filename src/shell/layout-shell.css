@@ -96,6 +96,11 @@
   display: block;
 }
 
+.cei-cc-rail-hidden-by-overlay {
+  visibility: hidden;
+  pointer-events: none;
+}
+
 .cei-cc-rail-header {
   display: flex;
   align-items: center;

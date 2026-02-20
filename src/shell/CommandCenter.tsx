@@ -797,7 +797,7 @@ export function CommandCenterLayout({ engine, userEmail, onLogout }: LayoutProps
         </main>
 
         {/* Right rail: Context */}
-        <aside className={`cei-cc-right${rightCollapsed ? ' cei-cc-rail-collapsed' : ''}`}>
+        <aside className={`cei-cc-right${rightCollapsed ? ' cei-cc-rail-collapsed' : ''}${selectedArtifact && artifactZoomState.zoomLevel === 'expanded' ? ' cei-cc-rail-hidden-by-overlay' : ''}`}>
           {rightCollapsed ? (
             <button
               aria-label="Expand artifacts rail"
