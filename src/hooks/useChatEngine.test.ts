@@ -1,4 +1,4 @@
-import { act, renderHook } from '@testing-library/react'
+import { act, fireEvent, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { StreamEvent } from '../agent/types.js'
@@ -74,6 +74,16 @@ function getLastAgentMessage(items: ChatTimelineItem[]): ChatMessageItem {
   }
 
   return lastMessage
+}
+
+function waitForAbort(signal: AbortSignal): Promise<void> {
+  if (signal.aborted) {
+    return Promise.resolve()
+  }
+
+  return new Promise<void>((resolve): void => {
+    signal.addEventListener('abort', () => resolve(), { once: true })
+  })
 }
 
 describe('useChatEngine modern-context integration', (): void => {
@@ -308,5 +318,106 @@ describe('useChatEngine modern-context integration', (): void => {
     })
 
     expect(result.current.latestModernContext).toBeNull()
+  })
+})
+
+describe('useChatEngine streaming Escape handling', (): void => {
+  beforeEach((): void => {
+    invokeAgentStreamMock.mockReset()
+  })
+
+  it('does not abort stream when Escape originates inside an overlay dialog', async (): Promise<void> => {
+    invokeAgentStreamMock.mockImplementation((args: { signal: AbortSignal }) => {
+      return (async function* (): AsyncGenerator<StreamEvent, void, undefined> {
+        yield { type: 'delta', content: 'Streaming' }
+        await waitForAbort(args.signal)
+      })()
+    })
+
+    const overlay = document.createElement('div')
+    overlay.setAttribute('role', 'dialog')
+    overlay.className = 'cei-artifact-overlay-panel'
+    const overlayButton = document.createElement('button')
+    overlay.appendChild(overlayButton)
+    document.body.appendChild(overlay)
+
+    const { result, unmount } = renderHook(() =>
+      useChatEngine({
+        getAccessToken: async (): Promise<string> => 'token',
+        logout: async (): Promise<void> => {},
+      }),
+    )
+
+    let submitPromise: Promise<void> = Promise.resolve()
+    act((): void => {
+      submitPromise = result.current.submitPrompt('Keep streaming')
+    })
+
+    try {
+      await waitFor((): void => {
+        expect(invokeAgentStreamMock).toHaveBeenCalledTimes(1)
+        expect(result.current.isStreaming).toBe(true)
+      })
+
+      const [{ signal }] = invokeAgentStreamMock.mock.calls[0] as [{ signal: AbortSignal }]
+
+      fireEvent.keyDown(overlayButton, { key: 'Escape' })
+
+      expect(signal.aborted).toBe(false)
+      expect(result.current.isStreaming).toBe(true)
+
+      act((): void => {
+        result.current.cancelActiveStream()
+      })
+
+      await act(async (): Promise<void> => {
+        await submitPromise
+      })
+    } finally {
+      if (overlay.parentNode) {
+        overlay.parentNode.removeChild(overlay)
+      }
+      unmount()
+    }
+  })
+
+  it('aborts stream when Escape originates outside overlay/dialog regions', async (): Promise<void> => {
+    invokeAgentStreamMock.mockImplementation((args: { signal: AbortSignal }) => {
+      return (async function* (): AsyncGenerator<StreamEvent, void, undefined> {
+        yield { type: 'delta', content: 'Streaming' }
+        await waitForAbort(args.signal)
+      })()
+    })
+
+    const { result, unmount } = renderHook(() =>
+      useChatEngine({
+        getAccessToken: async (): Promise<string> => 'token',
+        logout: async (): Promise<void> => {},
+      }),
+    )
+
+    let submitPromise: Promise<void> = Promise.resolve()
+    act((): void => {
+      submitPromise = result.current.submitPrompt('Cancel with escape')
+    })
+
+    await waitFor((): void => {
+      expect(invokeAgentStreamMock).toHaveBeenCalledTimes(1)
+      expect(result.current.isStreaming).toBe(true)
+    })
+
+    const [{ signal }] = invokeAgentStreamMock.mock.calls[0] as [{ signal: AbortSignal }]
+
+    fireEvent.keyDown(window, { key: 'Escape' })
+
+    await waitFor((): void => {
+      expect(signal.aborted).toBe(true)
+      expect(result.current.isStreaming).toBe(false)
+    })
+
+    await act(async (): Promise<void> => {
+      await submitPromise
+    })
+    unmount()
   })
 })

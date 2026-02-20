@@ -383,7 +383,7 @@ describe('invokeAgentStream', (): void => {
     ])
   })
 
-  it('yields an interruption error when the stream closes before done', async (): Promise<void> => {
+  it('synthesizes done when stream has content and closes without done marker', async (): Promise<void> => {
     vi.stubEnv('VITE_API_URL', 'https://api.example.com')
 
     const mockFetch = vi
@@ -402,12 +402,82 @@ describe('invokeAgentStream', (): void => {
       }),
     )
 
+    expect(events).toEqual([{ type: 'delta', content: 'Partial' }, { type: 'done' }])
+  })
+
+  it('yields an interruption error when stream closes before any content', async (): Promise<void> => {
+    vi.stubEnv('VITE_API_URL', 'https://api.example.com')
+
+    const mockFetch = vi.fn().mockResolvedValue(makeSseResponse([]))
+
+    vi.stubGlobal('fetch', mockFetch)
+
+    const events = await collectStreamEvents(
+      invokeAgentStream({
+        accessToken: 'jwt-token',
+        message: 'Trigger interruption',
+        requestId: 'req-interrupted-empty',
+        signal: createSignal(),
+        sessionId: 'session-interrupted-empty',
+      }),
+    )
+
     expect(events).toEqual([
-      { type: 'delta', content: 'Partial' },
       {
         type: 'error',
         code: 'stream_interrupted',
         message: 'The response stream ended before completion.',
+      },
+    ])
+  })
+
+  it('recognizes event-only SSE completion signals', async (): Promise<void> => {
+    vi.stubEnv('VITE_API_URL', 'https://api.example.com')
+
+    const mockFetch = vi.fn().mockResolvedValue(makeSseResponse(['event: done']))
+
+    vi.stubGlobal('fetch', mockFetch)
+
+    const events = await collectStreamEvents(
+      invokeAgentStream({
+        accessToken: 'jwt-token',
+        message: 'Trigger event completion',
+        requestId: 'req-event-done',
+        signal: createSignal(),
+        sessionId: 'session-event-done',
+      }),
+    )
+
+    expect(events).toEqual([
+      {
+        type: 'done',
+      },
+    ])
+  })
+
+  it('preserves data payload when event: done has accompanying data', async (): Promise<void> => {
+    vi.stubEnv('VITE_API_URL', 'https://api.example.com')
+
+    const mockFetch = vi.fn().mockResolvedValue(
+      makeSseResponse(['event: done\ndata: {"type":"done","summary":"all tasks complete"}']),
+    )
+
+    vi.stubGlobal('fetch', mockFetch)
+
+    const events = await collectStreamEvents(
+      invokeAgentStream({
+        accessToken: 'jwt-token',
+        message: 'Trigger event with payload',
+        requestId: 'req-event-done-payload',
+        signal: createSignal(),
+        sessionId: 'session-event-done-payload',
+      }),
+    )
+
+    expect(events).toEqual([
+      {
+        type: 'done',
+        summary: 'all tasks complete',
       },
     ])
   })
