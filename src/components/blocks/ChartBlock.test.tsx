@@ -316,11 +316,11 @@ describe('ChartBlock', (): void => {
     expect(barCalls[0][0].fill).toBe('#22d3ee')
   })
 
-  it('uses explicit wrapper height when expandedHeight is provided', (): void => {
-    render(<ChartBlock block={buildSingleSeriesChartBlock('bar')} expandedHeight={640} />)
+  it('uses responsive container sizing without inline wrapper height overrides', (): void => {
+    render(<ChartBlock block={buildSingleSeriesChartBlock('bar')} />)
 
     const chartContainer = screen.getByTestId('chart-container')
-    expect(chartContainer).toHaveStyle({ height: '640px' })
+    expect(chartContainer.getAttribute('style')).toBeNull()
 
     const responsiveContainerCalls = rechartsMocks.ResponsiveContainer.mock.calls as [
       Record<string, unknown>,

@@ -33,10 +33,6 @@ function makeChartArtifact(dataPoints: number): Artifact {
   }
 }
 
-function parsedHeightPx(element: HTMLElement): number {
-  return Number.parseFloat(element.style.height || '0')
-}
-
 describe('ArtifactOverlay chart layout', () => {
   const noop = vi.fn()
 
@@ -86,7 +82,7 @@ describe('ArtifactOverlay chart layout', () => {
     const chartContainer = screen.getByTestId('chart-container')
     expect(chartContainer).toBeTruthy()
     expect(chartContainer.className).toContain('cei-chart-wrapper')
-    expect(parsedHeightPx(chartContainer)).toBeGreaterThanOrEqual(320)
+    expect(chartContainer.getAttribute('style')).toBeNull()
 
     // Chart block renders inside the expanded content
     const chartBlock = screen.getByTestId('chart-block-bar')
