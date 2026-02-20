@@ -39,6 +39,7 @@ type MultiSeriesChartType = 'stacked-bar' | 'grouped-bar' | 'multi-line' | 'stac
 type SingleSeriesChartType = 'bar' | 'line' | 'pie' | 'area'
 
 afterEach((): void => {
+  document.documentElement.style.removeProperty('--chart-series-1')
   vi.clearAllMocks()
   vi.restoreAllMocks()
 })
@@ -154,12 +155,12 @@ describe('ChartBlock', (): void => {
     ).toEqual([
       {
         dataKey: 'Revenue',
-        fill: 'var(--chart-series-1)',
+        fill: '#f59e0b',
         stackId: 'a',
       },
       {
         dataKey: 'Cost',
-        fill: 'var(--chart-series-2)',
+        fill: '#10b981',
         stackId: 'a',
       },
     ])
@@ -179,12 +180,12 @@ describe('ChartBlock', (): void => {
     ).toEqual([
       {
         dataKey: 'Revenue',
-        fill: 'var(--chart-series-1)',
+        fill: '#f59e0b',
         stackId: undefined,
       },
       {
         dataKey: 'Cost',
-        fill: 'var(--chart-series-2)',
+        fill: '#10b981',
         stackId: undefined,
       },
     ])
@@ -195,22 +196,23 @@ describe('ChartBlock', (): void => {
       <ChartBlock
         block={buildMultiSeriesChartBlock('multi-line', {
           data: [
-            { label: 'Q1', Budget: 100, Spend: 90, Savings: 10, Risk: 8, Margin: 30 },
-            { label: 'Q2', Budget: 110, Spend: 98, Savings: 12, Risk: 7, Margin: 32 },
+            { label: 'Q1', Budget: 100, Spend: 90, Savings: 10, Risk: 8, Margin: 30, Forecast: 34 },
+            { label: 'Q2', Budget: 110, Spend: 98, Savings: 12, Risk: 7, Margin: 32, Forecast: 36 },
           ],
-          series: ['Budget', 'Spend', 'Savings', 'Risk', 'Margin'],
+          series: ['Budget', 'Spend', 'Savings', 'Risk', 'Margin', 'Forecast'],
         })}
       />,
     )
 
     const lineCalls = rechartsMocks.Line.mock.calls as [Record<string, unknown>][]
-    expect(lineCalls).toHaveLength(5)
+    expect(lineCalls).toHaveLength(6)
     expect(lineCalls.map(([props]) => props.stroke)).toEqual([
-      'var(--chart-series-1)',
-      'var(--chart-series-2)',
-      'var(--chart-series-3)',
-      'var(--chart-series-4)',
-      'var(--chart-series-1)',
+      '#f59e0b',
+      '#10b981',
+      '#3b82f6',
+      '#8b5cf6',
+      '#ef4444',
+      '#f59e0b',
     ])
   })
 
@@ -228,12 +230,12 @@ describe('ChartBlock', (): void => {
     ).toEqual([
       {
         dataKey: 'Revenue',
-        fill: 'var(--chart-series-1)',
+        fill: '#f59e0b',
         stackId: 'a',
       },
       {
         dataKey: 'Cost',
-        fill: 'var(--chart-series-2)',
+        fill: '#10b981',
         stackId: 'a',
       },
     ])
@@ -265,7 +267,16 @@ describe('ChartBlock', (): void => {
 
     const barCalls = rechartsMocks.Bar.mock.calls as [Record<string, unknown>][]
     expect(barCalls).toHaveLength(1)
-    expect(barCalls[0][0].fill).toBe('var(--chart-series-1)')
+    expect(barCalls[0][0].fill).toBe('#f59e0b')
+  })
+
+  it('resolves CSS variable colors before passing them to Recharts', (): void => {
+    document.documentElement.style.setProperty('--chart-series-1', '#22d3ee')
+    render(<ChartBlock block={buildSingleSeriesChartBlock('bar', ['var(--chart-series-1)'])} />)
+
+    const barCalls = rechartsMocks.Bar.mock.calls as [Record<string, unknown>][]
+    expect(barCalls).toHaveLength(1)
+    expect(barCalls[0][0].fill).toBe('#22d3ee')
   })
 
   it('uses explicit wrapper height when expandedHeight is provided', (): void => {

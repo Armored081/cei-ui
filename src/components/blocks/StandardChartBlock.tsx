@@ -27,12 +27,15 @@ interface StandardChartBlockProps {
   expandedHeight?: number
 }
 
-const defaultChartSeriesColors = [
-  'var(--chart-series-1)',
-  'var(--chart-series-2)',
-  'var(--chart-series-3)',
-  'var(--chart-series-4)',
+const defaultChartSeriesColorTokens = [
+  '--chart-series-1',
+  '--chart-series-2',
+  '--chart-series-3',
+  '--chart-series-4',
+  '--chart-series-5',
 ]
+
+const defaultChartSeriesColorFallbacks = ['#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ef4444']
 
 const multiSeriesChartTypes = new Set(['stacked-bar', 'grouped-bar', 'multi-line', 'stacked-area'])
 
@@ -55,9 +58,63 @@ function truncateLabel(label: string, maxLen = 16): string {
   return label.slice(0, maxLen - 1) + '…'
 }
 
+function fallbackChartSeriesColor(index: number): string {
+  return defaultChartSeriesColorFallbacks[index % defaultChartSeriesColorFallbacks.length]
+}
+
+function resolveCssVariableColor(variableName: string, fallback: string): string {
+  if (typeof window === 'undefined' || typeof document === 'undefined') {
+    return fallback
+  }
+
+  const resolved = window.getComputedStyle(document.documentElement).getPropertyValue(variableName)
+  const trimmed = resolved.trim()
+  return trimmed || fallback
+}
+
+function parseCssVariableReference(color: string): {
+  variableName: string
+  fallback: string | null
+} | null {
+  const match = color.trim().match(/^var\(\s*(--[a-zA-Z0-9_-]+)\s*(?:,\s*([^)]+))?\)$/)
+  if (!match) {
+    return null
+  }
+
+  return {
+    fallback: match[2]?.trim() || null,
+    variableName: match[1],
+  }
+}
+
+function resolveColorInput(color: string, fallback: string): string {
+  const cssVariableReference = parseCssVariableReference(color)
+  if (!cssVariableReference) {
+    return color
+  }
+
+  return resolveCssVariableColor(
+    cssVariableReference.variableName,
+    cssVariableReference.fallback || fallback,
+  )
+}
+
+function defaultChartSeriesColors(): string[] {
+  return defaultChartSeriesColorTokens.map((token, index) =>
+    resolveCssVariableColor(token, fallbackChartSeriesColor(index)),
+  )
+}
+
 function chartColor(block: ChartBlockData, index: number): string {
   const configuredColors = block.colors || []
-  const palette = configuredColors.length > 0 ? configuredColors : defaultChartSeriesColors
+  const fallback = fallbackChartSeriesColor(index)
+
+  if (configuredColors.length > 0) {
+    const configuredColor = configuredColors[index % configuredColors.length]
+    return resolveColorInput(configuredColor, fallback)
+  }
+
+  const palette = defaultChartSeriesColors()
 
   return palette[index % palette.length]
 }

@@ -27,10 +27,11 @@
   --success: #5ce0b8;
 
   /* Charts */
-  --chart-series-1: #e5a530;
-  --chart-series-2: #5ce0b8;
-  --chart-series-3: #7c93c4;
-  --chart-series-4: #c97dd6;
+  --chart-series-1: #f59e0b;
+  --chart-series-2: #10b981;
+  --chart-series-3: #3b82f6;
+  --chart-series-4: #8b5cf6;
+  --chart-series-5: #ef4444;
   --chart-grid: rgba(120, 140, 170, 0.12);
 
   /* Visualization engine */

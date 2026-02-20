@@ -117,8 +117,8 @@
 /* Touch-friendly close & fullscreen buttons */
 .cei-artifact-overlay-btn-close,
 .cei-artifact-overlay-btn-fullscreen {
-  min-width: 40px;
-  min-height: 40px;
+  min-width: 44px;
+  min-height: 44px;
   display: inline-flex;
   align-items: center;
   justify-content: center;

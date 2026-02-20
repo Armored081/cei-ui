@@ -70,6 +70,13 @@ describe('ArtifactFullScreen', (): void => {
     expect(screen.getByLabelText('Filter table rows')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Why this recommendation?' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Back' })).toHaveFocus()
+
+    const minimizeBtn = screen.getByRole('button', { name: 'Minimize artifact view' })
+    expect(minimizeBtn.className).toContain('cei-artifact-overlay-btn-fullscreen')
+
+    const closeBtn = screen.getByRole('button', { name: 'Close artifact view' })
+    expect(closeBtn.className).toContain('cei-artifact-overlay-btn-close')
+    expect(closeBtn.textContent).toBe('✕')
   })
 
   it('handles toolbar and escape interactions', (): void => {
