@@ -45,7 +45,7 @@ describe('useEntityPanel', (): void => {
     const { result, rerender } = renderHook(
       ({ mode }: { mode: 'artifacts-only' | 'stories+artifacts' }) => useEntityPanel(mode),
       {
-        initialProps: { mode: 'artifacts-only' as const },
+        initialProps: { mode: 'artifacts-only' as 'artifacts-only' | 'stories+artifacts' },
       },
     )
 
@@ -117,7 +117,7 @@ describe('useEntityPanel', (): void => {
     const { result, rerender } = renderHook(
       ({ mode }: { mode: 'artifacts-only' | 'stories+artifacts' }) => useEntityPanel(mode),
       {
-        initialProps: { mode: 'artifacts-only' as const },
+        initialProps: { mode: 'artifacts-only' as 'artifacts-only' | 'stories+artifacts' },
       },
     )
 

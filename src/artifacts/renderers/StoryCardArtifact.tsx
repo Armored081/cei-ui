@@ -41,13 +41,7 @@ function toStoryCardPayload(artifact: Artifact): ModernContextStoryCard {
   const candidatePayload = artifact.block as unknown
 
   if (isStoryCardArtifactPayload(candidatePayload)) {
-    // Map temporalWindow keys: schema uses {start,end}, components expect {startDate,endDate}
     const normalizedTemporalWindow = candidatePayload.temporalWindow
-      ? {
-          startDate: (candidatePayload.temporalWindow as { start: string; end: string }).start,
-          endDate: (candidatePayload.temporalWindow as { start: string; end: string }).end,
-        }
-      : undefined
 
     return {
       id: artifact.id,

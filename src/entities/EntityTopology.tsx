@@ -156,9 +156,7 @@ export function EntityTopology({
   const simulationRef = useRef<Simulation<GraphNode, GraphLink> | null>(null)
   const frameRef = useRef<number | null>(null)
 
-  // renderTick is used to trigger re-renders during simulation (state change causes render)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [renderTick, setRenderTick] = useState<number>(0)
+  const [, setRenderTick] = useState<number>(0)
   const [zoomTransform, setZoomTransform] = useState<ZoomTransform>(zoomIdentity)
   const [tooltip, setTooltip] = useState<TooltipState | null>(null)
 
