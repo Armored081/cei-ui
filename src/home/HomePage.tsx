@@ -4,7 +4,7 @@ import type { CuratedFeed } from './feedSchema'
 import { HomeWelcome } from './HomeWelcome'
 import { MetricsGlance } from './MetricsGlance'
 import { QuickStartGrid } from './QuickStartGrid'
-import type { HomeAgenticItem, HomeMetricItem } from './mockFeedData'
+import type { HomeAgenticItem, HomeMetricItem } from './types'
 import { useHomeFeed } from './useHomeFeed'
 import './home.css'
 

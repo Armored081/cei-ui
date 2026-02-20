@@ -1,7 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 
 import type { StructuredBlock } from '../../agent/types'
-import { SectionCard } from '../../components/SectionCard'
 import type { Artifact } from '../../hooks/useChatEngine'
 import type { ArtifactTypeDefinition } from '../ArtifactRegistry'
 import './artifact-renderers.css'
@@ -18,6 +17,11 @@ interface FlattenedControl extends AssessmentControl {
 interface AssessmentDetailContentProps {
   artifact: Artifact & { block: AssessmentDetailBlockData }
   mode: 'expanded' | 'fullscreen'
+}
+
+interface AssessmentSectionCardProps {
+  children: ReactNode
+  title: string
 }
 
 function isAssessmentDetailArtifact(
@@ -93,6 +97,34 @@ function toScoreClassName(score: number): string {
   }
 
   return 'cei-assessment-artifact-score cei-assessment-artifact-score-low'
+}
+
+function AssessmentSectionCard({ children, title }: AssessmentSectionCardProps): JSX.Element {
+  return (
+    <section
+      style={{
+        border: '1px solid var(--border)',
+        borderRadius: 'var(--radius-lg)',
+        backgroundColor: 'var(--bg-panel-muted)',
+        boxShadow: 'var(--shadow-panel)',
+        padding: 'var(--space-6)',
+      }}
+    >
+      <h2
+        style={{
+          fontSize: '1rem',
+          marginTop: 0,
+          marginBottom: 'var(--space-4)',
+          color: 'var(--text-muted)',
+          textTransform: 'uppercase',
+          letterSpacing: '0.08em',
+        }}
+      >
+        {title}
+      </h2>
+      {children}
+    </section>
+  )
 }
 
 function flattenControls(assessment: AssessmentDetail): FlattenedControl[] {
@@ -253,7 +285,7 @@ function AssessmentDetailContent({ artifact, mode }: AssessmentDetailContentProp
           const totals = countSectionStatuses(section)
 
           return (
-            <SectionCard key={section.name} title={section.name}>
+            <AssessmentSectionCard key={section.name} title={section.name}>
               <div className="cei-assessment-detail-section-card-content">
                 <p className="cei-assessment-detail-summary-label">Section score</p>
                 <p
@@ -267,7 +299,7 @@ function AssessmentDetailContent({ artifact, mode }: AssessmentDetailContentProp
                   {totals.gap.toString()}
                 </p>
               </div>
-            </SectionCard>
+            </AssessmentSectionCard>
           )
         })}
       </section>

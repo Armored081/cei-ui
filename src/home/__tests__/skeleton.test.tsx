@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { AttentionSection } from '../AttentionSection'
 import { MetricsGlance } from '../MetricsGlance'
-import type { HomeAgenticItem, HomeMetricItem } from '../mockFeedData'
+import type { HomeAgenticItem, HomeMetricItem } from '../types'
 
 const ATTENTION_ITEMS: HomeAgenticItem[] = [
   {

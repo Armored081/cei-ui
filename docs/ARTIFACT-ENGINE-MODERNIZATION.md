@@ -29,6 +29,7 @@ Datadog's dashboard UX has a key insight: **context-aware detail panels**.
 - **The panel overlays content but doesn't destroy layout** — the grid underneath stays put
 
 Key differences from our current approach:
+
 - Datadog's panel is **generous with width** (60%+ of viewport, not crammed)
 - Panel height is **100% of the available area** (not a small floating card)
 - **Toolbar is minimal** — close, fullscreen, download. No chrome bloat.
@@ -38,14 +39,14 @@ Key differences from our current approach:
 
 ### Artifact Types (6 renderers)
 
-| Kind | Renderer | Content Nature | Ideal Width |
-|------|----------|---------------|-------------|
-| `chart` | `ChartArtifact` | Bar/line/pie charts (Recharts) | 500px–full |
-| `table` | `TableArtifact` | Sortable data tables | Full width (scrollable) |
-| `recommendation` | `RecommendationArtifact` | Severity + text card | 400–600px |
-| `assessment-list` | `AssessmentListArtifact` | List of scored assessments | 500–700px |
-| `assessment-detail` | `AssessmentDetailArtifact` | Single assessment deep-dive | 600px–full |
-| `document` | `DocumentArtifact` | Policy/standard document view | 600–800px |
+| Kind                | Renderer                   | Content Nature                 | Ideal Width             |
+| ------------------- | -------------------------- | ------------------------------ | ----------------------- |
+| `chart`             | `ChartArtifact`            | Bar/line/pie charts (Recharts) | 500px–full              |
+| `table`             | `TableArtifact`            | Sortable data tables           | Full width (scrollable) |
+| `recommendation`    | `RecommendationArtifact`   | Severity + text card           | 400–600px               |
+| `assessment-list`   | `AssessmentListArtifact`   | List of scored assessments     | 500–700px               |
+| `assessment-detail` | `AssessmentDetailArtifact` | Single assessment deep-dive    | 600px–full              |
+| `document`          | `DocumentArtifact`         | Policy/standard document view  | 600–800px               |
 
 ### Current Zoom Levels
 
@@ -55,14 +56,14 @@ inline (right rail card) → expanded (overlay, 85% width) → fullscreen (entir
 
 ### Current Components
 
-| Component | Purpose | Issues |
-|-----------|---------|--------|
-| `ArtifactCard` | Right rail thumbnail | OK — just a clickable card |
-| `ArtifactOverlay` | "Expanded" panel | Too cramped, no content-awareness |
-| `ArtifactFullScreen` | Takeover view | Works but requires 2 clicks |
-| `ArtifactExpanded` | Inner content wrapper | Redundant abstraction |
-| `SlideOver` | Generic left-slide panel | Used for mobile threads, not artifacts |
-| `SlideUpDrawer` | Mobile bottom sheet | Used for mobile artifacts, too small |
+| Component            | Purpose                  | Issues                                 |
+| -------------------- | ------------------------ | -------------------------------------- |
+| `ArtifactCard`       | Right rail thumbnail     | OK — just a clickable card             |
+| `ArtifactOverlay`    | "Expanded" panel         | Too cramped, no content-awareness      |
+| `ArtifactFullScreen` | Takeover view            | Works but requires 2 clicks            |
+| `ArtifactExpanded`   | Inner content wrapper    | Redundant abstraction                  |
+| `SlideOver`          | Generic left-slide panel | Used for mobile threads, not artifacts |
+| `SlideUpDrawer`      | Mobile bottom sheet      | Used for mobile artifacts, too small   |
 
 ## Proposed Design: Two-Level Detail Panel
 
@@ -72,7 +73,7 @@ inline (right rail card) → expanded (overlay, 85% width) → fullscreen (entir
 inline (right rail card) → detail panel (replaces expanded + fullscreen)
 ```
 
-**Kill the 3-level zoom.** When you click an artifact, you want to *see* it. One click = full detail view.
+**Kill the 3-level zoom.** When you click an artifact, you want to _see_ it. One click = full detail view.
 
 ### Detail Panel Behavior
 
@@ -82,7 +83,7 @@ inline (right rail card) → detail panel (replaces expanded + fullscreen)
 - **Width: `max(50%, 640px)`** — generous default, content can breathe
 - **Height: 100% of grid row** — top to bottom, no floating card
 - **Content-aware sizing:**
-  - Tables/charts: panel expands to `max(65%, 800px)` 
+  - Tables/charts: panel expands to `max(65%, 800px)`
   - Recommendations: panel stays at `max(50%, 640px)`
   - Documents: panel uses `max(55%, 700px)`
 - **Fullscreen toggle** — single button in toolbar, takes over entire viewport (same as current `ArtifactFullScreen` but reachable in 1 click from the card)
@@ -123,6 +124,7 @@ inline (right rail card) → detail panel (replaces expanded + fullscreen)
 ## Implementation Phases
 
 ### Phase 1: Detail Panel Core (replaces ArtifactOverlay)
+
 - New `ArtifactDetailPanel` component
 - Content-aware width calculation based on artifact kind
 - Responsive breakpoints (desktop/tablet/mobile)
@@ -133,6 +135,7 @@ inline (right rail card) → detail panel (replaces expanded + fullscreen)
 - **Tests:** Panel rendering, keyboard nav, responsive behavior, zoom transitions
 
 ### Phase 2: Renderer Improvements
+
 - Tables: sticky headers, horizontal scroll, auto-column sizing
 - Charts: responsive container, proper aspect ratios, pan/zoom on mobile
 - Recommendations: redesigned card with proper severity visualization
@@ -140,6 +143,7 @@ inline (right rail card) → detail panel (replaces expanded + fullscreen)
 - **Tests:** Each renderer in detail panel context, responsive sizing
 
 ### Phase 3: Mobile Experience
+
 - Skip panel on mobile → go directly to fullscreen
 - Swipe-to-dismiss gesture
 - Swipe left/right to navigate between artifacts
@@ -147,6 +151,7 @@ inline (right rail card) → detail panel (replaces expanded + fullscreen)
 - **Tests:** Mobile gesture handling, direct-to-fullscreen flow
 
 ### Phase 4: Polish & Animation
+
 - Panel slide-in with spring physics (not linear ease)
 - Content fade-in with stagger (title → toolbar → content)
 - Artifact card highlight/pulse when selected
@@ -156,11 +161,13 @@ inline (right rail card) → detail panel (replaces expanded + fullscreen)
 ## Files to Modify/Create
 
 ### New
+
 - `src/primitives/ArtifactDetailPanel.tsx` — main detail panel
 - `src/primitives/artifact-detail-panel.css` — panel styles
 - `src/primitives/ArtifactDetailPanel.test.tsx` — tests
 
 ### Modify
+
 - `src/layouts/CommandCenter.tsx` — simplify zoom state to 2 levels
 - `src/layouts/CommandCenter.test.tsx` — update tests
 - `src/layouts/layout-command-center.css` — grid adjustments for panel
@@ -169,6 +176,7 @@ inline (right rail card) → detail panel (replaces expanded + fullscreen)
 - `src/artifacts/renderers/artifact-renderers.css` — renderer improvements
 
 ### Remove (after migration)
+
 - `src/primitives/ArtifactOverlay.tsx` — replaced by detail panel
 - `src/primitives/ArtifactOverlay.test.tsx`
 - `src/primitives/artifact-overlay.css`

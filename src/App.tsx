@@ -5,13 +5,13 @@ import { AdminLayout } from './admin/AdminLayout'
 import { IntegrationsPage } from './admin/IntegrationsPage'
 import { LoginPage } from './auth/LoginPage'
 import { ProtectedRoute } from './auth/ProtectedRoute'
-import { ChatPage } from './components/ChatPage'
 import { FeedbackDashboard } from './feedback/FeedbackDashboard'
 import { HomePage } from './home/HomePage'
-import { AppLayout } from './layout/AppLayout'
 import { MetricsPage } from './metrics/MetricsPage'
 import { OperationsPage } from './operations/OperationsPage'
 import { RoadmapPage } from './roadmap/RoadmapPage'
+import { AppShell } from './shell/AppShell'
+import { CommandCenter } from './shell/CommandCenter'
 
 export function App(): JSX.Element {
   return (
@@ -20,12 +20,12 @@ export function App(): JSX.Element {
       <Route
         element={
           <ProtectedRoute>
-            <AppLayout />
+            <AppShell />
           </ProtectedRoute>
         }
       >
         <Route index element={<HomePage />} />
-        <Route path="chat" element={<ChatPage />} />
+        <Route path="chat" element={<CommandCenter />} />
         <Route path="metrics" element={<MetricsPage />} />
         <Route path="operations" element={<OperationsPage />} />
         <Route path="roadmap" element={<RoadmapPage />} />

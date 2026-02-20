@@ -1,23 +1,27 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { v4 as uuidv4 } from 'uuid'
 
 import { registerBuiltinArtifactTypes } from '../artifacts/registerBuiltinTypes'
-import type { ChatMessageItem, ChatTimelineItem } from '../components/ChatMessageList'
+import { useAuth } from '../auth/AuthProvider'
+import { Composer } from '../conversation/Composer'
+import '../conversation/conversation.css'
+import { MessageList } from '../conversation/MessageList'
+import { composerPropsFromEngine } from '../conversation/composerPropsFromEngine'
 import type { Artifact, ConversationSnapshot } from '../hooks/useChatEngine'
+import { useChatEngine } from '../hooks/useChatEngine'
 import { useThreads } from '../hooks/useThreads'
 import { ArtifactCard } from '../primitives/ArtifactCard'
 import { ActivityDrawer } from '../primitives/ActivityDrawer'
 import { ArtifactFullScreen } from '../primitives/ArtifactFullScreen'
 import { ArtifactOverlay } from '../primitives/ArtifactOverlay'
-import { Composer } from '../primitives/Composer'
-import { MessageList } from '../primitives/MessageList'
 import { SlideOver } from '../primitives/SlideOver'
 import { SlideUpDrawer } from '../primitives/SlideUpDrawer'
 import { ThreadList } from '../primitives/ThreadList'
-import { TopBar } from '../primitives/TopBar'
-import { composerPropsFromEngine } from '../primitives/composerPropsFromEngine'
+import type { ChatMessageItem, ChatTimelineItem } from '../types/chat'
+import { TopBar } from './TopBar'
 import type { LayoutProps } from './types'
-import './layout-command-center.css'
+import './layout-shell.css'
 
 registerBuiltinArtifactTypes()
 
@@ -146,7 +150,43 @@ function zoomAnnouncementText(
     : 'Full-screen artifact view open.'
 }
 
-export function CommandCenter({ engine, userEmail, onLogout }: LayoutProps): JSX.Element {
+export function CommandCenter(): JSX.Element {
+  const { getAccessToken, logout, userEmail } = useAuth()
+  const engine = useChatEngine({ getAccessToken, logout })
+  const [searchParams] = useSearchParams()
+  const hasAppliedDraftRef = useRef<boolean>(false)
+
+  useEffect((): void => {
+    if (hasAppliedDraftRef.current) {
+      return
+    }
+
+    hasAppliedDraftRef.current = true
+    const draft = searchParams.get('draft')
+
+    if (!draft) {
+      return
+    }
+
+    const decodedDraft = decodeURIComponent(draft)
+
+    if (!decodedDraft.trim()) {
+      return
+    }
+
+    engine.setDraftMessage(decodedDraft)
+  }, [engine, searchParams])
+
+  return (
+    <CommandCenterLayout
+      engine={engine}
+      onLogout={(): Promise<void> => logout()}
+      userEmail={userEmail}
+    />
+  )
+}
+
+export function CommandCenterLayout({ engine, userEmail, onLogout }: LayoutProps): JSX.Element {
   const [artifactZoomState, setArtifactZoomState] =
     useState<ArtifactZoomState>(createInlineZoomState)
   const [leftCollapsed, setLeftCollapsed] = useState(false)

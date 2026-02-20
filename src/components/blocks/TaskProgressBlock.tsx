@@ -1,4 +1,4 @@
-import type { TaskProgressSegment } from '../ChatMessageList'
+import type { TaskProgressSegment } from '../../types/chat'
 import './TaskProgressBlock.css'
 
 interface TaskProgressBlockProps {

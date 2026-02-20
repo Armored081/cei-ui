@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import { v4 as uuidv4 } from 'uuid'
 
-import type { Thread } from '../threads/types'
+import type { Thread } from '../types/chat'
 
 const MAX_VISIBLE_THREADS = 200
 const MAX_PINNED_THREADS = 20

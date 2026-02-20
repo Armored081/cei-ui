@@ -1,6 +1,6 @@
 import { useId, useMemo, useState } from 'react'
 
-import type { ArtifactReasoning } from '../components/ChatMessageList'
+import type { ArtifactReasoning } from '../types/chat'
 import './reasoning-section.css'
 
 interface ReasoningSectionProps {

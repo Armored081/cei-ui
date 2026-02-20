@@ -4,9 +4,9 @@ import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { StructuredBlock } from '../agent/types'
-import type { ChatMessageItem } from '../components/ChatMessageList'
+import type { ChatMessageItem } from '../types/chat'
 import type { Artifact, ChatEngine, ToolLogItem } from '../hooks/useChatEngine'
-import { CommandCenter } from './CommandCenter'
+import { CommandCenterLayout } from './CommandCenter'
 
 function mockCompactViewport(): void {
   Object.defineProperty(window, 'matchMedia', {
@@ -130,7 +130,11 @@ function createEngine(onToggleTool: (messageId: string, toolId: string) => void)
 function renderLayout(engine: ChatEngine): void {
   render(
     <MemoryRouter>
-      <CommandCenter engine={engine} onLogout={(): void => {}} userEmail="analyst@example.com" />
+      <CommandCenterLayout
+        engine={engine}
+        onLogout={(): void => {}}
+        userEmail="analyst@example.com"
+      />
     </MemoryRouter>,
   )
 }

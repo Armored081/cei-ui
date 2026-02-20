@@ -687,24 +687,24 @@ CREATE INDEX idx_roadmap_status ON roadmap_items(status);
 | Impact Simulations  | Analysis | "What if" modeling for control changes and risk scenarios         |
 | Artifact Navigation | Platform | Prev/next switching, artifact search, cross-thread artifact view  |
 
-### Next (Planned)  — Modern UI Enhancements
+### Next (Planned) — Modern UI Enhancements
 
 These items emerged from the Codex review of the Modern UI Plan (2026-02-20). They're high-value but add complexity, so they're deferred past the initial 8-phase Modern UI rollout.
 
-| Item                               | Category     | Description                                                                                       |
-| ---------------------------------- | ------------ | ------------------------------------------------------------------------------------------------- |
-| Shared Agent-UI Contract Source    | Platform     | Generate UI Zod schemas from agent TypeScript types — single source of truth, zero manual drift   |
-| Correlated Timeline Overlay        | Analysis     | Cross-widget time-scoping: brush a time range on one chart, all charts/story cards filter to match |
-| Contract & E2E Test Gates          | Platform     | Agent↔UI schema contract tests + Playwright E2E gates before release                              |
+| Item                            | Category | Description                                                                                        |
+| ------------------------------- | -------- | -------------------------------------------------------------------------------------------------- |
+| Shared Agent-UI Contract Source | Platform | Generate UI Zod schemas from agent TypeScript types — single source of truth, zero manual drift    |
+| Correlated Timeline Overlay     | Analysis | Cross-widget time-scoping: brush a time range on one chart, all charts/story cards filter to match |
+| Contract & E2E Test Gates       | Platform | Agent↔UI schema contract tests + Playwright E2E gates before release                               |
 
 ### Later (Exploring)
 
-| Item                      | Category     | Description                                                      |
-| ------------------------- | ------------ | ---------------------------------------------------------------- |
-| Multi-Agent Workflows     | Intelligence | Parallel agent runs for complex analysis tasks                   |
-| SOAR Integration          | Integrations | Bi-directional integration with security orchestration platforms |
-| Role-Based Access Control | Platform     | Scoped permissions per user role (analyst, admin, auditor)       |
-| Public Roadmap            | Platform     | Unauthenticated roadmap view for stakeholder transparency        |
+| Item                      | Category     | Description                                                                                        |
+| ------------------------- | ------------ | -------------------------------------------------------------------------------------------------- |
+| Multi-Agent Workflows     | Intelligence | Parallel agent runs for complex analysis tasks                                                     |
+| SOAR Integration          | Integrations | Bi-directional integration with security orchestration platforms                                   |
+| Role-Based Access Control | Platform     | Scoped permissions per user role (analyst, admin, auditor)                                         |
+| Public Roadmap            | Platform     | Unauthenticated roadmap view for stakeholder transparency                                          |
 | Live Tail Activity Feed   | Analysis     | Faceted real-time event stream with pattern clustering and live counts (Datadog Live Tail pattern) |
 
 ---

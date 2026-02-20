@@ -22,7 +22,7 @@ import type {
   TaskProgressSegment,
   ChatTimelineItem,
   ToolActivityItem,
-} from '../components/ChatMessageList'
+} from '../types/chat'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -1094,9 +1094,10 @@ export function useChatEngine(params: UseChatEngineParams): ChatEngine {
               return {
                 ...currentMessage,
                 canRetry: friendlyError.canRetry,
-                errorText: isStreamInterruption && hasPartialContent
-                  ? 'Response interrupted — tap Retry to continue.'
-                  : friendlyError.messageText,
+                errorText:
+                  isStreamInterruption && hasPartialContent
+                    ? 'Response interrupted — tap Retry to continue.'
+                    : friendlyError.messageText,
                 isStreaming: false,
                 retryPrompt: continuationPrompt,
               }

@@ -1,6 +1,6 @@
 import { useId } from 'react'
 
-import type { Thread } from '../threads/types'
+import type { Thread } from '../types/chat'
 import { ThreadCard } from './ThreadCard'
 import './thread-list.css'
 

@@ -1,8 +1,8 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 
 import { useAuth } from '../auth/AuthProvider'
-import { TopBar } from '../primitives/TopBar'
-import './app-layout.css'
+import { TopBar } from './TopBar'
+import './app-shell.css'
 
 interface AppNavLinkProps {
   end?: boolean
@@ -29,7 +29,7 @@ function AppNavLink({ to, label, icon, end }: AppNavLinkProps): JSX.Element {
 /**
  * Application shell with sidebar navigation and route outlet.
  */
-export function AppLayout(): JSX.Element {
+export function AppShell(): JSX.Element {
   const { logout, userEmail } = useAuth()
   const { pathname } = useLocation()
   const hideTopBar = pathname.startsWith('/chat')
