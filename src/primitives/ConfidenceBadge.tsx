@@ -1,4 +1,4 @@
-import type { ArtifactConfidence } from '../components/ChatMessageList'
+import type { ArtifactConfidence } from '../types/chat'
 import './confidence-badge.css'
 
 interface ConfidenceBadgeProps {

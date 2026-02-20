@@ -1,7 +1,6 @@
 import { useState, type CSSProperties, type FormEvent } from 'react'
 import { Navigate } from 'react-router-dom'
 
-import { SectionCard } from '../components/SectionCard'
 import { describeAuthError, useAuth } from './AuthProvider'
 
 export function LoginPage(): JSX.Element {
@@ -45,7 +44,8 @@ export function LoginPage(): JSX.Element {
       }}
     >
       <div style={{ width: 'min(460px, 100%)' }}>
-        <SectionCard title="CEI Agent Login">
+        <section style={sectionStyle}>
+          <h2 style={sectionTitleStyle}>CEI Agent Login</h2>
           <h1 style={{ marginTop: 0, marginBottom: 'var(--space-3)' }}>Sign in</h1>
           <p
             style={{
@@ -94,10 +94,27 @@ export function LoginPage(): JSX.Element {
               {isSubmitting ? 'Signing in...' : 'Sign in'}
             </button>
           </form>
-        </SectionCard>
+        </section>
       </div>
     </main>
   )
+}
+
+const sectionStyle: CSSProperties = {
+  border: '1px solid var(--border)',
+  borderRadius: 'var(--radius-lg)',
+  backgroundColor: 'var(--bg-panel-muted)',
+  boxShadow: 'var(--shadow-panel)',
+  padding: 'var(--space-6)',
+}
+
+const sectionTitleStyle: CSSProperties = {
+  fontSize: '1rem',
+  marginTop: 0,
+  marginBottom: 'var(--space-4)',
+  color: 'var(--text-muted)',
+  textTransform: 'uppercase',
+  letterSpacing: '0.08em',
 }
 
 const inputStyle: CSSProperties = {

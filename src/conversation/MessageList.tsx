@@ -1,8 +1,13 @@
 import type { CSSProperties, RefObject } from 'react'
 
 import type { StructuredBlock } from '../agent/types'
-import type { ToolActivityItem } from '../components/ChatMessageList'
-import type { ChatMessageSegment, ChatTimelineItem } from '../components/ChatMessageList'
+import type {
+  ChatMessageRole,
+  ChatMessageSegment,
+  ChatTimelineItem,
+  ToolActivityItem,
+  ToolActivityStatus,
+} from '../types/chat'
 import { ChartBlock } from '../components/blocks/ChartBlock'
 import { RecommendationBlock } from '../components/blocks/RecommendationBlock'
 import { TaskProgressBlock } from '../components/blocks/TaskProgressBlock'
@@ -22,9 +27,6 @@ interface MessageListProps {
   blockRenderer?: BlockRenderer
   onArtifactClick?: (artifactId: string) => void
 }
-
-type ChatMessageRole = 'user' | 'agent'
-type ToolActivityStatus = 'running' | 'complete'
 
 function roleLabel(role: ChatMessageRole): string {
   return role === 'user' ? 'User' : 'Agent'

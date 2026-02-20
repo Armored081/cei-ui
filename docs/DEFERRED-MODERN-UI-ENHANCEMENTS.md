@@ -21,6 +21,7 @@ Generate UI-side Zod schemas automatically from the agent's TypeScript type defi
 ### Full Outline
 
 **Approach A: Shared package (monorepo-lite)**
+
 - Extract `modern-types.ts` into a shared npm package (`@cei/contracts`)
 - Both repos depend on the package
 - Agent exports TypeScript interfaces + Zod schemas
@@ -29,12 +30,14 @@ Generate UI-side Zod schemas automatically from the agent's TypeScript type defi
 - **Pros:** True single source. **Cons:** Requires package publish pipeline, version coordination.
 
 **Approach B: Code generation**
+
 - Agent repo has a `scripts/generate-ui-contracts.ts` that reads `modern-types.ts` and emits a Zod schema file
 - Generated file is committed to the UI repo (or fetched at build time)
 - CI check: if agent types change, regenerate and verify UI schemas match
 - **Pros:** No shared package, simpler infra. **Cons:** Generation logic to maintain.
 
 **Approach C: Runtime validation only (current + safeParse)**
+
 - Keep separate schemas but enforce `safeParse` at the UI boundary (already in V1 plan)
 - Add contract tests: UI test suite imports agent's type definitions and validates schema compatibility
 - **Pros:** Simplest. **Cons:** Doesn't prevent drift, only catches it.
@@ -42,6 +45,7 @@ Generate UI-side Zod schemas automatically from the agent's TypeScript type defi
 **Recommended:** Start with C (already in V1), graduate to A when a third consumer appears or after 2+ drift incidents.
 
 **Key files:**
+
 - Agent types: `cei-agent/src/usecases/core/modern-types.ts` (32 entity types, ModernContext, StoryCard, EntityGraph, VisualizationHint, PivotTarget)
 - UI schemas: `cei-ui/src/types/modern-context.ts` (Zod equivalents)
 - Both define: EntityType union, EntityReference, EntityRelationship, EntityGroup, EntityGraph, StoryCard, VisualizationHint, PivotTarget, ModernContext
@@ -63,12 +67,14 @@ Add a shared time-range selector: when a user brushes a time range on any chart,
 ### Full Outline
 
 **Architecture:**
+
 1. **TimeRangeContext** — React context providing `{ start: Date, end: Date, setRange, clearRange }`
 2. **Brushable charts** — Recharts/D3 charts emit `onBrush(start, end)` → updates TimeRangeContext
 3. **Filtered consumers** — StoryCardList, VizHintRenderer, EntityTopology read TimeRangeContext and filter their data
 4. **Visual indicator** — Persistent time-range badge ("Showing: Nov 22 - Dec 15") with clear button
 
 **Components affected:**
+
 - `viz/EnhancedChartBlock.tsx` — Add Recharts `ReferenceArea` + brush handler
 - `stories/StoryCardList.tsx` — Filter by `temporalWindow` overlap with selected range
 - `home/PostureOverview.tsx` — Filter gauge data to time range
@@ -95,6 +101,7 @@ Add two test tiers: (1) contract tests that verify UI Zod schemas parse actual a
 ### Full Outline
 
 **Contract tests:**
+
 - Snapshot actual agent `modernContext` output (from seed data runs) as JSON fixtures
 - UI test suite parses these fixtures through its Zod schemas
 - If agent changes a field name/type, contract test fails before deploy
@@ -102,12 +109,14 @@ Add two test tiers: (1) contract tests that verify UI Zod schemas parse actual a
 - ~8 tests covering all major shapes (StoryCard, EntityGraph, VizHint, PivotTarget, empty, malformed)
 
 **E2E tests (Playwright):**
+
 - `tests/e2e/modern-flow.spec.ts` — Full flow: login → send message → wait for story cards → click entity chip → verify panel opens → close panel
 - `tests/e2e/home-dashboard.spec.ts` — Home page loads → posture gauges render → story cards render → click story card entity
 - `tests/e2e/admin-composer.spec.ts` — Admin toggles composer version → verify toggle persists
 - Requires: running agent + UI in CI (Docker compose or similar)
 
 **Accessibility tests:**
+
 - Add `axe-core` integration to Playwright tests
 - Verify: EntityChip has ARIA role + label, EntityPanel has focus trap, StoryCard has heading hierarchy, TopologyChart has `aria-label`
 
@@ -130,6 +139,7 @@ A real-time, filterable event stream on the Home page showing security events as
 ### Full Outline
 
 **Architecture:**
+
 1. **Server-Sent Events endpoint** — Agent API streams security events (`/v1/events/stream`)
 2. **Event types:** audit_finding, control_change, vulnerability_discovered, compliance_deadline, policy_update, assessment_completed
 3. **UI component:** `home/LiveTail.tsx` — Scrolling event list with auto-scroll, pause, and filter controls
@@ -137,11 +147,13 @@ A real-time, filterable event stream on the Home page showing security events as
 5. **Pattern clustering:** Group repeated similar events ("12 low-severity findings in last 5 min")
 
 **Agent-side requirements:**
+
 - New SSE endpoint for event streaming
 - Event bus that aggregates cross-domain events
 - Event deduplication and rate limiting
 
 **UI components:**
+
 - `home/LiveTail.tsx` — Main feed component
 - `home/LiveTailFilters.tsx` — Facet sidebar
 - `home/EventRow.tsx` — Individual event rendering with entity chips
@@ -156,9 +168,9 @@ A real-time, filterable event stream on the Home page showing security events as
 
 ## Summary
 
-| Item | Roadmap Horizon | Effort | Tests | Dependencies |
-|---|---|---|---|---|
-| Shared Contract Source | Next | ~1h (Approach C) / ~3h (Approach A) | +8 | Both repos |
-| Correlated Timeline | Next | ~2.5h | +20 | TimeRangeContext + agent contract addition |
-| Contract & E2E Gates | Next | ~3h | +42 | Playwright + Docker CI |
-| Live Tail Activity Feed | Later | ~6h | +40 | Agent event bus + SSE endpoint |
+| Item                    | Roadmap Horizon | Effort                              | Tests | Dependencies                               |
+| ----------------------- | --------------- | ----------------------------------- | ----- | ------------------------------------------ |
+| Shared Contract Source  | Next            | ~1h (Approach C) / ~3h (Approach A) | +8    | Both repos                                 |
+| Correlated Timeline     | Next            | ~2.5h                               | +20   | TimeRangeContext + agent contract addition |
+| Contract & E2E Gates    | Next            | ~3h                                 | +42   | Playwright + Docker CI                     |
+| Live Tail Activity Feed | Later           | ~6h                                 | +40   | Agent event bus + SSE endpoint             |

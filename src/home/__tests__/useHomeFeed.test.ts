@@ -5,24 +5,17 @@ import { useHomeFeed } from '../useHomeFeed'
 
 const {
   mockFetchHomeFeed,
-  mockGetMockFeedData,
   mockGetAccessToken,
 }: {
   mockFetchHomeFeed: ReturnType<typeof vi.fn>
-  mockGetMockFeedData: ReturnType<typeof vi.fn>
   mockGetAccessToken: ReturnType<typeof vi.fn<() => Promise<string>>>
 } = vi.hoisted(() => ({
   mockFetchHomeFeed: vi.fn(),
-  mockGetMockFeedData: vi.fn(),
   mockGetAccessToken: vi.fn<() => Promise<string>>(),
 }))
 
 vi.mock('../HomeFeedApi', () => ({
   fetchHomeFeed: mockFetchHomeFeed,
-}))
-
-vi.mock('../mockFeedData', () => ({
-  getMockFeedData: mockGetMockFeedData,
 }))
 
 const API_FEED = {
@@ -49,34 +42,8 @@ const API_FEED = {
 
 beforeEach((): void => {
   mockFetchHomeFeed.mockReset()
-  mockGetMockFeedData.mockReset()
   mockGetAccessToken.mockReset()
   mockGetAccessToken.mockResolvedValue('access-token')
-  mockGetMockFeedData.mockReturnValue({
-    agenticItems: [
-      {
-        id: 'mock-agentic-1',
-        severity: 'amber',
-        title: 'Mock agentic',
-        summary: 'Mock summary',
-        confidence: 'medium',
-      },
-    ],
-    metricItems: [
-      {
-        id: 'mock-metric-1',
-        label: 'Mock metric',
-        value: 42,
-        valueDisplay: '42',
-        previousValue: 38,
-        threshold: {
-          direction: 'above',
-          amber: 50,
-          red: 75,
-        },
-      },
-    ],
-  })
 })
 
 afterEach((): void => {
@@ -129,21 +96,21 @@ describe('useHomeFeed', (): void => {
     })
 
     expect(result.current.error).toBeNull()
-    expect(result.current.feed?.agentic).toHaveLength(1)
-    expect(result.current.feed?.deterministic).toHaveLength(1)
+    expect(result.current.feed?.agentic.length || 0).toBeGreaterThan(0)
+    expect(result.current.feed?.deterministic.length || 0).toBeGreaterThan(0)
     expect(result.current.feed?.agentic[0]).toMatchObject({
-      id: 'mock-agentic-1',
+      id: 'agentic-vektora-nis2-gap',
       type: 'agentic',
       category: 'compliance',
       significanceScore: 0.8,
     })
     expect(result.current.feed?.deterministic[0]).toMatchObject({
-      id: 'mock-metric-1',
+      id: 'metric-ot-findings',
       type: 'deterministic',
       category: 'metrics',
       significanceScore: 0.5,
-      value: 42,
-      previousValue: 38,
+      value: 12,
+      previousValue: 9,
     })
     expect(result.current.feed?.cadenceState).toEqual({
       currentPeriod: 'mock',

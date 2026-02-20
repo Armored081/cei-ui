@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react'
 
-import type { Thread } from '../threads/types'
+import type { Thread } from '../types/chat'
 import { relativeTime } from '../utils/relativeTime'
 import './thread-card.css'
 

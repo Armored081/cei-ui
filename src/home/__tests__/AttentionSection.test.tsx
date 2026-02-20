@@ -3,7 +3,7 @@ import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
 
 import { AttentionSection } from '../AttentionSection'
-import type { HomeAgenticItem } from '../mockFeedData'
+import type { HomeAgenticItem } from '../types'
 
 const ATTENTION_ITEMS: HomeAgenticItem[] = [
   {

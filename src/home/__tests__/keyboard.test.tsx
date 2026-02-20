@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest'
 import { AttentionSection } from '../AttentionSection'
 import { MetricsGlance } from '../MetricsGlance'
 import { QuickStartGrid } from '../QuickStartGrid'
-import type { HomeAgenticItem, HomeMetricItem } from '../mockFeedData'
+import type { HomeAgenticItem, HomeMetricItem } from '../types'
 
 const ATTENTION_ITEMS: HomeAgenticItem[] = [
   {

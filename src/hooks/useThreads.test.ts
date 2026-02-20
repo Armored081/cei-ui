@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { Thread } from '../threads/types'
+import type { Thread } from '../types/chat'
 import { useThreads } from './useThreads'
 
 function createThreadAt(

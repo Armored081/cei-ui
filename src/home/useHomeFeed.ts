@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { fetchHomeFeed } from './HomeFeedApi'
 import type { CuratedFeed, FeedCandidate } from './feedSchema'
-import { getMockFeedData } from './mockFeedData'
+import type { HomeAgenticItem, HomeMetricItem } from './types'
 
 const HOME_FEED_REFRESH_INTERVAL_MS = 300_000
 
@@ -11,6 +11,78 @@ export interface UseHomeFeedResult {
   loading: boolean
   error: string | null
   refresh: () => void
+}
+
+interface HomeMockFeed {
+  agenticItems: HomeAgenticItem[]
+  metricItems: HomeMetricItem[]
+}
+
+const DEV_HOME_FEED: HomeMockFeed = {
+  agenticItems: [
+    {
+      id: 'agentic-vektora-nis2-gap',
+      severity: 'red',
+      title: 'Vektora NIS2 logging coverage gap needs executive review',
+      summary:
+        'Privileged access logging controls remain below NIS2 minimum expectations across two production domains.',
+      confidence: 'high',
+    },
+    {
+      id: 'agentic-gridnova-supplier-decision',
+      severity: 'amber',
+      title: 'Agent decision pending for GridNova supplier attestations',
+      summary:
+        'Three GridNova suppliers submitted incomplete control attestations and need acceptance or remediation direction.',
+      confidence: 'medium',
+    },
+    {
+      id: 'agentic-feb-operating-review',
+      severity: 'amber',
+      title: 'February operating review packet requires sign-off',
+      summary:
+        'The monthly operating review is assembled and waiting for leadership validation before distribution.',
+      confidence: 'low',
+    },
+  ],
+  metricItems: [
+    {
+      id: 'metric-ot-findings',
+      label: 'OT findings count',
+      value: 12,
+      valueDisplay: '12',
+      previousValue: 9,
+      threshold: {
+        direction: 'above',
+        amber: 8,
+        red: 11,
+      },
+    },
+    {
+      id: 'metric-it-ot-segmentation',
+      label: 'IT/OT segmentation %',
+      value: 91,
+      valueDisplay: '91%',
+      previousValue: 88,
+      threshold: {
+        direction: 'below',
+        amber: 90,
+        red: 85,
+      },
+    },
+    {
+      id: 'metric-vendor-coverage',
+      label: 'Vendor coverage %',
+      value: 76,
+      valueDisplay: '76%',
+      previousValue: 81,
+      threshold: {
+        direction: 'below',
+        amber: 80,
+        red: 70,
+      },
+    },
+  ],
 }
 
 function toAgenticCandidate(item: {
@@ -66,6 +138,17 @@ function mockCuratedFeed(): CuratedFeed {
       activeTargets: 3,
     },
   }
+}
+
+function getMockFeedData(): HomeMockFeed {
+  if (!import.meta.env.DEV) {
+    return {
+      agenticItems: [],
+      metricItems: [],
+    }
+  }
+
+  return DEV_HOME_FEED
 }
 
 function toReadableError(error: unknown): string {

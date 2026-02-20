@@ -1,4 +1,4 @@
-import type { ToolActivityItem } from '../components/ChatMessageList'
+import type { ToolActivityItem } from '../types/chat'
 import './tool-status-bar.css'
 
 interface ToolStatusBarProps {

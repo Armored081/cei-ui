@@ -3,7 +3,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { HomePage } from '../HomePage'
-import type { HomeAgenticItem, HomeMetricItem } from '../mockFeedData'
+import type { HomeAgenticItem, HomeMetricItem } from '../types'
 
 const { mockUseAuth, mockLogout, mockGetAccessToken, mockUseHomeFeed, mockRefresh } = vi.hoisted(
   (): {

@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 
 import { ConfidenceBadge } from '../primitives/ConfidenceBadge'
-import type { HomeAgenticItem } from './mockFeedData'
+import type { HomeAgenticItem } from './types'
 
 interface AttentionSectionProps {
   items: HomeAgenticItem[]

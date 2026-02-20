@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { AppLayout } from '../AppLayout'
+import { AppShell } from './AppShell'
 
 const { mockUseAuth, mockLogout } = vi.hoisted(
   (): {
@@ -14,7 +14,7 @@ const { mockUseAuth, mockLogout } = vi.hoisted(
   }),
 )
 
-vi.mock('../../auth/AuthProvider', (): { useAuth: typeof mockUseAuth } => ({
+vi.mock('../auth/AuthProvider', (): { useAuth: typeof mockUseAuth } => ({
   useAuth: mockUseAuth,
 }))
 
@@ -22,7 +22,7 @@ function renderLayout(initialEntry = '/'): void {
   render(
     <MemoryRouter initialEntries={[initialEntry]}>
       <Routes>
-        <Route path="/" element={<AppLayout />}>
+        <Route path="/" element={<AppShell />}>
           <Route index element={<div>Home content</div>} />
           <Route path="chat" element={<div>Chat content</div>} />
           <Route path="metrics" element={<div>Metrics content</div>} />
@@ -49,7 +49,7 @@ beforeEach((): void => {
   })
 })
 
-describe('AppLayout', (): void => {
+describe('AppShell', (): void => {
   it('renders sidebar links and nested outlet content', (): void => {
     renderLayout('/')
 

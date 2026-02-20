@@ -35,20 +35,21 @@ CEI is a **security operations platform**, not a chatbot with a sidebar. The cur
 
 ### Design North Star: Datadog for Security Governance
 
-| Datadog Concept | CEI Equivalent | Current State | Target State |
-|---|---|---|---|
-| **Dashboard** | Home + Posture Overview | Basic feed cards | Live posture dashboard with story cards, gauges, topology |
-| **Service Map** | Entity Topology | ❌ None | Interactive D3 node graph (controls ↔ risks ↔ frameworks) |
-| **Watchdog Stories** | Story Cards | ❌ None | Severity-badged cards with correlated signals, inline in responses AND on Home |
-| **Side Panel** | Entity Detail Panel | ❌ None | Slide-in panel with tabs (Overview, Related, History) |
-| **Pivot Links** | Entity Chips | ❌ None | Clickable `[[entity:type:id|name]]` chips in agent responses |
-| **Heatmaps/Charts** | Viz Hints | Basic Recharts blocks | Agent-driven visualization hints rendered as contextual charts |
-| **Live Tail** | Activity Feed | Tool log drawer | Real-time activity stream with severity filtering |
-| **Notebooks** | Interactive Reports | Static PPTX/PDF | Live data widgets mixed with narrative (future) |
+| Datadog Concept      | CEI Equivalent          | Current State         | Target State                                                                   |
+| -------------------- | ----------------------- | --------------------- | ------------------------------------------------------------------------------ | -------------------------------- |
+| **Dashboard**        | Home + Posture Overview | Basic feed cards      | Live posture dashboard with story cards, gauges, topology                      |
+| **Service Map**      | Entity Topology         | ❌ None               | Interactive D3 node graph (controls ↔ risks ↔ frameworks)                      |
+| **Watchdog Stories** | Story Cards             | ❌ None               | Severity-badged cards with correlated signals, inline in responses AND on Home |
+| **Side Panel**       | Entity Detail Panel     | ❌ None               | Slide-in panel with tabs (Overview, Related, History)                          |
+| **Pivot Links**      | Entity Chips            | ❌ None               | Clickable `[[entity:type:id                                                    | name]]` chips in agent responses |
+| **Heatmaps/Charts**  | Viz Hints               | Basic Recharts blocks | Agent-driven visualization hints rendered as contextual charts                 |
+| **Live Tail**        | Activity Feed           | Tool log drawer       | Real-time activity stream with severity filtering                              |
+| **Notebooks**        | Interactive Reports     | Static PPTX/PDF       | Live data widgets mixed with narrative (future)                                |
 
 ### Key Principle: Eliminate, Don't Accumulate
 
 The old UI has accumulated layers:
+
 - A `ChatPage` component that does nothing (39 lines, just renders CommandCenter)
 - A `ChatMessageList` types file used only for re-exports
 - Legacy `AppLayout` (61 lines, just an Outlet wrapper) alongside the real `CommandCenter`
@@ -64,24 +65,24 @@ The old UI has accumulated layers:
 
 ### File Inventory (84 source files, 252 tests)
 
-| Directory | Files | Purpose | Verdict |
-|---|---|---|---|
-| `agent/` | 2 | AgentClient + types | **Evolve** — add `modernContext` to stream schema |
-| `artifacts/` | 6 | ArtifactRegistry + renderers | **Evolve** — renderers become entity-aware |
-| `auth/` | 5 | Cognito auth | **Keep as-is** |
-| `components/` | 7 | ChatPage, ChatMessageList, blocks, Toast, etc. | **Eliminate** — merge into new structure |
-| `components/blocks/` | 5 | ChartBlock, TableBlock, RecommendationBlock, TaskProgress | **Evolve** — move to `blocks/`, add Modern blocks |
-| `feedback/` | 5 | Feedback dashboard + slide-over | **Keep** (move to admin/) |
-| `home/` | 8 | HomePage, feed, mock data | **Rebuild** — posture dashboard with story cards |
-| `hooks/` | 2 | useChatEngine, useThreads | **Rebuild** — useChatEngine gains modernContext |
-| `layout/` | 1 | AppLayout (dead wrapper) | **Eliminate** |
-| `layouts/` | 2 | CommandCenter + types | **Evolve** — becomes the shell, gains entity panel |
-| `metrics/` | 1 | MetricsPage | **Evolve** — becomes data-driven from agent metrics |
-| `operations/` | 4 | Operations page | **Keep** |
-| `primitives/` | 25 | UI atoms (Composer, MessageList, TopBar, etc.) | **Evolve** — core primitives stay, add entity-aware ones |
-| `roadmap/` | 5 | Roadmap page | **Keep** |
-| `threads/` | 1 | Thread types | **Merge** into hooks/useThreads |
-| `utils/` | 1 | relativeTime | **Keep** |
+| Directory            | Files | Purpose                                                   | Verdict                                                  |
+| -------------------- | ----- | --------------------------------------------------------- | -------------------------------------------------------- |
+| `agent/`             | 2     | AgentClient + types                                       | **Evolve** — add `modernContext` to stream schema        |
+| `artifacts/`         | 6     | ArtifactRegistry + renderers                              | **Evolve** — renderers become entity-aware               |
+| `auth/`              | 5     | Cognito auth                                              | **Keep as-is**                                           |
+| `components/`        | 7     | ChatPage, ChatMessageList, blocks, Toast, etc.            | **Eliminate** — merge into new structure                 |
+| `components/blocks/` | 5     | ChartBlock, TableBlock, RecommendationBlock, TaskProgress | **Evolve** — move to `blocks/`, add Modern blocks        |
+| `feedback/`          | 5     | Feedback dashboard + slide-over                           | **Keep** (move to admin/)                                |
+| `home/`              | 8     | HomePage, feed, mock data                                 | **Rebuild** — posture dashboard with story cards         |
+| `hooks/`             | 2     | useChatEngine, useThreads                                 | **Rebuild** — useChatEngine gains modernContext          |
+| `layout/`            | 1     | AppLayout (dead wrapper)                                  | **Eliminate**                                            |
+| `layouts/`           | 2     | CommandCenter + types                                     | **Evolve** — becomes the shell, gains entity panel       |
+| `metrics/`           | 1     | MetricsPage                                               | **Evolve** — becomes data-driven from agent metrics      |
+| `operations/`        | 4     | Operations page                                           | **Keep**                                                 |
+| `primitives/`        | 25    | UI atoms (Composer, MessageList, TopBar, etc.)            | **Evolve** — core primitives stay, add entity-aware ones |
+| `roadmap/`           | 5     | Roadmap page                                              | **Keep**                                                 |
+| `threads/`           | 1     | Thread types                                              | **Merge** into hooks/useThreads                          |
+| `utils/`             | 1     | relativeTime                                              | **Keep**                                                 |
 
 ### Critical Resize Fixes to Preserve
 
@@ -106,29 +107,29 @@ These were hard-won fixes for viewport resizing, mobile breakpoints, and overflo
 
 ### Dead Code (remove immediately)
 
-| File | Why It's Dead |
-|---|---|
-| `components/ChatPage.tsx` (39 lines) | Wrapper that just renders `<CommandCenter>` — the route should render CommandCenter directly |
-| `components/ChatPage.css` | Styles for dead ChatPage |
-| `components/ChatPage.test.tsx` | Tests for dead ChatPage |
+| File                                         | Why It's Dead                                                                                                                         |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `components/ChatPage.tsx` (39 lines)         | Wrapper that just renders `<CommandCenter>` — the route should render CommandCenter directly                                          |
+| `components/ChatPage.css`                    | Styles for dead ChatPage                                                                                                              |
+| `components/ChatPage.test.tsx`               | Tests for dead ChatPage                                                                                                               |
 | `components/ChatMessageList.tsx` (303 lines) | **Only used for type re-exports.** The actual message list is `primitives/MessageList.tsx`. Types should live in a shared types file. |
-| `components/ChatMessageList.test.tsx` | Tests for the dead re-export file |
-| `components/SectionCard.tsx` | **Zero imports anywhere in the codebase** |
-| `layout/AppLayout.tsx` (61 lines) | Just renders `<Outlet />` with a class name. Redundant with CommandCenter. |
-| `layout/__tests__/AppLayout.test.tsx` | Tests for dead wrapper |
-| `layout/app-layout.css` | Styles for dead wrapper |
-| `threads/types.ts` | Type definitions that belong in `hooks/useThreads.ts` |
-| `home/mockFeedData.ts` | Mock data that duplicates real `feedSchema.ts` types — tests should use builders |
+| `components/ChatMessageList.test.tsx`        | Tests for the dead re-export file                                                                                                     |
+| `components/SectionCard.tsx`                 | **Zero imports anywhere in the codebase**                                                                                             |
+| `layout/AppLayout.tsx` (61 lines)            | Just renders `<Outlet />` with a class name. Redundant with CommandCenter.                                                            |
+| `layout/__tests__/AppLayout.test.tsx`        | Tests for dead wrapper                                                                                                                |
+| `layout/app-layout.css`                      | Styles for dead wrapper                                                                                                               |
+| `threads/types.ts`                           | Type definitions that belong in `hooks/useThreads.ts`                                                                                 |
+| `home/mockFeedData.ts`                       | Mock data that duplicates real `feedSchema.ts` types — tests should use builders                                                      |
 
 ### Legacy Patterns (replace during rebuild)
 
-| Pattern | Problem | Replacement |
-|---|---|---|
-| Flat text message rendering | Agent response is raw markdown string | Parse `[[entity:type:id\|name]]` → render EntityChips |
-| Block-only artifacts | Only `StructuredBlock` types in artifact rail | Add `storyCard`, `vizHint`, `entityGraph` artifact types |
-| Three separate type locations | `components/ChatMessageList` types, `agent/types`, `threads/types` | Single `src/types/` directory |
-| `blockRenderer` prop switching | 4 rendering modes for same block | Single adaptive renderer with context-aware sizing |
-| Inline-only charts | Recharts rendered inside message bubbles | Contextual chart rendering (inline preview → expanded → fullscreen) |
+| Pattern                        | Problem                                                            | Replacement                                                         |
+| ------------------------------ | ------------------------------------------------------------------ | ------------------------------------------------------------------- |
+| Flat text message rendering    | Agent response is raw markdown string                              | Parse `[[entity:type:id\|name]]` → render EntityChips               |
+| Block-only artifacts           | Only `StructuredBlock` types in artifact rail                      | Add `storyCard`, `vizHint`, `entityGraph` artifact types            |
+| Three separate type locations  | `components/ChatMessageList` types, `agent/types`, `threads/types` | Single `src/types/` directory                                       |
+| `blockRenderer` prop switching | 4 rendering modes for same block                                   | Single adaptive renderer with context-aware sizing                  |
+| Inline-only charts             | Recharts rendered inside message bubbles                           | Contextual chart rendering (inline preview → expanded → fullscreen) |
 
 ---
 
@@ -290,6 +291,7 @@ src/
 ### Stream Protocol Changes
 
 The agent currently streams events via SSE:
+
 ```
 delta → text chunk
 block → structured block (chart, table, recommendation, document)
@@ -321,13 +323,38 @@ The `modern-context` event is emitted **once** near the end of the stream (after
 import { z } from 'zod'
 
 export const entityTypeSchema = z.enum([
-  'control', 'risk', 'metric', 'policy', 'standard', 'framework',
-  'vendor', 'asset', 'finding', 'person', 'team', 'process',
-  'vulnerability', 'cve', 'patch', 'exploit', 'affected_asset',
-  'scan', 'sla_policy', 'remediation_group',
-  'recovery_plan', 'rto_rpo_target', 'bc_scenario', 'test_exercise',
-  'dependency', 'critical_process', 'recovery_team', 'alternate_site',
-  'communication_plan', 'escalation_tier', 'vital_record', 'crisis_action',
+  'control',
+  'risk',
+  'metric',
+  'policy',
+  'standard',
+  'framework',
+  'vendor',
+  'asset',
+  'finding',
+  'person',
+  'team',
+  'process',
+  'vulnerability',
+  'cve',
+  'patch',
+  'exploit',
+  'affected_asset',
+  'scan',
+  'sla_policy',
+  'remediation_group',
+  'recovery_plan',
+  'rto_rpo_target',
+  'bc_scenario',
+  'test_exercise',
+  'dependency',
+  'critical_process',
+  'recovery_team',
+  'alternate_site',
+  'communication_plan',
+  'escalation_tier',
+  'vital_record',
+  'crisis_action',
 ])
 
 export const entityReferenceSchema = z.object({
@@ -363,18 +390,28 @@ export const storyCardSchema = z.object({
   severity: z.enum(['critical', 'high', 'medium', 'low', 'info']),
   narrative: z.string(),
   correlatedEntities: z.array(entityReferenceSchema),
-  temporalWindow: z.object({
-    startDate: z.string(),
-    endDate: z.string(),
-  }).optional(),
+  temporalWindow: z
+    .object({
+      startDate: z.string(),
+      endDate: z.string(),
+    })
+    .optional(),
   triggerMetrics: z.array(z.string()).optional(),
   recommendedActions: z.array(z.string()).optional(),
 })
 
 export const vizHintSchema = z.object({
   chartType: z.enum([
-    'bar', 'line', 'pie', 'radar', 'heatmap', 'treemap',
-    'gauge', 'topology', 'timeline', 'table',
+    'bar',
+    'line',
+    'pie',
+    'radar',
+    'heatmap',
+    'treemap',
+    'gauge',
+    'topology',
+    'timeline',
+    'table',
   ]),
   title: z.string(),
   dataKeys: z.array(z.string()),
@@ -407,6 +444,7 @@ export type ModernContext = z.infer<typeof modernContextSchema>
 ### Entity Reference Notation
 
 The LLM embeds entity references in its text responses using this notation:
+
 ```
 [[entity:control:AC-2|Account Management]]
 [[entity:risk:RS-042|Privileged Access Abuse]]
@@ -414,6 +452,7 @@ The LLM embeds entity references in its text responses using this notation:
 ```
 
 The UI parses these into interactive `EntityChip` components. The regex:
+
 ```typescript
 const ENTITY_NOTATION_PATTERN = /\[\[entity:([a-z_]+):([^\]|]+)\|([^\]]+)\]\]/g
 ```
@@ -436,6 +475,7 @@ Every entity reference in the UI resolves to an `EntityChip`. This is the single
 ```
 
 **Behavior:**
+
 - Hover → tooltip with entity type + id
 - Click → opens EntityPanel in the right rail
 - Status color derived from `entityGraph.nodes` if available
@@ -497,6 +537,7 @@ When any EntityChip is clicked, the right rail transforms into an entity detail 
 ```
 
 **Data source:** The entity detail is derived from:
+
 1. `modernContext.entityGraph` (nodes, edges, groups) — already in the response
 2. `modernContext.pivotTargets` — suggested actions for this entity
 3. Future: dedicated entity resolution API endpoint
@@ -505,13 +546,13 @@ When any EntityChip is clicked, the right rail transforms into an entity detail 
 
 The current right rail shows artifacts only. The new `ContextRail` is a multi-mode panel:
 
-| Mode | When | Content |
-|---|---|---|
-| **Artifacts** | Default when artifacts exist | Artifact cards (current behavior) |
-| **Entity Detail** | EntityChip clicked | Entity detail panel with tabs |
-| **Story Cards** | Story cards in modernContext | Story card list above artifacts |
-| **Topology** | Entity graph has >3 nodes | Mini topology map at top of rail |
-| **Empty** | No artifacts, no entities | "Context will appear here" |
+| Mode              | When                         | Content                           |
+| ----------------- | ---------------------------- | --------------------------------- |
+| **Artifacts**     | Default when artifacts exist | Artifact cards (current behavior) |
+| **Entity Detail** | EntityChip clicked           | Entity detail panel with tabs     |
+| **Story Cards**   | Story cards in modernContext | Story card list above artifacts   |
+| **Topology**      | Entity graph has >3 nodes    | Mini topology map at top of rail  |
+| **Empty**         | No artifacts, no entities    | "Context will appear here"        |
 
 The rail modes stack: story cards appear ABOVE the artifact list, and the topology map appears as a collapsible section. Clicking an entity chip REPLACES the rail content with the entity detail panel.
 
@@ -557,6 +598,7 @@ The Home page transforms from a simple feed list to a posture dashboard:
 ```
 
 **Data sources:**
+
 - Posture gauges → aggregate from latest `modernContext.vizHints` across agents
 - Story cards → from Home feed endpoint (already exists), enriched with `modernContext`
 - Entity chips in stories → parsed from story card `correlatedEntities`
@@ -592,7 +634,7 @@ The `useChatEngine` hook (1341 lines) is the state machine for conversation. Cha
 // ChatTimelineItem gains optional modernContext
 export interface ChatTimelineItem {
   // ... existing fields ...
-  modernContext?: ModernContext | null  // NEW — only on assistant messages
+  modernContext?: ModernContext | null // NEW — only on assistant messages
 }
 ```
 
@@ -618,7 +660,7 @@ if (streamEvent.type === 'modern-context') {
 export interface ChatEngine {
   // ... existing fields ...
   /** Returns the modernContext for the most recent assistant message, or null */
-  latestModernContext: ModernContext | null  // NEW — derived from last assistant message
+  latestModernContext: ModernContext | null // NEW — derived from last assistant message
 }
 ```
 
@@ -645,22 +687,37 @@ This opens the EntityPanel in the right rail. The panel draws data from the `mod
 // src/entities/entityTypeConfig.ts
 
 export interface EntityTypeConfig {
-  icon: string        // Emoji or SVG path
-  label: string       // Human-readable type name
-  color: string       // CSS custom property name
+  icon: string // Emoji or SVG path
+  label: string // Human-readable type name
+  color: string // CSS custom property name
   category: 'governance' | 'vulnerability' | 'disaster-recovery' | 'core'
 }
 
 export const ENTITY_TYPE_CONFIG: Record<EntityType, EntityTypeConfig> = {
-  control:          { icon: '🛡️', label: 'Control',          color: '--accent',          category: 'governance' },
-  risk:             { icon: '⚠️', label: 'Risk',              color: '--warning',         category: 'governance' },
-  framework:        { icon: '📋', label: 'Framework',         color: '--chart-series-3',  category: 'governance' },
-  policy:           { icon: '📜', label: 'Policy',            color: '--chart-series-4',  category: 'governance' },
-  metric:           { icon: '📊', label: 'Metric',            color: '--text-muted',      category: 'core' },
-  vulnerability:    { icon: '🔓', label: 'Vulnerability',     color: '--severity-high',   category: 'vulnerability' },
-  cve:              { icon: '🐛', label: 'CVE',               color: '--severity-high',   category: 'vulnerability' },
-  recovery_plan:    { icon: '🔄', label: 'Recovery Plan',     color: '--accent-strong',   category: 'disaster-recovery' },
-  dependency:       { icon: '🔗', label: 'Dependency',        color: '--chart-series-2',  category: 'disaster-recovery' },
+  control: { icon: '🛡️', label: 'Control', color: '--accent', category: 'governance' },
+  risk: { icon: '⚠️', label: 'Risk', color: '--warning', category: 'governance' },
+  framework: { icon: '📋', label: 'Framework', color: '--chart-series-3', category: 'governance' },
+  policy: { icon: '📜', label: 'Policy', color: '--chart-series-4', category: 'governance' },
+  metric: { icon: '📊', label: 'Metric', color: '--text-muted', category: 'core' },
+  vulnerability: {
+    icon: '🔓',
+    label: 'Vulnerability',
+    color: '--severity-high',
+    category: 'vulnerability',
+  },
+  cve: { icon: '🐛', label: 'CVE', color: '--severity-high', category: 'vulnerability' },
+  recovery_plan: {
+    icon: '🔄',
+    label: 'Recovery Plan',
+    color: '--accent-strong',
+    category: 'disaster-recovery',
+  },
+  dependency: {
+    icon: '🔗',
+    label: 'Dependency',
+    color: '--chart-series-2',
+    category: 'disaster-recovery',
+  },
   // ... all 32 entity types
 }
 ```
@@ -676,7 +733,7 @@ export interface ParsedEntityRef {
   type: EntityType
   id: string
   displayName: string
-  raw: string       // Original [[entity:...]] string
+  raw: string // Original [[entity:...]] string
   startIndex: number
   endIndex: number
 }
@@ -725,16 +782,16 @@ size: ~30KB gzipped (tree-shaken)
 
 ### VizHint → Chart Mapping
 
-| `vizHint.chartType` | Component | Library |
-|---|---|---|
-| `bar`, `line`, `pie`, `area` | `EnhancedChartBlock` | Recharts (existing) |
-| `gauge` | `GaugeChart` | Custom SVG (new) |
-| `topology` | `TopologyChart` | D3 (new) |
-| `timeline` | `TimelineChart` | Custom SVG + Recharts |
-| `heatmap` | `HeatmapChart` | Custom SVG |
-| `treemap` | Recharts Treemap | Recharts |
-| `radar` | Recharts Radar | Recharts |
-| `table` | `TableBlock` | Existing |
+| `vizHint.chartType`          | Component            | Library               |
+| ---------------------------- | -------------------- | --------------------- |
+| `bar`, `line`, `pie`, `area` | `EnhancedChartBlock` | Recharts (existing)   |
+| `gauge`                      | `GaugeChart`         | Custom SVG (new)      |
+| `topology`                   | `TopologyChart`      | D3 (new)              |
+| `timeline`                   | `TimelineChart`      | Custom SVG + Recharts |
+| `heatmap`                    | `HeatmapChart`       | Custom SVG            |
+| `treemap`                    | Recharts Treemap     | Recharts              |
+| `radar`                      | Recharts Radar       | Recharts              |
+| `table`                      | `TableBlock`         | Existing              |
 
 ### Gauge Chart Spec
 
@@ -765,6 +822,7 @@ The gauge is a key visual for posture overview:
 **Goal:** Clean slate. Remove dead code, consolidate types, and restructure directories in one pass.
 
 **Dead code removal:**
+
 - [ ] Delete: `ChatPage.tsx`, `ChatPage.css`, `ChatPage.test.tsx`
 - [ ] Delete: `ChatMessageList.tsx`, `ChatMessageList.test.tsx` (move types to `types/chat.ts`)
 - [ ] Delete: `SectionCard.tsx`
@@ -773,9 +831,11 @@ The gauge is a key visual for posture overview:
 - [ ] Delete: `home/mockFeedData.ts` (inline test data in test files)
 
 **Type consolidation:**
+
 - [ ] Create: `src/types/chat.ts`, `src/types/modern-context.ts`, `src/types/entity.ts`, `src/types/stream.ts`
 
 **Shell restructure** (folded in — pure file moves, no behavior change):
+
 - [ ] Move: `layouts/CommandCenter.tsx` → `shell/CommandCenter.tsx`
 - [ ] Move: `primitives/TopBar.tsx` → `shell/TopBar.tsx`
 - [ ] Move: `primitives/Composer.tsx` → `conversation/Composer.tsx`
@@ -833,6 +893,7 @@ The gauge is a key visual for posture overview:
 **Goal:** Right rail gains multi-mode context display AND entity detail panel. (Merged — same surface and state transitions.)
 
 **Context Rail:**
+
 - [ ] Create: `shell/ContextRail.tsx` — replaces static artifact listing
 - [ ] Modes: artifacts-only (default), stories+artifacts, entity-detail
 - [ ] Story cards appear at top of rail when present
@@ -842,6 +903,7 @@ The gauge is a key visual for posture overview:
 - [ ] Preserve: All resize fixes (min-height:0, grid isolation, dvh, etc.)
 
 **Entity Panel:**
+
 - [ ] Create: `entities/EntityDetailPanel.tsx` — slide-in panel with tabs
 - [ ] Create: `hooks/useEntityPanel.ts` — state for open/close/active entity
 - [ ] Tabs: Overview (attributes), Related (edges from graph), Graph (mini topology)
@@ -857,6 +919,7 @@ The gauge is a key visual for posture overview:
 **Goal:** Viz hints render as interactive charts AND entity graph renders as interactive topology. (Merged — same visualization substrate and D3 dependency.)
 
 **Viz Engine:**
+
 - [ ] Create: `viz/VizHintRenderer.tsx` — routes chartType to component
 - [ ] Create: `viz/GaugeChart.tsx` — SVG radial gauge with animated value
 - [ ] Create: `viz/TimelineChart.tsx` — temporal event timeline
@@ -867,6 +930,7 @@ The gauge is a key visual for posture overview:
 - [ ] Register: `VizHintArtifact` in ArtifactRegistry
 
 **Entity Topology:**
+
 - [ ] Add dependency: `d3` (d3-force, d3-selection, d3-zoom, d3-drag)
 - [ ] Create: `entities/EntityTopology.tsx` — force-directed graph component
 - [ ] Create: `entities/EntityRelationshipMatrix.tsx` — tabular fallback
@@ -901,17 +965,17 @@ The gauge is a key visual for posture overview:
 
 ### Total
 
-| Phase | Feature | Codex Phases | Duration | New Tests |
-|---|---|---|---|---|
-| 0 | Foundation + Dead Code + Shell Restructure | 1 | ~1.5h | ~0 (refactor) |
-| 1 | Streaming Protocol (per-message + safeParse) | 1 | ~1h | +20 |
-| 2 | Entity System (with memoization) | 1 | ~1.5h | +28 |
-| 3 | Story Cards | 1 | ~1.5h | +24 |
-| 4 | Context Rail + Entity Panel | 1 | ~2.5h | +36 |
-| 5 | Viz Engine + Entity Topology | 1 | ~3h | +40 |
-| 6 | Home Dashboard | 1 | ~1.5h | +16 |
-| 7 | Admin Composer Config | 1 | ~1h | +12 |
-| **TOTAL** | | **8** | **~13.5h** | **~176** |
+| Phase     | Feature                                      | Codex Phases | Duration   | New Tests     |
+| --------- | -------------------------------------------- | ------------ | ---------- | ------------- |
+| 0         | Foundation + Dead Code + Shell Restructure   | 1            | ~1.5h      | ~0 (refactor) |
+| 1         | Streaming Protocol (per-message + safeParse) | 1            | ~1h        | +20           |
+| 2         | Entity System (with memoization)             | 1            | ~1.5h      | +28           |
+| 3         | Story Cards                                  | 1            | ~1.5h      | +24           |
+| 4         | Context Rail + Entity Panel                  | 1            | ~2.5h      | +36           |
+| 5         | Viz Engine + Entity Topology                 | 1            | ~3h        | +40           |
+| 6         | Home Dashboard                               | 1            | ~1.5h      | +16           |
+| 7         | Admin Composer Config                        | 1            | ~1h        | +12           |
+| **TOTAL** |                                              | **8**        | **~13.5h** | **~176**      |
 
 ---
 
@@ -930,6 +994,7 @@ Each phase produces a working, deployable UI. No feature flags needed because:
 ### Graceful Degradation
 
 If the agent returns no `modernContext` (legacy mode or error):
+
 - Entity chips → not rendered (text stays as-is with `[[entity:...]]` stripped)
 - Story cards → not rendered (agent response displayed normally)
 - Viz hints → not rendered (existing chart blocks work as before)
@@ -955,13 +1020,13 @@ The UI handles the `modern-context` event in the stream loop, with `safeParse` v
 
 ### Test Categories
 
-| Category | Tools | What It Tests |
-|---|---|---|
-| **Unit** | Vitest | Entity parser, strip notation, type config, chart data transforms |
-| **Component** | Vitest + Testing Library | EntityChip render, StoryCard severity colors, GaugeChart values |
-| **Integration** | Vitest + Testing Library | useChatEngine with modernContext events, thread switch, snapshot |
-| **Visual** | Manual (future: Chromatic) | Dark theme rendering, responsive breakpoints, D3 graph layout |
-| **E2E** | Future: Playwright | Full flow: send message → story cards render → click entity → panel opens |
+| Category        | Tools                      | What It Tests                                                             |
+| --------------- | -------------------------- | ------------------------------------------------------------------------- |
+| **Unit**        | Vitest                     | Entity parser, strip notation, type config, chart data transforms         |
+| **Component**   | Vitest + Testing Library   | EntityChip render, StoryCard severity colors, GaugeChart values           |
+| **Integration** | Vitest + Testing Library   | useChatEngine with modernContext events, thread switch, snapshot          |
+| **Visual**      | Manual (future: Chromatic) | Dark theme rendering, responsive breakpoints, D3 graph layout             |
+| **E2E**         | Future: Playwright         | Full flow: send message → story cards render → click entity → panel opens |
 
 ### Key Test Scenarios
 
@@ -982,12 +1047,12 @@ The UI handles the `modern-context` event in the stream loop, with `safeParse` v
 
 ### New Dependencies
 
-| Package | Size (gzipped) | Purpose |
-|---|---|---|
-| `d3-force` | ~8KB | Force simulation for topology |
-| `d3-selection` | ~6KB | DOM manipulation for D3 |
-| `d3-zoom` | ~5KB | Zoom/pan for topology |
-| `d3-drag` | ~3KB | Node dragging |
+| Package        | Size (gzipped) | Purpose                       |
+| -------------- | -------------- | ----------------------------- |
+| `d3-force`     | ~8KB           | Force simulation for topology |
+| `d3-selection` | ~6KB           | DOM manipulation for D3       |
+| `d3-zoom`      | ~5KB           | Zoom/pan for topology         |
+| `d3-drag`      | ~3KB           | Node dragging                 |
 
 **Total new deps: ~22KB gzipped** — Acceptable for the functionality gained.
 
@@ -1004,18 +1069,19 @@ The UI handles the `modern-context` event in the stream loop, with `safeParse` v
 
 ### New CSS Files
 
-| File | Purpose |
-|---|---|
-| `entities/EntityChip.css` | Chip styles, hover, status colors |
-| `stories/StoryCard.css` | Card layout, severity colors, timeline bar |
-| `viz/gauge-chart.css` | Gauge SVG styles, color zones |
-| `viz/topology-chart.css` | D3 container, node styles, edge styles |
-| `shell/context-rail.css` | Multi-mode rail layout |
-| `shell/entity-panel.css` | Panel slide-in, tabs |
+| File                      | Purpose                                    |
+| ------------------------- | ------------------------------------------ |
+| `entities/EntityChip.css` | Chip styles, hover, status colors          |
+| `stories/StoryCard.css`   | Card layout, severity colors, timeline bar |
+| `viz/gauge-chart.css`     | Gauge SVG styles, color zones              |
+| `viz/topology-chart.css`  | D3 container, node styles, edge styles     |
+| `shell/context-rail.css`  | Multi-mode rail layout                     |
+| `shell/entity-panel.css`  | Panel slide-in, tabs                       |
 
 ### Design Token Usage
 
 All new components use existing CSS custom properties from `theme/tokens.css`:
+
 - Severity colors: `--severity-critical`, `--severity-high`, `--severity-medium`, `--severity-low`
 - Chart series: `--chart-series-1` through `--chart-series-4`
 - Surfaces: `--bg-panel`, `--bg-elevated`, `--bg-panel-muted`
@@ -1044,15 +1110,16 @@ Each phase depends on the previous. No parallelization needed — they're small 
 
 The UI phases cannot fully demonstrate features without these agent-side fixes:
 
-| Agent Phase | Blocks UI Phase | Why |
-|---|---|---|
-| **A: Stream Protocol** | UI Phase 1 (Streaming) | UI won't receive `modernContext` without this |
-| **B: Composer Config Seed** | UI Phase 2+ (all features) | Without 'modern' mode enabled, no modernContext is generated |
-| **C-E: Modern Scenarios** | UI Phase 6 (Home Dashboard) | Empty story cards = empty dashboard |
-| **F: Shared Services** | UI Phase 5 (Topology) | Sparse entity graphs = boring topology |
-| **G: Home Feed Bridge** | UI Phase 6 (Home Dashboard) | Story cards don't appear on Home without this |
+| Agent Phase                 | Blocks UI Phase             | Why                                                          |
+| --------------------------- | --------------------------- | ------------------------------------------------------------ |
+| **A: Stream Protocol**      | UI Phase 1 (Streaming)      | UI won't receive `modernContext` without this                |
+| **B: Composer Config Seed** | UI Phase 2+ (all features)  | Without 'modern' mode enabled, no modernContext is generated |
+| **C-E: Modern Scenarios**   | UI Phase 6 (Home Dashboard) | Empty story cards = empty dashboard                          |
+| **F: Shared Services**      | UI Phase 5 (Topology)       | Sparse entity graphs = boring topology                       |
+| **G: Home Feed Bridge**     | UI Phase 6 (Home Dashboard) | Story cards don't appear on Home without this                |
 
 **Recommended execution order:**
+
 ```
 Agent Phase A: Stream Protocol     ← FIRST (unblocks everything)
 Agent Phase B: Composer Config     ← Enables Modern engines

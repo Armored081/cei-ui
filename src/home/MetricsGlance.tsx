@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 
-import type { HomeMetricItem } from './mockFeedData'
+import type { HomeMetricItem } from './types'
 
 interface MetricsGlanceProps {
   items: HomeMetricItem[]

@@ -3,7 +3,7 @@ import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
 
 import { MetricsGlance } from '../MetricsGlance'
-import type { HomeMetricItem } from '../mockFeedData'
+import type { HomeMetricItem } from '../types'
 
 const METRIC_ITEMS: HomeMetricItem[] = [
   {
