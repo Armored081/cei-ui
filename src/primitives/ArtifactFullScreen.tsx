@@ -5,6 +5,7 @@ import type { Artifact } from '../hooks/useChatEngine'
 import { ConfidenceBadge } from './ConfidenceBadge'
 import { ReasoningSection } from './ReasoningSection'
 import { useDialogFocusTrap } from './useDialogFocusTrap'
+import './artifact-overlay.css'
 import './artifact-fullscreen.css'
 
 interface ArtifactFullScreenProps {
@@ -72,7 +73,7 @@ export function ArtifactFullScreen({
           <div className="cei-artifact-fullscreen-actions">
             <button
               aria-label="Minimize artifact view"
-              className="cei-artifact-fullscreen-btn"
+              className="cei-artifact-overlay-btn cei-artifact-overlay-btn-fullscreen"
               onClick={onToggleFullScreen}
               type="button"
             >
@@ -80,11 +81,11 @@ export function ArtifactFullScreen({
             </button>
             <button
               aria-label="Close artifact view"
-              className="cei-artifact-fullscreen-btn"
+              className="cei-artifact-overlay-btn cei-artifact-overlay-btn-close"
               onClick={onClose}
               type="button"
             >
-              ×
+              ✕
             </button>
           </div>
         </header>
