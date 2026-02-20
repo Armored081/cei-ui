@@ -156,17 +156,17 @@
   overflow-x: hidden;
   min-height: 0;
   padding: var(--space-3);
-  display: grid;
-  grid-template-rows: 1fr auto;
+  display: flex;
+  flex-direction: column;
   gap: var(--space-3);
   scrollbar-gutter: stable;
 }
 
 .cei-artifact-overlay-renderer {
   min-height: 0;
+  flex: 1;
   overflow-x: auto;
   overflow-y: visible;
-  display: grid;
 }
 
 .cei-artifact-overlay-empty {

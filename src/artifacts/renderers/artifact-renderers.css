@@ -66,21 +66,10 @@
 }
 
 /* Chart artifacts fill available space in expanded overlay */
-.cei-artifact-expanded-content {
-  min-height: 0;
-  display: grid;
-  grid-template-rows: 1fr;
-}
-
-.cei-artifact-expanded-content .cei-block {
-  display: grid;
-  grid-template-rows: 1fr;
-  min-height: 0;
-}
-
 .cei-artifact-expanded-content .cei-chart-wrapper {
-  height: 100%;
-  min-height: 240px;
+  height: calc(100vh - 120px);
+  min-height: 300px;
+  max-height: 800px;
 }
 
 .cei-artifact-expanded-content .cei-block-header {
