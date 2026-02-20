@@ -46,6 +46,42 @@ export interface Integration {
 }
 
 /**
+ * Supported prompt composer versions.
+ */
+export type ComposerVersion = 'legacy' | 'modern'
+
+/**
+ * Prompt composer configuration for an agent.
+ */
+export interface ComposerConfig {
+  composerVersion: ComposerVersion
+}
+
+/**
+ * Agent configuration record returned by admin endpoints.
+ */
+export interface AgentConfig {
+  id: string
+  name: string
+  config: ComposerConfig
+}
+
+/**
+ * Agent configuration list payload.
+ */
+export interface AgentConfigListResult {
+  items: AgentConfig[]
+  total: number
+}
+
+/**
+ * Composer update payload.
+ */
+export interface ComposerConfigUpdateResult {
+  agent: AgentConfig
+}
+
+/**
  * Integration list payload.
  */
 export interface IntegrationListResult {
@@ -271,6 +307,8 @@ const integrationSystemTypes: IntegrationSystemType[] = [
   'rubrik',
 ]
 
+const composerVersions: ComposerVersion[] = ['legacy', 'modern']
+
 function isHealthStatus(value: unknown): value is IntegrationHealthStatus {
   return (
     typeof value === 'string' &&
@@ -282,6 +320,10 @@ function isSystemType(value: unknown): value is IntegrationSystemType {
   return (
     typeof value === 'string' && integrationSystemTypes.includes(value as IntegrationSystemType)
   )
+}
+
+function isComposerVersion(value: unknown): value is ComposerVersion {
+  return typeof value === 'string' && composerVersions.includes(value as ComposerVersion)
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -363,6 +405,46 @@ function assertIntegration(payload: unknown): Integration {
   }
 }
 
+function assertComposerConfig(payload: unknown): ComposerConfig {
+  if (!isRecord(payload)) {
+    throw new Error('Invalid composer config payload: expected object')
+  }
+
+  const candidate = payload as Record<string, unknown>
+
+  if (!isComposerVersion(candidate.composerVersion)) {
+    throw new Error('Invalid composer config payload: invalid composerVersion')
+  }
+
+  return {
+    composerVersion: candidate.composerVersion,
+  }
+}
+
+function assertAgentConfig(payload: unknown): AgentConfig {
+  if (!isRecord(payload)) {
+    throw new Error('Invalid agent payload: expected object')
+  }
+
+  const candidate = payload as Record<string, unknown>
+
+  if (typeof candidate.id !== 'string' || !candidate.id.trim()) {
+    throw new Error('Invalid agent payload: missing id')
+  }
+
+  if (typeof candidate.name !== 'string' || !candidate.name.trim()) {
+    throw new Error('Invalid agent payload: missing name')
+  }
+
+  const configPayload = isRecord(candidate.config) ? candidate.config : candidate
+
+  return {
+    id: candidate.id,
+    name: candidate.name,
+    config: assertComposerConfig(configPayload),
+  }
+}
+
 function assertIntegrationListResult(payload: unknown): IntegrationListResult {
   if (!isRecord(payload) || !Array.isArray(payload.items) || typeof payload.total !== 'number') {
     throw new Error(
@@ -383,6 +465,54 @@ function assertIntegrationUpdateResult(payload: unknown): IntegrationUpdateResul
 
   return {
     integration: assertIntegration(payload.integration),
+  }
+}
+
+function assertAgentConfigListResult(payload: unknown): AgentConfigListResult {
+  if (Array.isArray(payload)) {
+    return {
+      items: payload.map((entry: unknown): AgentConfig => assertAgentConfig(entry)),
+      total: payload.length,
+    }
+  }
+
+  if (!isRecord(payload)) {
+    throw new Error('Invalid agent list response: expected object')
+  }
+
+  const candidate = payload as {
+    items?: unknown
+    agents?: unknown
+    total?: unknown
+  }
+
+  const listPayload = Array.isArray(candidate.items)
+    ? candidate.items
+    : Array.isArray(candidate.agents)
+      ? candidate.agents
+      : null
+
+  if (!listPayload) {
+    throw new Error('Invalid agent list response: expected items or agents array')
+  }
+
+  const items = listPayload.map((entry: unknown): AgentConfig => assertAgentConfig(entry))
+
+  return {
+    items,
+    total: typeof candidate.total === 'number' ? candidate.total : items.length,
+  }
+}
+
+function assertComposerConfigUpdateResult(payload: unknown): ComposerConfigUpdateResult {
+  if (isRecord(payload) && 'agent' in payload) {
+    return {
+      agent: assertAgentConfig(payload.agent),
+    }
+  }
+
+  return {
+    agent: assertAgentConfig(payload),
   }
 }
 
@@ -542,5 +672,66 @@ export async function updateIntegration(
 
   return assertIntegrationUpdateResult(
     await readJsonPayload(response, 'Failed to update integration'),
+  )
+}
+
+/**
+ * Lists agent composer configuration rows for the admin console.
+ *
+ * @param accessToken - Bearer token used for authorization
+ * @returns Agent configuration list with total count
+ */
+export async function listAgentConfigs(accessToken: string): Promise<AgentConfigListResult> {
+  const baseUrl = readApiBaseUrl()
+  const response = await fetch(`${baseUrl}/api/admin/agents`, {
+    method: 'GET',
+    headers: buildAuthHeaders(accessToken),
+  })
+
+  if (!response.ok) {
+    const details = await readErrorMessage(response)
+    throw new Error(`Failed to list agent composer config: ${details}`)
+  }
+
+  return assertAgentConfigListResult(
+    await readJsonPayload(response, 'Failed to list agent composer config'),
+  )
+}
+
+/**
+ * Updates the prompt composer version for one agent.
+ *
+ * @param accessToken - Bearer token used for authorization
+ * @param agentId - Agent identifier to update
+ * @param config - Composer version payload
+ * @returns Updated agent configuration row
+ */
+export async function updateComposerConfig(
+  accessToken: string,
+  agentId: string,
+  config: ComposerConfig,
+): Promise<ComposerConfigUpdateResult> {
+  const baseUrl = readApiBaseUrl()
+  const response = await fetch(
+    `${baseUrl}/api/admin/composer-config/${encodeURIComponent(agentId)}`,
+    {
+      method: 'PUT',
+      headers: {
+        ...buildAuthHeaders(accessToken),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        composerVersion: config.composerVersion,
+      }),
+    },
+  )
+
+  if (!response.ok) {
+    const details = await readErrorMessage(response)
+    throw new Error(`Failed to update composer config: ${details}`)
+  }
+
+  return assertComposerConfigUpdateResult(
+    await readJsonPayload(response, 'Failed to update composer config'),
   )
 }

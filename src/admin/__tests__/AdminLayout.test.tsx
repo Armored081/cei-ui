@@ -24,6 +24,7 @@ describe('AdminLayout', (): void => {
     expect(screen.getByText('Administration')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: '← Back' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /overview/i })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /composer config/i })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /integrations/i })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /feedback/i })).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: /roadmap/i })).not.toBeInTheDocument()
@@ -34,6 +35,10 @@ describe('AdminLayout', (): void => {
 
     expect(screen.getByRole('link', { name: '← Back' })).toHaveAttribute('href', '/')
     expect(screen.getByRole('link', { name: /overview/i })).toHaveAttribute('href', '/admin')
+    expect(screen.getByRole('link', { name: /composer config/i })).toHaveAttribute(
+      'href',
+      '/admin/composer-config',
+    )
     expect(screen.getByRole('link', { name: /integrations/i })).toHaveAttribute(
       'href',
       '/admin/integrations',
@@ -46,13 +51,17 @@ describe('AdminLayout', (): void => {
 })
 
 describe('AdminDashboard', (): void => {
-  it('renders cards for integrations, feedback, and roadmap', (): void => {
+  it('renders cards for composer config, integrations, feedback, and roadmap', (): void => {
     render(
       <MemoryRouter>
         <AdminDashboard />
       </MemoryRouter>,
     )
 
+    expect(screen.getByRole('link', { name: /composer config/i })).toHaveAttribute(
+      'href',
+      '/admin/composer-config',
+    )
     expect(screen.getByRole('link', { name: /integrations/i })).toHaveAttribute(
       'href',
       '/admin/integrations',

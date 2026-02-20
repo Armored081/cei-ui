@@ -22,7 +22,7 @@ export function AdminDashboard(): JSX.Element {
           marginBottom: '32px',
         }}
       >
-        Manage integrations, feedback, and product roadmap.
+        Manage integrations, feedback, composer rollout, and product roadmap.
       </p>
 
       <div
@@ -32,6 +32,12 @@ export function AdminDashboard(): JSX.Element {
           gap: '16px',
         }}
       >
+        <AdminCard
+          title="Composer Config"
+          description="Toggle prompt composer version by agent"
+          icon="🧩"
+          href="/admin/composer-config"
+        />
         <AdminCard
           title="Integrations"
           description="Configure data sources and system connections"
