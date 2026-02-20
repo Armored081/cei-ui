@@ -245,7 +245,9 @@ describe('ComposerConfigPage', (): void => {
     })
 
     await waitFor((): void => {
-      expect(screen.getByRole('button', { name: 'Switch Optimistic Agent to Legacy' })).toBeEnabled()
+      expect(
+        screen.getByRole('button', { name: 'Switch Optimistic Agent to Legacy' }),
+      ).toBeEnabled()
     })
   })
 
