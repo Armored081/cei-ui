@@ -54,6 +54,7 @@ export function AdminLayout(): JSX.Element {
           Administration
         </div>
         <AdminNavLink to="/admin" end label="Overview" icon="⚙️" />
+        <AdminNavLink to="/admin/composer-config" label="Composer Config" icon="🧩" />
         <AdminNavLink to="/admin/integrations" label="Integrations" icon="🔗" />
         <AdminNavLink to="/admin/feedback" label="Feedback" icon="💬" />
       </nav>

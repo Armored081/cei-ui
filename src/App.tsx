@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 
 import { AdminDashboard } from './admin/AdminDashboard'
 import { AdminLayout } from './admin/AdminLayout'
+import { ComposerConfigPage } from './admin/ComposerConfigPage'
 import { IntegrationsPage } from './admin/IntegrationsPage'
 import { LoginPage } from './auth/LoginPage'
 import { ProtectedRoute } from './auth/ProtectedRoute'
@@ -39,6 +40,7 @@ export function App(): JSX.Element {
         }
       >
         <Route index element={<AdminDashboard />} />
+        <Route path="composer-config" element={<ComposerConfigPage />} />
         <Route path="integrations" element={<IntegrationsPage />} />
         <Route path="feedback" element={<FeedbackDashboard />} />
       </Route>
