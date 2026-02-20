@@ -23,6 +23,7 @@ import type {
   ChatTimelineItem,
   ToolActivityItem,
 } from '../types/chat'
+import { modernContextSchema, type ModernContext } from '../types/modern-context.js'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -391,6 +392,7 @@ export interface ChatEngine {
   messages: ChatMessageItem[]
   artifacts: Artifact[]
   toolLog: ToolLogItem[]
+  latestModernContext: ModernContext | null
 
   // Composer state
   draftMessage: string
@@ -521,6 +523,18 @@ export function useChatEngine(params: UseChatEngineParams): ChatEngine {
     }
     return result
   }, [messages])
+
+  const latestModernContext = useMemo((): ModernContext | null => {
+    for (let index = timelineItems.length - 1; index >= 0; index -= 1) {
+      const item = timelineItems[index]
+
+      if (item.type === 'message' && item.role === 'agent' && item.modernContext) {
+        return item.modernContext
+      }
+    }
+
+    return null
+  }, [timelineItems])
 
   // Scroll helpers
   const updateMessageScrollIntent = (): void => {
@@ -1115,6 +1129,23 @@ export function useChatEngine(params: UseChatEngineParams): ChatEngine {
           return
         }
 
+        if (streamEvent.type === 'modern-context') {
+          setStreamStatus('streaming')
+          const parsedModernContext = modernContextSchema.safeParse(streamEvent.modernContext)
+
+          if (parsedModernContext.success) {
+            setAgentMessageState(
+              agentMessage.id,
+              (currentMessage: ChatMessageItem): ChatMessageItem => ({
+                ...currentMessage,
+                modernContext: parsedModernContext.data,
+              }),
+            )
+          }
+
+          continue
+        }
+
         if (streamEvent.type === 'done') {
           sawDoneEvent = true
           setStreamStatus('done')
@@ -1125,10 +1156,20 @@ export function useChatEngine(params: UseChatEngineParams): ChatEngine {
               const nextSegments = hasRenderableSegment(currentMessage.segments)
                 ? currentMessage.segments
                 : appendTextSegment(currentMessage.segments, streamEvent.summary || '')
+              let fallbackModernContext = currentMessage.modernContext
+
+              if (!currentMessage.modernContext && streamEvent.modernContext) {
+                const parsedModernContext = modernContextSchema.safeParse(streamEvent.modernContext)
+
+                if (parsedModernContext.success) {
+                  fallbackModernContext = parsedModernContext.data
+                }
+              }
 
               return {
                 ...currentMessage,
                 isStreaming: false,
+                modernContext: fallbackModernContext,
                 segments: nextSegments,
               }
             },
@@ -1293,6 +1334,7 @@ export function useChatEngine(params: UseChatEngineParams): ChatEngine {
     messages,
     artifacts,
     toolLog,
+    latestModernContext,
 
     // Composer state
     draftMessage,

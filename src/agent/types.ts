@@ -181,8 +181,13 @@ export const streamEventSchema = z.discriminatedUnion('type', [
     result: z.unknown(),
   }),
   z.object({
+    type: z.literal('modern-context'),
+    modernContext: z.unknown(),
+  }),
+  z.object({
     type: z.literal('done'),
     summary: z.string().optional(),
+    modernContext: z.unknown().optional(),
   }),
   z.object({
     type: z.literal('error'),
