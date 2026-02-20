@@ -3,9 +3,11 @@ import { assessmentDetailArtifactDefinition } from './renderers/AssessmentDetail
 import { assessmentListArtifactDefinition } from './renderers/AssessmentListArtifact.js'
 import { chartArtifactDefinition } from './renderers/ChartArtifact.js'
 import { documentArtifactDefinition } from './renderers/DocumentArtifact.js'
+import { entityGraphArtifactDefinition } from './renderers/EntityGraphArtifact.js'
 import { recommendationArtifactDefinition } from './renderers/RecommendationArtifact.js'
 import { storyCardArtifactDefinition } from './renderers/StoryCardArtifact.js'
 import { tableArtifactDefinition } from './renderers/TableArtifact.js'
+import { vizHintArtifactDefinition } from './renderers/VizHintArtifact.js'
 
 let areBuiltinTypesRegistered = false
 
@@ -17,6 +19,8 @@ const builtinDefinitions = [
   assessmentDetailArtifactDefinition,
   documentArtifactDefinition,
   storyCardArtifactDefinition,
+  vizHintArtifactDefinition,
+  entityGraphArtifactDefinition,
 ]
 
 /**

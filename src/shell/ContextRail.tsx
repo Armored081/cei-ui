@@ -1,11 +1,17 @@
 import { useMemo, useState } from 'react'
 
+import { EntityRelationshipMatrix } from '../entities/EntityRelationshipMatrix.js'
+import { EntityTopology } from '../entities/EntityTopology.js'
 import type { Artifact, ToolLogItem } from '../hooks/useChatEngine.js'
 import type { ContextRailMode } from '../hooks/useEntityPanel.js'
 import { ActivityDrawer } from '../primitives/ActivityDrawer.js'
 import { ArtifactCard } from '../primitives/ArtifactCard.js'
 import { StoryCardList } from '../stories/StoryCardList.js'
-import type { EntityReference, ModernContext } from '../types/modern-context.js'
+import {
+  entityGraphSchema,
+  type EntityReference,
+  type ModernContext,
+} from '../types/modern-context.js'
 import '../styles/context-rail.css'
 
 interface ContextRailProps {
@@ -48,21 +54,29 @@ export function ContextRail({
   const isTopologyOverlayOpen = mode === 'stories+artifacts' && isTopologyOverlayOpenRaw
 
   const storyCards = latestModernContext?.storyCards || []
+  const parsedEntityGraph = useMemo(() => {
+    if (!latestModernContext) {
+      return null
+    }
+
+    const parsed = entityGraphSchema.safeParse(latestModernContext.entityGraph)
+    return parsed.success ? parsed.data : null
+  }, [latestModernContext])
   const hasStories = mode === 'stories+artifacts' && storyCards.length > 0
-  const nodeCount = latestModernContext?.entityGraph.nodes.length || 0
-  const edgeCount = latestModernContext?.entityGraph.edges.length || 0
+  const nodeCount = parsedEntityGraph?.nodes.length || 0
+  const edgeCount = parsedEntityGraph?.edges.length || 0
   const shouldShowTopologyPreview = hasStories && nodeCount > 3
 
   const topologyPreviewNames = useMemo((): string[] => {
-    if (!shouldShowTopologyPreview || !latestModernContext) {
+    if (!shouldShowTopologyPreview || !parsedEntityGraph) {
       return []
     }
 
-    return latestModernContext.entityGraph.nodes
+    return parsedEntityGraph.nodes
       .slice(0, 5)
       .map((node) => node.name)
       .filter((name): boolean => Boolean(name))
-  }, [latestModernContext, shouldShowTopologyPreview])
+  }, [parsedEntityGraph, shouldShowTopologyPreview])
 
   const onStoryEntityClick = (entityRef: EntityReference): void => {
     onEntityClick?.(entityRef, latestContextMessageId || undefined)
@@ -155,15 +169,32 @@ export function ContextRail({
           role="dialog"
         >
           <div className="cei-context-topology-overlay-content">
-            <h5>Full topology view</h5>
-            <p>Coming soon in Phase 5.</p>
-            <button
-              className="cei-context-topology-action"
-              onClick={(): void => setIsTopologyOverlayOpen(false)}
-              type="button"
-            >
-              Close
-            </button>
+            <div className="cei-context-topology-overlay-header">
+              <h5>Entity topology</h5>
+              <button
+                className="cei-context-topology-action"
+                onClick={(): void => setIsTopologyOverlayOpen(false)}
+                type="button"
+              >
+                Close
+              </button>
+            </div>
+
+            {!parsedEntityGraph ? (
+              <p>Topology data is unavailable for this message.</p>
+            ) : parsedEntityGraph.nodes.length > 50 ? (
+              <EntityRelationshipMatrix
+                graph={parsedEntityGraph}
+                onEntityClick={onStoryEntityClick}
+              />
+            ) : (
+              <EntityTopology
+                graph={parsedEntityGraph}
+                height={Math.max(300, Math.min(window.innerHeight - 260, 760))}
+                onNodeClick={onStoryEntityClick}
+                width={Math.max(420, Math.min(window.innerWidth - 180, 1120))}
+              />
+            )}
           </div>
         </div>
       ) : null}

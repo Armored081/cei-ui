@@ -33,6 +33,18 @@
   --chart-series-4: #c97dd6;
   --chart-grid: rgba(120, 140, 170, 0.12);
 
+  /* Visualization engine */
+  --viz-critical: #e85c6f;
+  --viz-high: #e89040;
+  --viz-medium: #e5a530;
+  --viz-low: #7c93c4;
+  --viz-grid: rgba(120, 140, 170, 0.16);
+  --viz-axis: #7e8da5;
+  --viz-tooltip-bg: rgba(10, 14, 20, 0.96);
+  --viz-tooltip-border: rgba(140, 160, 190, 0.28);
+  --viz-tooltip-text: #e8ecf4;
+  --viz-gauge-track: rgba(124, 147, 196, 0.22);
+
   /* Severity */
   --severity-critical: #e85c6f;
   --severity-high: #e89040;
