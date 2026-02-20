@@ -46,6 +46,30 @@ function createInlineZoomState(): ArtifactZoomState {
   }
 }
 
+function stepBackArtifactZoomState(currentZoomState: ArtifactZoomState): ArtifactZoomState {
+  if (currentZoomState.zoomLevel === 'inline') {
+    return currentZoomState
+  }
+
+  if (currentZoomState.zoomLevel === 'expanded') {
+    return createInlineZoomState()
+  }
+
+  if (
+    currentZoomState.zoomLevel === 'fullscreen' &&
+    currentZoomState.previousZoomLevel === 'expanded' &&
+    currentZoomState.artifactId
+  ) {
+    return {
+      artifactId: currentZoomState.artifactId,
+      zoomLevel: 'expanded',
+      previousZoomLevel: 'fullscreen',
+    }
+  }
+
+  return createInlineZoomState()
+}
+
 function readIsCompactLayout(): boolean {
   if (typeof window.matchMedia !== 'function') {
     return false
@@ -225,6 +249,10 @@ export function CommandCenterLayout({ engine, userEmail, onLogout }: LayoutProps
 
   const threadStateMapRef = useRef<Map<string, ConversationSnapshot>>(new Map())
   const threadMessageCountsRef = useRef<Map<string, number>>(new Map())
+  const artifactHistoryDepthRef = useRef<number>(0)
+  const previousArtifactZoomStateRef = useRef<ArtifactZoomState>(createInlineZoomState())
+  const isProcessingArtifactPopStateRef = useRef<boolean>(false)
+  const ignoreNextArtifactPopStateRef = useRef<boolean>(false)
 
   const selectedArtifact: Artifact | null = useMemo(
     (): Artifact | null =>
@@ -285,6 +313,19 @@ export function CommandCenterLayout({ engine, userEmail, onLogout }: LayoutProps
 
   const onResetArtifactZoom = useCallback((): void => {
     setArtifactZoomState(createInlineZoomState())
+
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    const historyDepth = artifactHistoryDepthRef.current
+    if (historyDepth <= 0) {
+      return
+    }
+
+    artifactHistoryDepthRef.current = 0
+    ignoreNextArtifactPopStateRef.current = true
+    window.history.go(-historyDepth)
   }, [])
 
   const onSelectArtifact = useCallback((artifactId: string): void => {
@@ -311,6 +352,11 @@ export function CommandCenterLayout({ engine, userEmail, onLogout }: LayoutProps
   }, [])
 
   const onExitArtifactFullScreen = useCallback((): void => {
+    if (typeof window !== 'undefined' && artifactHistoryDepthRef.current > 0) {
+      window.history.back()
+      return
+    }
+
     setArtifactZoomState((currentZoomState): ArtifactZoomState => {
       if (!currentZoomState.artifactId || currentZoomState.zoomLevel !== 'fullscreen') {
         return currentZoomState
@@ -361,29 +407,65 @@ export function CommandCenterLayout({ engine, userEmail, onLogout }: LayoutProps
   }, [selectedArtifactIndex, engine.artifacts.length])
 
   const onStepBackArtifactZoom = useCallback((): void => {
-    setArtifactZoomState((currentZoomState): ArtifactZoomState => {
-      if (currentZoomState.zoomLevel === 'inline') {
-        return currentZoomState
+    if (typeof window !== 'undefined' && artifactHistoryDepthRef.current > 0) {
+      window.history.back()
+      return
+    }
+
+    setArtifactZoomState(
+      (currentZoomState): ArtifactZoomState => stepBackArtifactZoomState(currentZoomState),
+    )
+  }, [])
+
+  useEffect((): void => {
+    const previousZoomState = previousArtifactZoomStateRef.current
+    previousArtifactZoomStateRef.current = artifactZoomState
+
+    if (isProcessingArtifactPopStateRef.current || typeof window === 'undefined') {
+      isProcessingArtifactPopStateRef.current = false
+      return
+    }
+
+    const enteredExpanded =
+      previousZoomState.zoomLevel === 'inline' &&
+      artifactZoomState.zoomLevel === 'expanded' &&
+      Boolean(artifactZoomState.artifactId)
+    if (enteredExpanded) {
+      window.history.pushState({ artifactOverlay: true }, '')
+      artifactHistoryDepthRef.current += 1
+      return
+    }
+
+    const enteredFullScreen =
+      previousZoomState.zoomLevel === 'expanded' &&
+      artifactZoomState.zoomLevel === 'fullscreen' &&
+      Boolean(artifactZoomState.artifactId)
+    if (enteredFullScreen) {
+      window.history.pushState({ artifactFullscreen: true }, '')
+      artifactHistoryDepthRef.current += 1
+    }
+  }, [artifactZoomState])
+
+  useEffect((): (() => void) => {
+    const onPopState = (): void => {
+      if (ignoreNextArtifactPopStateRef.current) {
+        ignoreNextArtifactPopStateRef.current = false
+        return
       }
 
-      if (currentZoomState.zoomLevel === 'expanded') {
-        return createInlineZoomState()
+      if (artifactHistoryDepthRef.current <= 0) {
+        return
       }
 
-      if (
-        currentZoomState.zoomLevel === 'fullscreen' &&
-        currentZoomState.previousZoomLevel === 'expanded' &&
-        currentZoomState.artifactId
-      ) {
-        return {
-          artifactId: currentZoomState.artifactId,
-          zoomLevel: 'expanded',
-          previousZoomLevel: 'fullscreen',
-        }
-      }
+      isProcessingArtifactPopStateRef.current = true
+      artifactHistoryDepthRef.current = Math.max(0, artifactHistoryDepthRef.current - 1)
+      setArtifactZoomState(
+        (currentZoomState): ArtifactZoomState => stepBackArtifactZoomState(currentZoomState),
+      )
+    }
 
-      return createInlineZoomState()
-    })
+    window.addEventListener('popstate', onPopState)
+    return (): void => window.removeEventListener('popstate', onPopState)
   }, [])
 
   useEffect((): void => {
@@ -797,7 +879,9 @@ export function CommandCenterLayout({ engine, userEmail, onLogout }: LayoutProps
         </main>
 
         {/* Right rail: Context */}
-        <aside className={`cei-cc-right${rightCollapsed ? ' cei-cc-rail-collapsed' : ''}${selectedArtifact && artifactZoomState.zoomLevel === 'expanded' ? ' cei-cc-rail-hidden-by-overlay' : ''}`}>
+        <aside
+          className={`cei-cc-right${rightCollapsed ? ' cei-cc-rail-collapsed' : ''}${selectedArtifact && artifactZoomState.zoomLevel === 'expanded' ? ' cei-cc-rail-hidden-by-overlay' : ''}`}
+        >
           {rightCollapsed ? (
             <button
               aria-label="Expand artifacts rail"

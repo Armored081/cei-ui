@@ -264,16 +264,67 @@ describe('CommandCenter compact layout', (): void => {
     ).toBeInTheDocument()
 
     fireEvent.keyDown(window, { key: 'Escape' })
+    fireEvent.popState(window)
 
     expect(
       screen.getByRole('dialog', { name: 'Expanded artifact: Patch vulnerable package' }),
     ).toBeInTheDocument()
 
     fireEvent.keyDown(window, { key: 'Escape' })
+    fireEvent.popState(window)
 
     expect(
       screen.queryByRole('dialog', { name: 'Expanded artifact: Patch vulnerable package' }),
     ).not.toBeInTheDocument()
+  })
+
+  it('maps browser back events to artifact zoom transitions', (): void => {
+    const pushStateSpy = vi.spyOn(window.history, 'pushState')
+
+    renderLayout(createEngine(vi.fn()))
+
+    const conversation = screen.getByRole('log', { name: 'Conversation' })
+    fireEvent.click(within(conversation).getByRole('button', { name: /Patch vulnerable package/ }))
+
+    expect(pushStateSpy).toHaveBeenCalledWith({ artifactOverlay: true }, '')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open full-screen artifact view' }))
+
+    expect(
+      screen.getByRole('dialog', { name: 'Full-screen artifact: Patch vulnerable package' }),
+    ).toBeInTheDocument()
+    expect(pushStateSpy).toHaveBeenCalledWith({ artifactFullscreen: true }, '')
+
+    fireEvent.popState(window)
+    expect(
+      screen.getByRole('dialog', { name: 'Expanded artifact: Patch vulnerable package' }),
+    ).toBeInTheDocument()
+
+    fireEvent.popState(window)
+    expect(
+      screen.queryByRole('dialog', { name: 'Expanded artifact: Patch vulnerable package' }),
+    ).not.toBeInTheDocument()
+
+    pushStateSpy.mockRestore()
+  })
+
+  it('rewinds artifact history entries when close is pressed', (): void => {
+    const historyGoSpy = vi.spyOn(window.history, 'go')
+
+    renderLayout(createEngine(vi.fn()))
+
+    const conversation = screen.getByRole('log', { name: 'Conversation' })
+    fireEvent.click(within(conversation).getByRole('button', { name: /Patch vulnerable package/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Open full-screen artifact view' }))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Close artifact view' }))
+
+    expect(historyGoSpy).toHaveBeenCalledWith(-2)
+    expect(
+      screen.queryByRole('dialog', { name: 'Expanded artifact: Patch vulnerable package' }),
+    ).not.toBeInTheDocument()
+
+    historyGoSpy.mockRestore()
   })
 
   it('opens the thread drawer through compact controls', (): void => {

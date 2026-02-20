@@ -458,9 +458,11 @@ describe('invokeAgentStream', (): void => {
   it('preserves data payload when event: done has accompanying data', async (): Promise<void> => {
     vi.stubEnv('VITE_API_URL', 'https://api.example.com')
 
-    const mockFetch = vi.fn().mockResolvedValue(
-      makeSseResponse(['event: done\ndata: {"type":"done","summary":"all tasks complete"}']),
-    )
+    const mockFetch = vi
+      .fn()
+      .mockResolvedValue(
+        makeSseResponse(['event: done\ndata: {"type":"done","summary":"all tasks complete"}']),
+      )
 
     vi.stubGlobal('fetch', mockFetch)
 

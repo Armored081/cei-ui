@@ -42,9 +42,9 @@ async function sendMessage(page: Page, message: string): Promise<void> {
  */
 async function waitForAgentResponse(page: Page, timeoutMs = 120_000): Promise<void> {
   // Wait for an agent message bubble to appear (streaming started)
-  await expect(
-    page.locator('.cei-message-bubble:not(.cei-message-user)').first(),
-  ).toBeVisible({ timeout: 30_000 })
+  await expect(page.locator('.cei-message-bubble:not(.cei-message-user)').first()).toBeVisible({
+    timeout: 30_000,
+  })
 
   // Wait for artifacts to appear (the agent generates chart artifacts)
   // This is the most reliable signal the agent finished meaningfully
