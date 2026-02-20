@@ -6,6 +6,7 @@
 > **Repo:** `~/development/cei-ui` (React 18, Vite, Vitest, 252 tests)
 > **Agent Repo:** `~/development/cei-agent` (5051 tests, Modern Prompt Composer complete)
 > **Prerequisite:** Modern Prompt Composer Phases 0-6 ✅ (all agents ship `modernContext`)
+> **Agent Addendum:** `cei-agent/docs/MODERN-AGENT-READINESS-ADDENDUM.md` — 7 agent-side phases (A-G) that must run before/alongside UI phases: streaming fix, seed data, home feed bridge
 
 ---
 
@@ -1052,6 +1053,32 @@ No new design tokens needed. The "War Room Precision" system already has everyth
 ```
 
 Each phase depends on the previous. No parallelization needed — they're small enough for single Codex runs.
+
+### Agent-Side Prerequisites (from `MODERN-AGENT-READINESS-ADDENDUM.md`)
+
+The UI phases cannot fully demonstrate features without these agent-side fixes:
+
+| Agent Phase | Blocks UI Phase | Why |
+|---|---|---|
+| **A: Stream Protocol** | UI Phase 1 (Streaming) | UI won't receive `modernContext` without this |
+| **B: Composer Config Seed** | UI Phase 2+ (all features) | Without 'modern' mode enabled, no modernContext is generated |
+| **C-E: Modern Scenarios** | UI Phase 8 (Home Dashboard) | Empty story cards = empty dashboard |
+| **F: Shared Services** | UI Phase 7 (Topology) | Sparse entity graphs = boring topology |
+| **G: Home Feed Bridge** | UI Phase 8 (Home Dashboard) | Story cards don't appear on Home without this |
+
+**Recommended execution order:**
+```
+Agent Phase A: Stream Protocol     ← FIRST (unblocks everything)
+Agent Phase B: Composer Config     ← Enables Modern engines
+UI Phase 0: Foundation             ← Can run in parallel with Agent B
+UI Phase 1: Streaming Protocol     ← Requires Agent Phase A complete
+Agent Phases C-E: Seed Scenarios   ← Can run in parallel with UI Phases 2-5
+UI Phases 2-7: Entity/Story/Viz   ← Feature development
+Agent Phase F: Shared Services     ← Before UI Phase 7
+Agent Phase G: Home Feed Bridge    ← Before UI Phase 8
+UI Phase 8: Home Dashboard         ← Requires Agent Phases C-G complete
+UI Phases 9-10: Cleanup + Admin
+```
 
 ---
 
