@@ -241,6 +241,43 @@ describe('ChartBlock', (): void => {
     ])
   })
 
+  it('uses high-contrast tooltip content style for cartesian charts', (): void => {
+    render(<ChartBlock block={buildSingleSeriesChartBlock('bar')} />)
+
+    const tooltipCalls = rechartsMocks.Tooltip.mock.calls as [Record<string, unknown>][]
+    expect(tooltipCalls).toHaveLength(1)
+    expect(tooltipCalls[0][0].contentStyle).toMatchObject({
+      backgroundColor: '#0e1219',
+      border: '1px solid #475569',
+      boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+      color: '#f1f5f9',
+    })
+  })
+
+  it('uses high-contrast tooltip content style for pie charts', (): void => {
+    render(<ChartBlock block={buildSingleSeriesChartBlock('pie')} />)
+
+    const tooltipCalls = rechartsMocks.Tooltip.mock.calls as [Record<string, unknown>][]
+    expect(tooltipCalls).toHaveLength(1)
+    expect(tooltipCalls[0][0].contentStyle).toMatchObject({
+      backgroundColor: '#0e1219',
+      border: '1px solid #475569',
+      boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+      color: '#f1f5f9',
+    })
+  })
+
+  it('uses brighter tooltip label style', (): void => {
+    render(<ChartBlock block={buildSingleSeriesChartBlock('line')} />)
+
+    const tooltipCalls = rechartsMocks.Tooltip.mock.calls as [Record<string, unknown>][]
+    expect(tooltipCalls).toHaveLength(1)
+    expect(tooltipCalls[0][0].labelStyle).toMatchObject({
+      color: '#cbd5e1',
+      fontWeight: 600,
+    })
+  })
+
   it('uses custom color overrides for pie chart cells', (): void => {
     render(<ChartBlock block={buildSingleSeriesChartBlock('pie', ['#111111', '#222222'])} />)
 

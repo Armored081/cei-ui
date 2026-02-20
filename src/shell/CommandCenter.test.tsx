@@ -251,6 +251,42 @@ describe('CommandCenter compact layout', (): void => {
     ).toBeInTheDocument()
   })
 
+  it('applies overlay-hidden rail class to both left and right rails in expanded mode', (): void => {
+    renderLayout(createEngine(vi.fn()))
+
+    const leftRail = document.querySelector('.cei-cc-left')
+    const rightRail = document.querySelector('.cei-cc-right')
+    expect(leftRail).not.toBeNull()
+    expect(rightRail).not.toBeNull()
+    expect(leftRail!.className).not.toContain('cei-cc-rail-hidden-by-overlay')
+    expect(rightRail!.className).not.toContain('cei-cc-rail-hidden-by-overlay')
+
+    const conversation = screen.getByRole('log', { name: 'Conversation' })
+    fireEvent.click(within(conversation).getByRole('button', { name: /Patch vulnerable package/ }))
+
+    expect(leftRail!.className).toContain('cei-cc-rail-hidden-by-overlay')
+    expect(rightRail!.className).toContain('cei-cc-rail-hidden-by-overlay')
+  })
+
+  it('removes overlay-hidden rail class after closing expanded overlay', (): void => {
+    renderLayout(createEngine(vi.fn()))
+
+    const leftRail = document.querySelector('.cei-cc-left')
+    const rightRail = document.querySelector('.cei-cc-right')
+    expect(leftRail).not.toBeNull()
+    expect(rightRail).not.toBeNull()
+
+    const conversation = screen.getByRole('log', { name: 'Conversation' })
+    fireEvent.click(within(conversation).getByRole('button', { name: /Patch vulnerable package/ }))
+    expect(leftRail!.className).toContain('cei-cc-rail-hidden-by-overlay')
+    expect(rightRail!.className).toContain('cei-cc-rail-hidden-by-overlay')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Close artifact view' }))
+
+    expect(leftRail!.className).not.toContain('cei-cc-rail-hidden-by-overlay')
+    expect(rightRail!.className).not.toContain('cei-cc-rail-hidden-by-overlay')
+  })
+
   it('transitions between expanded and full-screen with keyboard shortcuts', (): void => {
     renderLayout(createEngine(vi.fn()))
 
@@ -286,14 +322,26 @@ describe('CommandCenter compact layout', (): void => {
     const conversation = screen.getByRole('log', { name: 'Conversation' })
     fireEvent.click(within(conversation).getByRole('button', { name: /Patch vulnerable package/ }))
 
-    expect(pushStateSpy).toHaveBeenCalledWith({ artifactOverlay: true }, '')
+    expect(pushStateSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        artifactOverlay: true,
+        artifactId: 'agent-1-block-1',
+      }),
+      '',
+    )
 
     fireEvent.click(screen.getByRole('button', { name: 'Open full-screen artifact view' }))
 
     expect(
       screen.getByRole('dialog', { name: 'Full-screen artifact: Patch vulnerable package' }),
     ).toBeInTheDocument()
-    expect(pushStateSpy).toHaveBeenCalledWith({ artifactFullscreen: true }, '')
+    expect(pushStateSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        artifactFullscreen: true,
+        artifactId: 'agent-1-block-1',
+      }),
+      '',
+    )
 
     fireEvent.popState(window)
     expect(
@@ -306,6 +354,30 @@ describe('CommandCenter compact layout', (): void => {
     ).not.toBeInTheDocument()
 
     pushStateSpy.mockRestore()
+  })
+
+  it('maps browser forward events to artifact zoom transitions', (): void => {
+    renderLayout(createEngine(vi.fn()))
+
+    const conversation = screen.getByRole('log', { name: 'Conversation' })
+    fireEvent.click(within(conversation).getByRole('button', { name: /Patch vulnerable package/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Open full-screen artifact view' }))
+
+    expect(
+      screen.getByRole('dialog', { name: 'Full-screen artifact: Patch vulnerable package' }),
+    ).toBeInTheDocument()
+
+    fireEvent.popState(window, { state: { artifactOverlay: true, artifactId: 'agent-1-block-1' } })
+    expect(
+      screen.getByRole('dialog', { name: 'Expanded artifact: Patch vulnerable package' }),
+    ).toBeInTheDocument()
+
+    fireEvent.popState(window, {
+      state: { artifactFullscreen: true, artifactId: 'agent-1-block-1' },
+    })
+    expect(
+      screen.getByRole('dialog', { name: 'Full-screen artifact: Patch vulnerable package' }),
+    ).toBeInTheDocument()
   })
 
   it('rewinds artifact history entries when close is pressed', (): void => {

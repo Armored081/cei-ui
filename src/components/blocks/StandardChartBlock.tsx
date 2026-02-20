@@ -40,15 +40,16 @@ const defaultChartSeriesColorFallbacks = ['#f59e0b', '#10b981', '#3b82f6', '#8b5
 const multiSeriesChartTypes = new Set(['stacked-bar', 'grouped-bar', 'multi-line', 'stacked-area'])
 
 const tooltipStyle: React.CSSProperties = {
-  backgroundColor: 'rgba(14, 18, 25, 0.96)',
-  border: '1px solid var(--border-strong, #2a3040)',
+  backgroundColor: '#0e1219',
+  border: '1px solid #475569',
   borderRadius: '6px',
-  color: '#e2e8f0',
+  boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+  color: '#f1f5f9',
   fontSize: '0.8rem',
 }
 
 const tooltipLabelStyle: React.CSSProperties = {
-  color: '#94a3b8',
+  color: '#cbd5e1',
   fontWeight: 600,
   marginBottom: '2px',
 }
