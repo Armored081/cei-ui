@@ -29,3 +29,12 @@ dist-ssr
 *.sw?
 *.zip
 serve.pid
+.env.e2e
+.auth/
+e2e/screenshots/
+playwright-report/
+test-results/
+playwright-report/
+test-results/
+.auth/
+e2e/screenshots/
