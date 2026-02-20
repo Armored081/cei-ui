@@ -119,7 +119,7 @@ describe('ArtifactFullScreen', (): void => {
   })
 
   it('renders chart artifacts with flex-based fullscreen sizing classes', (): void => {
-    const { container } = render(
+    render(
       <ArtifactFullScreen
         artifact={buildChartArtifact()}
         onBack={vi.fn()}
@@ -131,8 +131,9 @@ describe('ArtifactFullScreen', (): void => {
 
     const chartContainer = screen.getByTestId('chart-container')
     expect(chartContainer.getAttribute('style')).toBeNull()
+    // Portal renders to document.body, not test container
     expect(
-      container.querySelector(
+      document.querySelector(
         '.cei-artifact-fullscreen-content.cei-artifact-fullscreen-content-chart',
       ),
     ).toBeTruthy()

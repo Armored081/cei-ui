@@ -54,7 +54,11 @@ function FullScreenChart({
 }: {
   artifact: Artifact & { block: ChartBlockData }
 }): JSX.Element {
-  return <ChartBlock block={artifact.block} />
+  return (
+    <div className="cei-artifact-expanded-chart">
+      <ChartBlock block={artifact.block} />
+    </div>
+  )
 }
 
 function renderExpanded(artifact: Artifact): JSX.Element {
