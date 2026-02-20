@@ -41,6 +41,17 @@ const heatmapConfigSchema = z.object({
   maxValue: z.number().positive().optional(),
 })
 
+const barDatumSchema = z.object({
+  label: z.string(),
+  value: z.number(),
+})
+
+const barDataSchema = z.union([barDatumSchema, z.array(barDatumSchema).min(1)])
+
+const barConfigSchema = z.object({
+  max: z.number().positive().optional(),
+})
+
 interface VizHintRendererProps {
   hint: VizHint
   width?: number
@@ -139,6 +150,54 @@ export function VizHintRenderer({ hint, width, height }: VizHintRendererProps): 
       <div className="cei-viz-hint" data-testid="viz-hint-heatmap">
         {hint.title ? <h4 className="cei-viz-hint-title">{hint.title}</h4> : null}
         <HeatmapChart data={parsedData.data} height={height} maxValue={maxValue} width={width} />
+      </div>
+    )
+  }
+
+  if (hint.chartType === 'bar') {
+    const parsedData = barDataSchema.safeParse(hint.data)
+
+    if (!parsedData.success) {
+      warnInvalidHint(hint, 'bar data payload is malformed')
+      return null
+    }
+
+    const parsedConfig = barConfigSchema.safeParse(hint.config || {})
+
+    if (!parsedConfig.success) {
+      warnInvalidHint(hint, 'bar config payload is malformed')
+      return null
+    }
+
+    const data = Array.isArray(parsedData.data) ? parsedData.data : [parsedData.data]
+    const maxValue =
+      parsedConfig.data.max ||
+      data.reduce((maxEntryValue, entry) => Math.max(maxEntryValue, entry.value), 0) ||
+      1
+
+    return (
+      <div className="cei-viz-hint" data-testid="viz-hint-bar">
+        {hint.title ? <h4 className="cei-viz-hint-title">{hint.title}</h4> : null}
+        <div className="cei-viz-frame cei-viz-bar-frame">
+          <ul className="cei-viz-bar-list" role="img" aria-label={`${hint.title || 'Bar'} chart`}>
+            {data.map((entry) => {
+              const ratio = Math.max(0, Math.min(1, entry.value / maxValue))
+
+              return (
+                <li className="cei-viz-bar-item" key={`${entry.label}-${entry.value.toString()}`}>
+                  <span className="cei-viz-bar-label">{entry.label}</span>
+                  <span className="cei-viz-bar-track">
+                    <span
+                      className="cei-viz-bar-fill"
+                      style={{ width: `${(ratio * 100).toFixed(2)}%` }}
+                    />
+                  </span>
+                  <span className="cei-viz-bar-value">{entry.value.toString()}</span>
+                </li>
+              )
+            })}
+          </ul>
+        </div>
       </div>
     )
   }

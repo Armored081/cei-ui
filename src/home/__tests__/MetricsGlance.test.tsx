@@ -68,6 +68,17 @@ function ChatRouteDebug(): JSX.Element {
   return <div>{`Chat route ${location.search}`}</div>
 }
 
+function metricValueFor(label: string): HTMLElement {
+  const metricCard = screen.getByRole('button', { name: new RegExp(label, 'i') })
+  const metricValue = metricCard.querySelector('.cei-home-metric-value')
+
+  if (!(metricValue instanceof HTMLElement)) {
+    throw new Error(`Expected metric value element for "${label}"`)
+  }
+
+  return metricValue
+}
+
 describe('MetricsGlance', (): void => {
   it('renders heading and all metric cards', (): void => {
     renderMetrics(METRIC_ITEMS)
@@ -78,12 +89,23 @@ describe('MetricsGlance', (): void => {
     expect(screen.getByRole('button', { name: /IT\/OT segmentation %/i })).toBeInTheDocument()
   })
 
+  it('renders gauge and bar viz hints via VizHintRenderer', (): void => {
+    const { container } = render(
+      <MemoryRouter>
+        <MetricsGlance items={METRIC_ITEMS} />
+      </MemoryRouter>,
+    )
+
+    expect(container.querySelectorAll('[data-testid="viz-hint-gauge"]')).toHaveLength(2)
+    expect(container.querySelectorAll('[data-testid="viz-hint-bar"]')).toHaveLength(1)
+  })
+
   it('applies red, amber, and green threshold classes', (): void => {
     renderMetrics(METRIC_ITEMS)
 
-    expect(screen.getByText('12')).toHaveClass('cei-metric-value--red')
-    expect(screen.getByText('84%')).toHaveClass('cei-metric-value--amber')
-    expect(screen.getByText('95%')).toHaveClass('cei-metric-value--green')
+    expect(metricValueFor('OT findings count')).toHaveClass('cei-metric-value--red')
+    expect(metricValueFor('Vendor coverage %')).toHaveClass('cei-metric-value--amber')
+    expect(metricValueFor('IT/OT segmentation %')).toHaveClass('cei-metric-value--green')
   })
 
   it('renders up, down, and flat trend arrows', (): void => {
@@ -172,6 +194,33 @@ describe('MetricsGlance', (): void => {
 
     renderMetrics(belowRedItem)
 
-    expect(screen.getByText('68%')).toHaveClass('cei-metric-value--red')
+    expect(metricValueFor('Critical SLA adherence %')).toHaveClass('cei-metric-value--red')
+  })
+
+  it('renders metric chart frame in each metric card', (): void => {
+    const { container } = render(
+      <MemoryRouter>
+        <MetricsGlance items={METRIC_ITEMS} />
+      </MemoryRouter>,
+    )
+
+    expect(container.querySelectorAll('.cei-home-metric-viz')).toHaveLength(3)
+  })
+
+  it('renders previous/current bar labels for count metrics', (): void => {
+    renderMetrics([METRIC_ITEMS[0]])
+
+    expect(screen.getByText('Current')).toBeInTheDocument()
+    expect(screen.getByText('Previous')).toBeInTheDocument()
+  })
+
+  it('renders gauge charts for percent metrics', (): void => {
+    const { container } = render(
+      <MemoryRouter>
+        <MetricsGlance items={[METRIC_ITEMS[1], METRIC_ITEMS[2]]} />
+      </MemoryRouter>,
+    )
+
+    expect(container.querySelectorAll('[data-testid="gauge-chart"]')).toHaveLength(2)
   })
 })

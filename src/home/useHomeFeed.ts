@@ -27,6 +27,22 @@ const DEV_HOME_FEED: HomeMockFeed = {
       summary:
         'Privileged access logging controls remain below NIS2 minimum expectations across two production domains.',
       confidence: 'high',
+      correlatedEntities: [
+        {
+          type: 'vendor',
+          id: 'VND-4401',
+          name: 'Vektora Systems',
+        },
+        {
+          type: 'control',
+          id: 'CTRL-LOG-12',
+          name: 'Privileged Access Logging',
+        },
+      ],
+      temporalWindow: {
+        startDate: '2026-02-10',
+        endDate: '2026-02-17',
+      },
     },
     {
       id: 'agentic-gridnova-supplier-decision',
@@ -35,6 +51,17 @@ const DEV_HOME_FEED: HomeMockFeed = {
       summary:
         'Three GridNova suppliers submitted incomplete control attestations and need acceptance or remediation direction.',
       confidence: 'medium',
+      correlatedEntities: [
+        {
+          type: 'vendor',
+          id: 'VND-7710',
+          name: 'GridNova',
+        },
+      ],
+      temporalWindow: {
+        startDate: '2026-02-01',
+        endDate: '2026-02-18',
+      },
     },
     {
       id: 'agentic-feb-operating-review',
@@ -43,6 +70,17 @@ const DEV_HOME_FEED: HomeMockFeed = {
       summary:
         'The monthly operating review is assembled and waiting for leadership validation before distribution.',
       confidence: 'low',
+      correlatedEntities: [
+        {
+          type: 'team',
+          id: 'TEAM-OPS-3',
+          name: 'Operations Review Board',
+        },
+      ],
+      temporalWindow: {
+        startDate: '2026-02-01',
+        endDate: '2026-02-20',
+      },
     },
   ],
   metricItems: [
@@ -90,6 +128,8 @@ function toAgenticCandidate(item: {
   title: string
   summary: string
   confidence: FeedCandidate['confidence']
+  correlatedEntities?: HomeAgenticItem['correlatedEntities']
+  temporalWindow?: HomeAgenticItem['temporalWindow']
 }): FeedCandidate {
   return {
     id: item.id,
@@ -99,6 +139,14 @@ function toAgenticCandidate(item: {
     summary: item.summary,
     confidence: item.confidence,
     significanceScore: 0.8,
+    entityId: item.correlatedEntities?.[0]?.id,
+    metadata:
+      item.correlatedEntities || item.temporalWindow
+        ? {
+            relatedEntities: item.correlatedEntities || [],
+            temporalWindow: item.temporalWindow,
+          }
+        : undefined,
   }
 }
 

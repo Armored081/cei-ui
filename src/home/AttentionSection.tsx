@@ -1,6 +1,8 @@
 import { useNavigate } from 'react-router-dom'
 
-import { ConfidenceBadge } from '../primitives/ConfidenceBadge'
+import type { EntityChipClickRef } from '../entities/EntityChip.js'
+import { StoryCardMini } from '../stories/StoryCardMini.js'
+import type { StoryCard as ModernContextStoryCard } from '../types/modern-context.js'
 import type { HomeAgenticItem } from './types'
 
 interface AttentionSectionProps {
@@ -10,11 +12,21 @@ interface AttentionSectionProps {
   onRetry?: () => void
 }
 
-/**
- * Renders a severity dot class for attention cards.
- */
-function severityClassName(severity: HomeAgenticItem['severity']): string {
-  return severity === 'red' ? 'cei-home-severity-dot-red' : 'cei-home-severity-dot-amber'
+function mapStorySeverity(
+  severity: HomeAgenticItem['severity'],
+): ModernContextStoryCard['severity'] {
+  return severity === 'red' ? 'high' : 'medium'
+}
+
+function toStoryCard(item: HomeAgenticItem): ModernContextStoryCard {
+  return {
+    id: item.id,
+    title: item.title,
+    severity: mapStorySeverity(item.severity),
+    narrative: item.summary,
+    correlatedEntities: item.correlatedEntities || [],
+    temporalWindow: item.temporalWindow,
+  }
 }
 
 /**
@@ -48,10 +60,19 @@ export function AttentionSection({
     navigate(`/chat?draft=${encodeURIComponent(prompt)}`)
   }
 
+  const onOpenEntity = (entityRef: EntityChipClickRef): void => {
+    const prompt = `Analyze recent activity for ${entityRef.name} (${entityRef.type})`
+    navigate(
+      `/chat?draft=${encodeURIComponent(prompt)}&entityId=${encodeURIComponent(
+        entityRef.id,
+      )}&entityType=${encodeURIComponent(entityRef.type)}`,
+    )
+  }
+
   return (
     <section className="cei-home-section" aria-labelledby="cei-home-attention-title">
       <h2 className="cei-home-section-title" id="cei-home-attention-title">
-        Attention Needed
+        Attention Required
       </h2>
 
       {loading ? (
@@ -78,7 +99,7 @@ export function AttentionSection({
           {items.map(
             (item): JSX.Element => (
               <div
-                className="cei-home-card cei-home-attention-card"
+                className="cei-home-attention-story"
                 key={item.id}
                 role="button"
                 tabIndex={0}
@@ -89,17 +110,7 @@ export function AttentionSection({
                   }
                 }}
               >
-                <div className="cei-home-attention-header">
-                  <div className="cei-home-attention-title-wrap">
-                    <span
-                      aria-hidden="true"
-                      className={`cei-home-severity-dot ${severityClassName(item.severity)}`}
-                    />
-                    <h3 className="cei-home-card-title">{item.title}</h3>
-                  </div>
-                  <ConfidenceBadge confidence={item.confidence} />
-                </div>
-                <p className="cei-home-card-summary">{item.summary}</p>
+                <StoryCardMini onEntityClick={onOpenEntity} story={toStoryCard(item)} />
               </div>
             ),
           )}

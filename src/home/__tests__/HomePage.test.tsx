@@ -113,7 +113,8 @@ describe('HomePage', (): void => {
 
     expect(screen.getByRole('heading', { name: 'Good morning' })).toBeInTheDocument()
     expect(screen.getByText('Tuesday, February 17, 2026')).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Attention Needed' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Posture Overview' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Attention Required' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Metrics at a Glance' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Quick Start' })).toBeInTheDocument()
   })
@@ -135,6 +136,7 @@ describe('HomePage', (): void => {
 
     const { container } = renderHomePage()
 
+    expect(container.querySelectorAll('.cei-home-posture-card--skeleton')).toHaveLength(3)
     expect(container.querySelectorAll('.cei-home-attention-card--skeleton')).toHaveLength(3)
     expect(container.querySelectorAll('.cei-home-metric-card--skeleton')).toHaveLength(3)
   })
@@ -153,6 +155,12 @@ describe('HomePage', (): void => {
     fireEvent.click(screen.getAllByRole('button', { name: 'Try again' })[0])
 
     expect(mockRefresh).toHaveBeenCalledTimes(1)
+  })
+
+  it('renders default posture gauges', (): void => {
+    const { container } = renderHomePage()
+
+    expect(container.querySelectorAll('[data-testid="gauge-chart"]')).toHaveLength(3)
   })
 
   it('shows empty section states when feed arrays are empty', (): void => {

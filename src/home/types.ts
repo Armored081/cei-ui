@@ -1,4 +1,5 @@
 import type { ArtifactConfidence } from '../types/chat'
+import type { StoryCard as ModernContextStoryCard } from '../types/modern-context'
 
 export type HomeSeverity = 'red' | 'amber'
 export type ThresholdDirection = 'above' | 'below'
@@ -6,9 +7,11 @@ export type ThresholdDirection = 'above' | 'below'
 /** Agent-curated item shown in the Attention Needed section. */
 export interface HomeAgenticItem {
   confidence: ArtifactConfidence
+  correlatedEntities?: ModernContextStoryCard['correlatedEntities']
   id: string
   severity: HomeSeverity
   summary: string
+  temporalWindow?: ModernContextStoryCard['temporalWindow']
   title: string
 }
 

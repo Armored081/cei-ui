@@ -54,6 +54,25 @@
   gap: var(--space-3);
 }
 
+.cei-home-posture-grid {
+  margin-top: var(--space-4);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.cei-home-posture-card {
+  min-height: 196px;
+}
+
+.cei-home-posture-card .cei-viz-frame {
+  border-color: var(--border-strong);
+}
+
+.cei-home-posture-card--skeleton {
+  min-height: 196px;
+}
+
 .cei-home-attention-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
@@ -99,6 +118,30 @@
   display: grid;
   align-content: start;
   gap: var(--space-3);
+}
+
+.cei-home-attention-story {
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.cei-home-attention-story .cei-story-card-mini {
+  height: 100%;
+  transition:
+    border-color 140ms ease,
+    background-color 140ms ease,
+    transform 140ms ease;
+}
+
+.cei-home-attention-story:hover .cei-story-card-mini {
+  border-color: var(--accent);
+  background-color: color-mix(in srgb, var(--bg-panel-muted) 82%, var(--accent) 18%);
+  transform: translateY(-1px);
+}
+
+.cei-home-attention-story:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .cei-home-attention-card--skeleton,
@@ -189,6 +232,14 @@
   margin: 0;
   color: var(--text-muted);
   font-size: 0.85rem;
+}
+
+.cei-home-metric-viz .cei-viz-frame {
+  min-height: 126px;
+}
+
+.cei-home-metric-viz .cei-viz-hint {
+  gap: var(--space-1);
 }
 
 .cei-home-trend-arrow {
@@ -292,6 +343,10 @@
 }
 
 @media (max-width: 960px) {
+  .cei-home-posture-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .cei-home-attention-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -322,6 +377,10 @@
   }
 
   .cei-home-attention-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cei-home-posture-grid {
     grid-template-columns: 1fr;
   }
 

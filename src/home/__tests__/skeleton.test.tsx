@@ -55,6 +55,17 @@ const METRIC_ITEMS: HomeMetricItem[] = [
   },
 ]
 
+function metricValueFor(label: string): HTMLElement {
+  const metricCard = screen.getByRole('button', { name: new RegExp(label, 'i') })
+  const metricValue = metricCard.querySelector('.cei-home-metric-value')
+
+  if (!(metricValue instanceof HTMLElement)) {
+    throw new Error(`Expected metric value element for "${label}"`)
+  }
+
+  return metricValue
+}
+
 describe('home skeleton and error states', (): void => {
   it('renders 3 attention skeleton cards when loading is true', (): void => {
     const { container } = render(
@@ -157,9 +168,9 @@ describe('home skeleton and error states', (): void => {
       </MemoryRouter>,
     )
 
-    expect(screen.getByText('12')).toHaveClass('cei-metric-value--red')
-    expect(screen.getByText('9')).toHaveClass('cei-metric-value--amber')
-    expect(screen.getByText('6')).toHaveClass('cei-metric-value--green')
+    expect(metricValueFor('OT findings count')).toHaveClass('cei-metric-value--red')
+    expect(metricValueFor('Open findings count')).toHaveClass('cei-metric-value--amber')
+    expect(metricValueFor('Resolved findings count')).toHaveClass('cei-metric-value--green')
   })
 
   it('renders trend arrow up when value is above previous', (): void => {

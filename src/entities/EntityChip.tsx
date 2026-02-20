@@ -29,7 +29,8 @@ export interface EntityChipProps {
 export function EntityChip({ type, id, name, onClick }: EntityChipProps): JSX.Element {
   const config = ENTITY_TYPE_CONFIG[type]
 
-  const onChipClick = (): void => {
+  const onChipClick = (event: React.MouseEvent<HTMLButtonElement>): void => {
+    event.stopPropagation()
     if (onClick) {
       onClick({ type, id, name })
     }
