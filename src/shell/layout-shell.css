@@ -267,6 +267,12 @@
   }
 }
 
+@media (max-width: 480px) {
+  .cei-cc-left {
+    z-index: auto;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .cei-cc-grid {
     transition: none;

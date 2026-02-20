@@ -38,11 +38,89 @@ interface ArtifactZoomState {
   previousZoomLevel: ArtifactZoomLevel | null
 }
 
+interface ArtifactHistoryState {
+  artifactFullscreen?: true
+  artifactId?: string
+  artifactOverlay?: true
+}
+
 function createInlineZoomState(): ArtifactZoomState {
   return {
     artifactId: null,
     zoomLevel: 'inline',
     previousZoomLevel: null,
+  }
+}
+
+function readArtifactHistoryState(state: unknown): ArtifactHistoryState | null {
+  if (!state || typeof state !== 'object') {
+    return null
+  }
+
+  const parsedState = state as Record<string, unknown>
+  const hasOverlayState = parsedState.artifactOverlay === true
+  const hasFullscreenState = parsedState.artifactFullscreen === true
+
+  if (!hasOverlayState && !hasFullscreenState) {
+    return null
+  }
+
+  const artifactId =
+    typeof parsedState.artifactId === 'string' && parsedState.artifactId.length > 0
+      ? parsedState.artifactId
+      : undefined
+
+  return {
+    artifactFullscreen: hasFullscreenState ? true : undefined,
+    artifactId,
+    artifactOverlay: hasOverlayState ? true : undefined,
+  }
+}
+
+function artifactHistoryDepthFromState(state: ArtifactHistoryState | null): number {
+  if (!state) {
+    return 0
+  }
+
+  if (state.artifactFullscreen) {
+    return 2
+  }
+
+  if (state.artifactOverlay) {
+    return 1
+  }
+
+  return 0
+}
+
+function applyArtifactHistoryState(
+  currentZoomState: ArtifactZoomState,
+  historyState: ArtifactHistoryState,
+  fallbackArtifactId: string | null,
+  availableArtifacts: Artifact[],
+): ArtifactZoomState {
+  const artifactId = historyState.artifactId || currentZoomState.artifactId || fallbackArtifactId
+  if (!artifactId) {
+    return currentZoomState
+  }
+
+  const artifactExists = availableArtifacts.some((artifact) => artifact.id === artifactId)
+  if (!artifactExists) {
+    return createInlineZoomState()
+  }
+
+  if (historyState.artifactFullscreen) {
+    return {
+      artifactId,
+      zoomLevel: 'fullscreen',
+      previousZoomLevel: 'expanded',
+    }
+  }
+
+  return {
+    artifactId,
+    zoomLevel: 'expanded',
+    previousZoomLevel: currentZoomState.zoomLevel === 'fullscreen' ? 'fullscreen' : 'inline',
   }
 }
 
@@ -250,6 +328,7 @@ export function CommandCenterLayout({ engine, userEmail, onLogout }: LayoutProps
   const threadStateMapRef = useRef<Map<string, ConversationSnapshot>>(new Map())
   const threadMessageCountsRef = useRef<Map<string, number>>(new Map())
   const artifactHistoryDepthRef = useRef<number>(0)
+  const lastArtifactIdRef = useRef<string | null>(null)
   const previousArtifactZoomStateRef = useRef<ArtifactZoomState>(createInlineZoomState())
   const isProcessingArtifactPopStateRef = useRef<boolean>(false)
   const ignoreNextArtifactPopStateRef = useRef<boolean>(false)
@@ -418,6 +497,12 @@ export function CommandCenterLayout({ engine, userEmail, onLogout }: LayoutProps
   }, [])
 
   useEffect((): void => {
+    if (artifactZoomState.artifactId) {
+      lastArtifactIdRef.current = artifactZoomState.artifactId
+    }
+  }, [artifactZoomState.artifactId])
+
+  useEffect((): void => {
     const previousZoomState = previousArtifactZoomStateRef.current
     previousArtifactZoomStateRef.current = artifactZoomState
 
@@ -431,7 +516,13 @@ export function CommandCenterLayout({ engine, userEmail, onLogout }: LayoutProps
       artifactZoomState.zoomLevel === 'expanded' &&
       Boolean(artifactZoomState.artifactId)
     if (enteredExpanded) {
-      window.history.pushState({ artifactOverlay: true }, '')
+      window.history.pushState(
+        {
+          artifactOverlay: true,
+          artifactId: artifactZoomState.artifactId || undefined,
+        },
+        '',
+      )
       artifactHistoryDepthRef.current += 1
       return
     }
@@ -441,32 +532,79 @@ export function CommandCenterLayout({ engine, userEmail, onLogout }: LayoutProps
       artifactZoomState.zoomLevel === 'fullscreen' &&
       Boolean(artifactZoomState.artifactId)
     if (enteredFullScreen) {
-      window.history.pushState({ artifactFullscreen: true }, '')
+      window.history.pushState(
+        {
+          artifactFullscreen: true,
+          artifactId: artifactZoomState.artifactId || undefined,
+        },
+        '',
+      )
       artifactHistoryDepthRef.current += 1
     }
   }, [artifactZoomState])
 
   useEffect((): (() => void) => {
-    const onPopState = (): void => {
+    const onPopState = (event: PopStateEvent): void => {
       if (ignoreNextArtifactPopStateRef.current) {
         ignoreNextArtifactPopStateRef.current = false
         return
       }
 
-      if (artifactHistoryDepthRef.current <= 0) {
+      const historyState = readArtifactHistoryState(event.state)
+      const currentDepth = artifactHistoryDepthRef.current
+
+      if (!historyState && currentDepth <= 0) {
         return
       }
 
       isProcessingArtifactPopStateRef.current = true
-      artifactHistoryDepthRef.current = Math.max(0, artifactHistoryDepthRef.current - 1)
+
+      if (!historyState) {
+        artifactHistoryDepthRef.current = Math.max(0, currentDepth - 1)
+        setArtifactZoomState(
+          (currentZoomState): ArtifactZoomState => stepBackArtifactZoomState(currentZoomState),
+        )
+        return
+      }
+
+      const targetDepth = artifactHistoryDepthFromState(historyState)
+      artifactHistoryDepthRef.current = targetDepth
+      const availableArtifacts = engine.artifacts
+
+      if (targetDepth > currentDepth) {
+        setArtifactZoomState(
+          (currentZoomState): ArtifactZoomState =>
+            applyArtifactHistoryState(
+              currentZoomState,
+              historyState,
+              lastArtifactIdRef.current,
+              availableArtifacts,
+            ),
+        )
+        return
+      }
+
+      if (targetDepth < currentDepth) {
+        setArtifactZoomState(
+          (currentZoomState): ArtifactZoomState => stepBackArtifactZoomState(currentZoomState),
+        )
+        return
+      }
+
       setArtifactZoomState(
-        (currentZoomState): ArtifactZoomState => stepBackArtifactZoomState(currentZoomState),
+        (currentZoomState): ArtifactZoomState =>
+          applyArtifactHistoryState(
+            currentZoomState,
+            historyState,
+            lastArtifactIdRef.current,
+            availableArtifacts,
+          ),
       )
     }
 
     window.addEventListener('popstate', onPopState)
     return (): void => window.removeEventListener('popstate', onPopState)
-  }, [])
+  }, [engine.artifacts])
 
   useEffect((): void => {
     if (!activeThreadId) {
@@ -763,6 +901,9 @@ export function CommandCenterLayout({ engine, userEmail, onLogout }: LayoutProps
   const gridClassName = `cei-cc-grid${leftCollapsed ? ' cei-cc-grid-left-collapsed' : ''}${
     rightCollapsed ? ' cei-cc-grid-right-collapsed' : ''
   }`
+  const railsHiddenByExpandedOverlay = Boolean(
+    selectedArtifact && artifactZoomState.zoomLevel === 'expanded',
+  )
   const entityDetailPanel =
     entityPanel.isOpen && entityPanel.activeEntity ? (
       <EntityDetailPanel
@@ -804,7 +945,9 @@ export function CommandCenterLayout({ engine, userEmail, onLogout }: LayoutProps
 
       <div className={gridClassName}>
         {/* Left rail: Threads */}
-        <aside className={`cei-cc-left${leftCollapsed ? ' cei-cc-rail-collapsed' : ''}`}>
+        <aside
+          className={`cei-cc-left${leftCollapsed ? ' cei-cc-rail-collapsed' : ''}${railsHiddenByExpandedOverlay ? ' cei-cc-rail-hidden-by-overlay' : ''}`}
+        >
           {leftCollapsed ? (
             <button
               aria-label="Expand thread rail"
@@ -880,7 +1023,7 @@ export function CommandCenterLayout({ engine, userEmail, onLogout }: LayoutProps
 
         {/* Right rail: Context */}
         <aside
-          className={`cei-cc-right${rightCollapsed ? ' cei-cc-rail-collapsed' : ''}${selectedArtifact && artifactZoomState.zoomLevel === 'expanded' ? ' cei-cc-rail-hidden-by-overlay' : ''}`}
+          className={`cei-cc-right${rightCollapsed ? ' cei-cc-rail-collapsed' : ''}${railsHiddenByExpandedOverlay ? ' cei-cc-rail-hidden-by-overlay' : ''}`}
         >
           {rightCollapsed ? (
             <button

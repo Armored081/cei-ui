@@ -34,6 +34,13 @@ describe('Layout shell grid tracks', (): void => {
     const css = readCss('src/shell/layout-shell.css')
     expect(css).toMatch(/\.cei-cc-center\s*{[^}]*min-width:\s*0;/s)
   })
+
+  it('resets left rail stacking context on phones', (): void => {
+    const css = readCss('src/shell/layout-shell.css')
+    expect(css).toMatch(
+      /@media \(max-width: 480px\)\s*{[\s\S]*\.cei-cc-left\s*{[^}]*z-index:\s*auto;/s,
+    )
+  })
 })
 
 describe('Message list overflow constraints', (): void => {

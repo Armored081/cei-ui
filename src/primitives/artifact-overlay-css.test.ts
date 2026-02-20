@@ -52,4 +52,31 @@ describe('Artifact overlay scroll containment', (): void => {
       /@media \(max-width: 1024px\)\s*{[\s\S]*\.cei-artifact-overlay-panel\s*{[^}]*position:\s*relative;/s,
     )
   })
+
+  it('applies safe-area inset padding for compact overlays', (): void => {
+    const css = readCss()
+    expect(css).toMatch(
+      /@media \(max-width: 1024px\)\s*{[\s\S]*\.cei-artifact-overlay-root\s*{[^}]*padding-top:\s*env\(safe-area-inset-top\);/s,
+    )
+    expect(css).toMatch(
+      /@media \(max-width: 1024px\)\s*{[\s\S]*\.cei-artifact-overlay-body\s*{[^}]*padding-bottom:\s*calc\(var\(--space-3\)\s*\+\s*env\(safe-area-inset-bottom\)\);/s,
+    )
+  })
+
+  it('adds a phone breakpoint that hides the fullscreen button', (): void => {
+    const css = readCss()
+    expect(css).toMatch(
+      /@media \(max-width: 480px\)\s*{[\s\S]*\.cei-artifact-overlay-btn-fullscreen\s*{[^}]*display:\s*none;/s,
+    )
+  })
+
+  it('tightens toolbar and title sizing at phone widths', (): void => {
+    const css = readCss()
+    expect(css).toMatch(
+      /@media \(max-width: 480px\)\s*{[\s\S]*\.cei-artifact-overlay-toolbar\s*{[^}]*padding:\s*var\(--space-1\)\s*var\(--space-2\);/s,
+    )
+    expect(css).toMatch(
+      /@media \(max-width: 480px\)\s*{[\s\S]*\.cei-artifact-overlay-title\s*{[^}]*font-size:\s*0\.85rem;[^}]*max-width:\s*calc\(100vw\s*-\s*160px\);/s,
+    )
+  })
 })
