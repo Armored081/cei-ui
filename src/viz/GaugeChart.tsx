@@ -173,10 +173,20 @@ export function GaugeChart({
         <text className="cei-viz-gauge-label" textAnchor="middle" x={centerX} y={height * 0.12}>
           {label}
         </text>
-        <text className="cei-viz-gauge-value" textAnchor="middle" x={centerX} y={centerY - radius * 0.05}>
+        <text
+          className="cei-viz-gauge-value"
+          textAnchor="middle"
+          x={centerX}
+          y={centerY - radius * 0.05}
+        >
           {`${percentage.toString()}%`}
         </text>
-        <text className="cei-viz-gauge-subtext" textAnchor="middle" x={centerX} y={centerY + radius * 0.22}>
+        <text
+          className="cei-viz-gauge-subtext"
+          textAnchor="middle"
+          x={centerX}
+          y={centerY + radius * 0.22}
+        >
           {`${boundedValue.toFixed(0)} / ${normalizedMax.toFixed(0)}`}
         </text>
       </svg>

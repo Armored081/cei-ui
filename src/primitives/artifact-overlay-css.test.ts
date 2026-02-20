@@ -35,4 +35,21 @@ describe('Artifact overlay scroll containment', (): void => {
 
     expect(renderer).toContain('overflow-x: auto')
   })
+
+  it('layers panel above backdrop to avoid mobile compositing artifacts', (): void => {
+    const css = readCss()
+    expect(css).toMatch(/\.cei-artifact-overlay-backdrop\s*{[^}]*z-index:\s*0;/s)
+    expect(css).toMatch(/\.cei-artifact-overlay-panel\s*{[^}]*z-index:\s*1;/s)
+  })
+
+  it('pins compact overlay to the viewport with explicit height', (): void => {
+    const css = readCss()
+    expect(css).toMatch(/@media \(max-width: 1024px\)\s*{[^}]*\.cei-artifact-overlay-root/s)
+    expect(css).toMatch(
+      /@media \(max-width: 1024px\)\s*{[\s\S]*\.cei-artifact-overlay-root\s*{[^}]*height:\s*100dvh;/s,
+    )
+    expect(css).toMatch(
+      /@media \(max-width: 1024px\)\s*{[\s\S]*\.cei-artifact-overlay-panel\s*{[^}]*position:\s*relative;/s,
+    )
+  })
 })
