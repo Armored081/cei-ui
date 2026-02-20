@@ -95,7 +95,7 @@
 .cei-artifact-overlay-actions {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-1);
 }
 
 .cei-artifact-overlay-btn {
@@ -112,6 +112,43 @@
 .cei-artifact-overlay-btn:hover {
   color: var(--text-primary);
   border-color: var(--border-strong);
+}
+
+/* Touch-friendly close & fullscreen buttons */
+.cei-artifact-overlay-btn-close,
+.cei-artifact-overlay-btn-fullscreen {
+  min-width: 40px;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md, 8px);
+  font-size: 1.3rem;
+  transition: background 150ms ease, color 150ms ease;
+}
+
+.cei-artifact-overlay-btn-close {
+  background: rgba(255, 80, 80, 0.12);
+  color: #f87171;
+  border-color: rgba(255, 80, 80, 0.2);
+}
+
+.cei-artifact-overlay-btn-close:hover {
+  background: rgba(255, 80, 80, 0.25);
+  color: #fca5a5;
+  border-color: rgba(255, 80, 80, 0.4);
+}
+
+.cei-artifact-overlay-btn-fullscreen {
+  background: rgba(148, 163, 184, 0.1);
+  color: var(--text-muted);
+  border-color: rgba(148, 163, 184, 0.15);
+}
+
+.cei-artifact-overlay-btn-fullscreen:hover {
+  background: rgba(148, 163, 184, 0.2);
+  color: var(--text-primary);
+  border-color: rgba(148, 163, 184, 0.3);
 }
 
 .cei-artifact-overlay-body {
@@ -162,10 +199,21 @@
   .cei-artifact-overlay-root {
     grid-column: 1 / -1;
     z-index: 32;
+    position: fixed;
+    inset: 0;
   }
 
   .cei-artifact-overlay-panel {
+    left: 0;
     border-left: 0;
+    border-radius: 0;
+  }
+
+  .cei-artifact-overlay-btn-close,
+  .cei-artifact-overlay-btn-fullscreen {
+    min-width: 44px;
+    min-height: 44px;
+    font-size: 1.4rem;
   }
 }
 

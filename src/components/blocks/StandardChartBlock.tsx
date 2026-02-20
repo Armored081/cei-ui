@@ -35,6 +35,25 @@ const defaultChartSeriesColors = [
 
 const multiSeriesChartTypes = new Set(['stacked-bar', 'grouped-bar', 'multi-line', 'stacked-area'])
 
+const tooltipStyle: React.CSSProperties = {
+  backgroundColor: 'rgba(14, 18, 25, 0.96)',
+  border: '1px solid var(--border-strong, #2a3040)',
+  borderRadius: '6px',
+  color: '#e2e8f0',
+  fontSize: '0.8rem',
+}
+
+const tooltipLabelStyle: React.CSSProperties = {
+  color: '#94a3b8',
+  fontWeight: 600,
+  marginBottom: '2px',
+}
+
+function truncateLabel(label: string, maxLen = 16): string {
+  if (label.length <= maxLen) return label
+  return label.slice(0, maxLen - 1) + '…'
+}
+
 function chartColor(block: ChartBlockData, index: number): string {
   const configuredColors = block.colors || []
   const palette = configuredColors.length > 0 ? configuredColors : defaultChartSeriesColors
@@ -66,12 +85,20 @@ function resolveSeries(block: ChartBlockData): string[] {
 function renderChart(block: ChartBlockData): JSX.Element {
   if (block.chartType === 'bar') {
     return (
-      <BarChart data={block.data}>
+      <BarChart data={block.data} margin={{ top: 8, right: 16, bottom: 56, left: 8 }}>
         <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 3" />
-        <XAxis dataKey="label" stroke="var(--text-muted)" />
-        <YAxis stroke="var(--text-muted)" />
-        <Tooltip />
-        <Legend />
+        <XAxis
+          angle={-40}
+          dataKey="label"
+          height={64}
+          interval={0}
+          stroke="var(--text-muted)"
+          textAnchor="end"
+          tick={{ fontSize: 10, fill: 'var(--text-muted)' }}
+          tickFormatter={(v: string): string => truncateLabel(v, 20)}
+        />
+        <YAxis stroke="var(--text-muted)" tick={{ fontSize: 11 }} width={40} />
+        <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} />
         <Bar dataKey="value" fill={chartColor(block, 0)} name={block.title} radius={[6, 6, 0, 0]} />
       </BarChart>
     )
@@ -83,7 +110,7 @@ function renderChart(block: ChartBlockData): JSX.Element {
         <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 3" />
         <XAxis dataKey="label" stroke="var(--text-muted)" />
         <YAxis stroke="var(--text-muted)" />
-        <Tooltip />
+        <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} />
         <Legend />
         <Line
           dataKey="value"
@@ -103,7 +130,7 @@ function renderChart(block: ChartBlockData): JSX.Element {
         <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 3" />
         <XAxis dataKey="label" stroke="var(--text-muted)" />
         <YAxis stroke="var(--text-muted)" />
-        <Tooltip />
+        <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} />
         <Legend />
         <Area
           dataKey="value"
@@ -124,11 +151,11 @@ function renderChart(block: ChartBlockData): JSX.Element {
 
     if (block.chartType === 'stacked-bar') {
       return (
-        <BarChart data={data}>
+        <BarChart data={data} margin={{ top: 8, right: 16, bottom: 56, left: 8 }}>
           <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 3" />
-          <XAxis dataKey="label" stroke="var(--text-muted)" />
-          <YAxis stroke="var(--text-muted)" />
-          <Tooltip />
+          <XAxis angle={-40} dataKey="label" height={64} interval={0} stroke="var(--text-muted)" textAnchor="end" tick={{ fontSize: 10, fill: 'var(--text-muted)' }} tickFormatter={(v: string): string => truncateLabel(v, 20)} />
+          <YAxis stroke="var(--text-muted)" width={40} />
+          <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} />
           <Legend />
           {series.map((seriesName, index) => (
             <Bar
@@ -145,11 +172,11 @@ function renderChart(block: ChartBlockData): JSX.Element {
 
     if (block.chartType === 'grouped-bar') {
       return (
-        <BarChart data={data}>
+        <BarChart data={data} margin={{ top: 8, right: 16, bottom: 56, left: 8 }}>
           <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 3" />
-          <XAxis dataKey="label" stroke="var(--text-muted)" />
-          <YAxis stroke="var(--text-muted)" />
-          <Tooltip />
+          <XAxis angle={-40} dataKey="label" height={64} interval={0} stroke="var(--text-muted)" textAnchor="end" tick={{ fontSize: 10, fill: 'var(--text-muted)' }} tickFormatter={(v: string): string => truncateLabel(v, 20)} />
+          <YAxis stroke="var(--text-muted)" width={40} />
+          <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} />
           <Legend />
           {series.map((seriesName, index) => (
             <Bar
@@ -169,7 +196,7 @@ function renderChart(block: ChartBlockData): JSX.Element {
           <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 3" />
           <XAxis dataKey="label" stroke="var(--text-muted)" />
           <YAxis stroke="var(--text-muted)" />
-          <Tooltip />
+          <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} />
           <Legend />
           {series.map((seriesName, index) => (
             <Line
@@ -191,7 +218,7 @@ function renderChart(block: ChartBlockData): JSX.Element {
         <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 3" />
         <XAxis dataKey="label" stroke="var(--text-muted)" />
         <YAxis stroke="var(--text-muted)" />
-        <Tooltip />
+        <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} />
         <Legend />
         {series.map((seriesName, index) => (
           <Area
@@ -212,7 +239,7 @@ function renderChart(block: ChartBlockData): JSX.Element {
 
   return (
     <PieChart>
-      <Tooltip />
+      <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} />
       <Legend />
       <Pie cx="50%" cy="50%" data={block.data} dataKey="value" nameKey="label" outerRadius={84}>
         {block.data.map((point, index) => (
@@ -235,7 +262,7 @@ export function StandardChartBlock({ block }: StandardChartBlockProps): JSX.Elem
       </header>
 
       <div className="cei-chart-wrapper" data-testid="chart-container">
-        <ResponsiveContainer height={240} width="100%">
+        <ResponsiveContainer height="100%" width="100%">
           {renderChart(block)}
         </ResponsiveContainer>
       </div>

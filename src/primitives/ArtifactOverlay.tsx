@@ -136,7 +136,7 @@ export function ArtifactOverlay({
           <div className="cei-artifact-overlay-actions">
             <button
               aria-label="Open full-screen artifact view"
-              className="cei-artifact-overlay-btn"
+              className="cei-artifact-overlay-btn cei-artifact-overlay-btn-fullscreen"
               onClick={onToggleFullScreen}
               type="button"
             >
@@ -144,11 +144,11 @@ export function ArtifactOverlay({
             </button>
             <button
               aria-label="Close artifact view"
-              className="cei-artifact-overlay-btn"
+              className="cei-artifact-overlay-btn cei-artifact-overlay-btn-close"
               onClick={onClose}
               type="button"
             >
-              ×
+              ✕
             </button>
           </div>
         </header>

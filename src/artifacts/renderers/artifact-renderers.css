@@ -65,6 +65,15 @@
   gap: var(--space-3);
 }
 
+/* Give chart artifacts more vertical space in expanded overlay */
+.cei-artifact-expanded-content .cei-chart-wrapper {
+  height: min(60vh, 420px);
+}
+
+.cei-artifact-expanded-content .cei-block-header {
+  display: none;
+}
+
 .cei-artifact-fullscreen-actions {
   display: flex;
   flex-wrap: wrap;
