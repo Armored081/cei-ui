@@ -1,7 +1,7 @@
 # Modern UI Plan — Datadog-Caliber CEI Experience
 
-> **Status:** Draft — comprehensive UI rebuild plan
-> **Date:** 2026-02-20
+> **Status:** Draft — reviewed by Codex (gpt-5.3-codex), 8 recommendations applied
+> **Date:** 2026-02-20 (updated post-review)
 > **Author:** Clawd (orchestrating Codex)
 > **Repo:** `~/development/cei-ui` (React 18, Vite, Vitest, 252 tests)
 > **Agent Repo:** `~/development/cei-agent` (5051 tests, Modern Prompt Composer complete)
@@ -584,11 +584,16 @@ Renders a table of agents with their active composer version (legacy/modern) and
 
 The `useChatEngine` hook (1341 lines) is the state machine for conversation. Changes needed:
 
-#### New State
+#### Per-Message ModernContext (not thread-global)
+
+**Critical design decision:** `modernContext` is stored **per assistant message**, not as a single thread-level object. Each agent response may produce different story cards, entity graphs, and viz hints. A thread-global `modernContext` would overwrite previous turns and mis-drive the entity panel/rail.
 
 ```typescript
-// Add to useChatEngine state
-const [modernContext, setModernContext] = useState<ModernContext | null>(null)
+// ChatTimelineItem gains optional modernContext
+export interface ChatTimelineItem {
+  // ... existing fields ...
+  modernContext?: ModernContext | null  // NEW — only on assistant messages
+}
 ```
 
 #### New Stream Event Handler
@@ -596,7 +601,13 @@ const [modernContext, setModernContext] = useState<ModernContext | null>(null)
 ```typescript
 // In the stream event loop, add:
 if (streamEvent.type === 'modern-context') {
-  setModernContext(streamEvent.modernContext)
+  // Validate with safeParse to degrade gracefully on malformed data
+  const parsed = modernContextSchema.safeParse(streamEvent.modernContext)
+  if (parsed.success) {
+    // Attach to the current assistant message being built
+    currentMessage.modernContext = parsed.data
+  }
+  // On parse failure: silently degrade — no modernContext for this message
   continue
 }
 ```
@@ -606,23 +617,14 @@ if (streamEvent.type === 'modern-context') {
 ```typescript
 export interface ChatEngine {
   // ... existing fields ...
-  modernContext: ModernContext | null  // NEW
+  /** Returns the modernContext for the most recent assistant message, or null */
+  latestModernContext: ModernContext | null  // NEW — derived from last assistant message
 }
 ```
 
 #### Snapshot/Restore
 
-The `ConversationSnapshot` gains `modernContext`:
-
-```typescript
-export interface ConversationSnapshot {
-  sessionId: string
-  timelineItems: ChatTimelineItem[]
-  modernContext: ModernContext | null  // NEW
-}
-```
-
-Thread switching saves/restores modernContext per thread.
+No changes needed to `ConversationSnapshot` — `modernContext` travels with each `ChatTimelineItem`. Thread switching naturally preserves per-message context.
 
 #### Entity Chip Click Handler
 
@@ -631,7 +633,7 @@ Thread switching saves/restores modernContext per thread.
 onEntityClick: (entityRef: EntityReference) => void
 ```
 
-This opens the EntityPanel in the right rail.
+This opens the EntityPanel in the right rail. The panel draws data from the `modernContext` of the message containing the clicked entity chip.
 
 ---
 
@@ -659,7 +661,7 @@ export const ENTITY_TYPE_CONFIG: Record<EntityType, EntityTypeConfig> = {
   cve:              { icon: '🐛', label: 'CVE',               color: '--severity-high',   category: 'vulnerability' },
   recovery_plan:    { icon: '🔄', label: 'Recovery Plan',     color: '--accent-strong',   category: 'disaster-recovery' },
   dependency:       { icon: '🔗', label: 'Dependency',        color: '--chart-series-2',  category: 'disaster-recovery' },
-  // ... all 33 entity types
+  // ... all 32 entity types
 }
 ```
 
@@ -758,45 +760,57 @@ The gauge is a key visual for posture overview:
 
 ## 12. Implementation Phases
 
-### Phase 0: Foundation — Types + Dead Code Removal (1 Codex phase, ~1h)
+### Phase 0: Foundation — Types + Dead Code + Shell Restructure (1 Codex phase, ~1.5h)
 
-**Goal:** Clean slate. Remove dead code, consolidate types.
+**Goal:** Clean slate. Remove dead code, consolidate types, and restructure directories in one pass.
 
+**Dead code removal:**
 - [ ] Delete: `ChatPage.tsx`, `ChatPage.css`, `ChatPage.test.tsx`
 - [ ] Delete: `ChatMessageList.tsx`, `ChatMessageList.test.tsx` (move types to `types/chat.ts`)
 - [ ] Delete: `SectionCard.tsx`
 - [ ] Delete: `layout/AppLayout.tsx`, `layout/__tests__/`, `layout/app-layout.css`
 - [ ] Delete: `threads/types.ts` (merge into `hooks/useThreads.ts`)
 - [ ] Delete: `home/mockFeedData.ts` (inline test data in test files)
+
+**Type consolidation:**
 - [ ] Create: `src/types/chat.ts`, `src/types/modern-context.ts`, `src/types/entity.ts`, `src/types/stream.ts`
+
+**Shell restructure** (folded in — pure file moves, no behavior change):
+- [ ] Move: `layouts/CommandCenter.tsx` → `shell/CommandCenter.tsx`
+- [ ] Move: `primitives/TopBar.tsx` → `shell/TopBar.tsx`
+- [ ] Move: `primitives/Composer.tsx` → `conversation/Composer.tsx`
+- [ ] Move: remaining conversation primitives to `conversation/`
+- [ ] Create: `shell/AppShell.tsx` — replaces AppLayout as the route wrapper
+- [ ] Delete: empty `layouts/`, `layout/`, `components/` directories
 - [ ] Update: `App.tsx` routes — render CommandCenter directly, remove ChatPage indirection
-- [ ] Update: all imports that referenced deleted files
+- [ ] Update: all imports that referenced deleted/moved files
 - [ ] Tests: All existing tests still pass (refactor, not behavior change)
 - [ ] Target: **252 tests passing** (same count, dead test files removed, new type tests added)
 
 ### Phase 1: Streaming Protocol — ModernContext in Stream (1 Codex phase, ~1h)
 
-**Goal:** The UI can receive and store `modernContext` from the agent.
+**Goal:** The UI can receive and store `modernContext` from the agent, per-message.
 
 - [ ] Add `modern-context` to `streamEventSchema` in `agent/types.ts`
-- [ ] Add `modernContext` state to `useChatEngine`
-- [ ] Handle `modern-context` event in stream loop
-- [ ] Add `modernContext` to `ConversationSnapshot` (save/restore on thread switch)
-- [ ] Add `modernContext` to `ChatEngine` interface
-- [ ] Tests: Stream parsing, snapshot round-trip, thread switch preserves context
+- [ ] Add optional `modernContext` field to `ChatTimelineItem` (assistant messages only)
+- [ ] Handle `modern-context` event in stream loop with **`safeParse` validation** (degrade gracefully on malformed data — never crash)
+- [ ] Derive `latestModernContext` from most recent assistant message for convenience
+- [ ] Thread switching naturally preserves per-message context (no separate snapshot field needed)
+- [ ] Tests: Stream parsing with valid/invalid/missing modernContext, thread switch preserves per-message context
 - [ ] Target: **+20 tests**
 
 ### Phase 2: Entity System — Chips + Parser (1 Codex phase, ~1.5h)
 
 **Goal:** Entity references in agent text become clickable chips.
 
-- [ ] Create: `entities/entityTypeConfig.ts` — icon/color/label per type
+- [ ] Create: `entities/entityTypeConfig.ts` — icon/color/label per type (all 32 types)
 - [ ] Create: `entities/entityUtils.ts` — `parseEntityNotations()`, `stripEntityNotation()`
 - [ ] Create: `entities/EntityChip.tsx` + CSS — clickable chip component
 - [ ] Create: `entities/EntityBadge.tsx` — type icon + status color
 - [ ] Create: `conversation/EntityChipParser.tsx` — transforms text segments containing `[[entity:...]]`
 - [ ] Update: `conversation/MessageList.tsx` — text segments pass through EntityChipParser
-- [ ] Tests: Parser edge cases, chip rendering, click handler
+- [ ] **Memoize parsed results:** `useMemo` keyed on message text — parse `[[entity:...]]` once per finalized message, not on every render
+- [ ] Tests: Parser edge cases, chip rendering, click handler, memoization (no re-parse on re-render)
 - [ ] Target: **+28 tests**
 
 ### Phase 3: Story Cards — Inline + Rail (1 Codex phase, ~1.5h)
@@ -808,16 +822,17 @@ The gauge is a key visual for posture overview:
 - [ ] Create: `stories/StoryCardMini.tsx` — compact card for Home
 - [ ] Create: `stories/StorySeverityBadge.tsx`
 - [ ] Create: `stories/StoryTimeline.tsx` — temporal window bar
-- [ ] Create: `conversation/StoryCardInline.tsx` — renders story cards above agent text
-- [ ] Update: `MessageList.tsx` — if `modernContext.storyCards` exists, render above message
+- [ ] Create: `conversation/StoryCardInline.tsx` — renders story cards above agent text (reads from that message's `modernContext`)
+- [ ] Update: `MessageList.tsx` — if message has `modernContext.storyCards`, render above message
 - [ ] Register: `StoryCardArtifact` in `ArtifactRegistry`
 - [ ] Tests: Story card rendering, severity colors, entity chips within cards
 - [ ] Target: **+24 tests**
 
-### Phase 4: Context Rail — Multi-Mode Right Panel (1 Codex phase, ~1.5h)
+### Phase 4: Context Rail + Entity Panel (1 Codex phase, ~2.5h)
 
-**Goal:** Right rail shows story cards + artifacts + entity topology preview.
+**Goal:** Right rail gains multi-mode context display AND entity detail panel. (Merged — same surface and state transitions.)
 
+**Context Rail:**
 - [ ] Create: `shell/ContextRail.tsx` — replaces static artifact listing
 - [ ] Modes: artifacts-only (default), stories+artifacts, entity-detail
 - [ ] Story cards appear at top of rail when present
@@ -825,25 +840,23 @@ The gauge is a key visual for posture overview:
 - [ ] "View Full Topology" button → expand to overlay
 - [ ] Update: `CommandCenter.tsx` — replace static artifact aside with ContextRail
 - [ ] Preserve: All resize fixes (min-height:0, grid isolation, dvh, etc.)
-- [ ] Tests: Mode switching, resize behavior, mobile responsive
-- [ ] Target: **+20 tests**
 
-### Phase 5: Entity Panel — Side Panel Detail (1 Codex phase, ~1.5h)
-
-**Goal:** Click an entity chip → right rail transforms into entity detail panel.
-
+**Entity Panel:**
 - [ ] Create: `entities/EntityDetailPanel.tsx` — slide-in panel with tabs
 - [ ] Create: `hooks/useEntityPanel.ts` — state for open/close/active entity
 - [ ] Tabs: Overview (attributes), Related (edges from graph), Graph (mini topology)
 - [ ] "Back to Artifacts" button restores previous rail mode
 - [ ] Wire: `onEntityClick` callback through CommandCenter → EntityPanel
-- [ ] Tests: Panel open/close, tab switching, back navigation
-- [ ] Target: **+20 tests**
+- [ ] Panel draws data from the `modernContext` of the message containing the clicked chip
 
-### Phase 6: Visualization Engine — Gauge + Enhanced Charts (1 Codex phase, ~2h)
+- [ ] Tests: Mode switching, resize behavior, mobile responsive, panel open/close, tab switching, back navigation
+- [ ] Target: **+36 tests**
 
-**Goal:** Viz hints from modernContext render as interactive charts.
+### Phase 5: Visualization Engine + Entity Topology (1 Codex phase, ~3h)
 
+**Goal:** Viz hints render as interactive charts AND entity graph renders as interactive topology. (Merged — same visualization substrate and D3 dependency.)
+
+**Viz Engine:**
 - [ ] Create: `viz/VizHintRenderer.tsx` — routes chartType to component
 - [ ] Create: `viz/GaugeChart.tsx` — SVG radial gauge with animated value
 - [ ] Create: `viz/TimelineChart.tsx` — temporal event timeline
@@ -852,23 +865,19 @@ The gauge is a key visual for posture overview:
 - [ ] Create: `viz/EnhancedChartBlock.tsx` — ChartBlock wrapper that accepts vizHint data
 - [ ] Update: `blocks/ChartBlock.tsx` — if vizHint metadata present, use enhanced rendering
 - [ ] Register: `VizHintArtifact` in ArtifactRegistry
-- [ ] Tests: Gauge rendering, heatmap cells, theme tokens
-- [ ] Target: **+24 tests**
 
-### Phase 7: Entity Topology — D3 Interactive Graph (1 Codex phase, ~2h)
-
-**Goal:** Interactive node graph rendering EntityGraph.
-
+**Entity Topology:**
 - [ ] Add dependency: `d3` (d3-force, d3-selection, d3-zoom, d3-drag)
 - [ ] Create: `entities/EntityTopology.tsx` — force-directed graph component
 - [ ] Create: `entities/EntityRelationshipMatrix.tsx` — tabular fallback
 - [ ] Features: Click node → entity panel, hover → tooltip, zoom/pan, group regions
 - [ ] Responsive: Renders in context rail (small) or expanded overlay (full)
 - [ ] Register: `EntityGraphArtifact` in ArtifactRegistry
-- [ ] Tests: Node rendering, click handlers, resize, empty state
-- [ ] Target: **+20 tests**
 
-### Phase 8: Home Page — Posture Dashboard Rebuild (1 Codex phase, ~1.5h)
+- [ ] Tests: Gauge rendering, heatmap cells, theme tokens, node rendering, click handlers, resize, empty state
+- [ ] Target: **+40 tests**
+
+### Phase 6: Home Page — Posture Dashboard Rebuild (1 Codex phase, ~1.5h)
 
 **Goal:** Home page becomes a live posture dashboard.
 
@@ -880,22 +889,7 @@ The gauge is a key visual for posture overview:
 - [ ] Tests: Dashboard rendering, gauge values, story card integration
 - [ ] Target: **+16 tests**
 
-### Phase 9: Shell Restructure — Final Cleanup (1 Codex phase, ~1h)
-
-**Goal:** Move files to final directory structure, eliminate all legacy paths.
-
-- [ ] Move: `layouts/CommandCenter.tsx` → `shell/CommandCenter.tsx`
-- [ ] Move: `primitives/TopBar.tsx` → `shell/TopBar.tsx`
-- [ ] Move: `primitives/Composer.tsx` → `conversation/Composer.tsx`
-- [ ] Move: remaining conversation primitives to `conversation/`
-- [ ] Move: remaining pure primitives stay in `primitives/`
-- [ ] Delete: empty `layouts/`, `layout/`, `components/` directories
-- [ ] Update: all imports
-- [ ] Create: `shell/AppShell.tsx` — replaces AppLayout as the route wrapper
-- [ ] Tests: All tests pass with new paths
-- [ ] Target: **252 + ~172 = ~424 tests**
-
-### Phase 10: Admin — Composer Config Page (1 Codex phase, ~1h)
+### Phase 7: Admin — Composer Config Page (1 Codex phase, ~1h)
 
 **Goal:** Admin can toggle composer version per agent.
 
@@ -909,18 +903,15 @@ The gauge is a key visual for posture overview:
 
 | Phase | Feature | Codex Phases | Duration | New Tests |
 |---|---|---|---|---|
-| 0 | Foundation + Dead Code | 1 | ~1h | ~0 (refactor) |
-| 1 | Streaming Protocol | 1 | ~1h | +20 |
-| 2 | Entity System | 1 | ~1.5h | +28 |
+| 0 | Foundation + Dead Code + Shell Restructure | 1 | ~1.5h | ~0 (refactor) |
+| 1 | Streaming Protocol (per-message + safeParse) | 1 | ~1h | +20 |
+| 2 | Entity System (with memoization) | 1 | ~1.5h | +28 |
 | 3 | Story Cards | 1 | ~1.5h | +24 |
-| 4 | Context Rail | 1 | ~1.5h | +20 |
-| 5 | Entity Panel | 1 | ~1.5h | +20 |
-| 6 | Viz Engine | 1 | ~2h | +24 |
-| 7 | Entity Topology | 1 | ~2h | +20 |
-| 8 | Home Dashboard | 1 | ~1.5h | +16 |
-| 9 | Shell Restructure | 1 | ~1h | ~0 (refactor) |
-| 10 | Admin Composer Config | 1 | ~1h | +12 |
-| **TOTAL** | | **11** | **~15.5h** | **~184** |
+| 4 | Context Rail + Entity Panel | 1 | ~2.5h | +36 |
+| 5 | Viz Engine + Entity Topology | 1 | ~3h | +40 |
+| 6 | Home Dashboard | 1 | ~1.5h | +16 |
+| 7 | Admin Composer Config | 1 | ~1h | +12 |
+| **TOTAL** | | **8** | **~13.5h** | **~176** |
 
 ---
 
@@ -930,12 +921,11 @@ The gauge is a key visual for posture overview:
 
 Each phase produces a working, deployable UI. No feature flags needed because:
 
-1. **Phase 0** only removes dead code — no behavior change
+1. **Phase 0** removes dead code + restructures directories — no behavior change
 2. **Phase 1** adds modernContext handling but doesn't change rendering (data flows through, ignored if absent)
-3. **Phases 2-7** add NEW components — existing rendering unchanged for messages without modernContext
-4. **Phase 8** rebuilds Home — biggest visible change, but Home is already a separate page
-5. **Phase 9** is pure file moves — no behavior change
-6. **Phase 10** adds an admin page — no impact on existing pages
+3. **Phases 2-5** add NEW components — existing rendering unchanged for messages without modernContext
+4. **Phase 6** rebuilds Home — biggest visible change, but Home is already a separate page
+5. **Phase 7** adds an admin page — no impact on existing pages
 
 ### Graceful Degradation
 
@@ -952,13 +942,12 @@ If the agent returns no `modernContext` (legacy mode or error):
 
 Before the UI can fully leverage Modern features, the agent needs one streaming change:
 
-**The agent must emit a `modern-context` stream event.** Currently, `modernContext` is part of the `InvocationResponse` schema but is NOT streamed as a separate event. Options:
+**The agent must emit a `modern-context` stream event.** Currently, `modernContext` is part of the `InvocationResponse` schema but is NOT streamed as a separate event. The protocol is:
 
-1. **Preferred:** Agent emits `{ type: 'modern-context', modernContext: {...} }` event before `done`
-2. **Fallback:** Agent includes `modernContext` in the `done` event payload
-3. **Simplest:** Agent includes `modernContext` as a special `block` event with `kind: 'modern-context'`
+1. **Primary:** Agent emits `{ type: 'modern-context', modernContext: {...} }` event before `done`
+2. **Fallback:** Agent includes `modernContext` in the `done` event payload (for resilience)
 
-Option 3 is the simplest because it requires zero streaming protocol changes — just a new block kind. The UI already handles `block` events. We add `modernContext` as a block type, and the UI extracts it.
+The UI handles the `modern-context` event in the stream loop, with `safeParse` validation and graceful fallback. No other protocol variants are needed.
 
 ---
 
@@ -1039,17 +1028,14 @@ No new design tokens needed. The "War Room Precision" system already has everyth
 ## Appendix C: Recommended Phase Sequence
 
 ```
-1. Phase 0: Foundation (dead code cleanup)         — Clean slate
-2. Phase 1: Streaming Protocol                      — Data flows through
-3. Phase 2: Entity System                           — Atomic building block
+1. Phase 0: Foundation + Shell Restructure          — Clean slate + directory moves
+2. Phase 1: Streaming Protocol                      — Data flows through (per-message + safeParse)
+3. Phase 2: Entity System                           — Atomic building block (memoized parsing)
 4. Phase 3: Story Cards                             — Uses Entity System
-5. Phase 4: Context Rail                            — Houses stories + entities
-6. Phase 5: Entity Panel                            — Click target for chips
-7. Phase 6: Viz Engine                              — Charts for hints
-8. Phase 7: Entity Topology                         — D3 graph
-9. Phase 8: Home Dashboard                          — Uses all above
-10. Phase 9: Shell Restructure                      — Final cleanup
-11. Phase 10: Admin Composer Config                 — Admin tooling
+5. Phase 4: Context Rail + Entity Panel             — Houses stories + entities + click target
+6. Phase 5: Viz Engine + Entity Topology            — All visualization (charts + D3 graph)
+7. Phase 6: Home Dashboard                          — Uses all above
+8. Phase 7: Admin Composer Config                   — Admin tooling
 ```
 
 Each phase depends on the previous. No parallelization needed — they're small enough for single Codex runs.
@@ -1062,9 +1048,9 @@ The UI phases cannot fully demonstrate features without these agent-side fixes:
 |---|---|---|
 | **A: Stream Protocol** | UI Phase 1 (Streaming) | UI won't receive `modernContext` without this |
 | **B: Composer Config Seed** | UI Phase 2+ (all features) | Without 'modern' mode enabled, no modernContext is generated |
-| **C-E: Modern Scenarios** | UI Phase 8 (Home Dashboard) | Empty story cards = empty dashboard |
-| **F: Shared Services** | UI Phase 7 (Topology) | Sparse entity graphs = boring topology |
-| **G: Home Feed Bridge** | UI Phase 8 (Home Dashboard) | Story cards don't appear on Home without this |
+| **C-E: Modern Scenarios** | UI Phase 6 (Home Dashboard) | Empty story cards = empty dashboard |
+| **F: Shared Services** | UI Phase 5 (Topology) | Sparse entity graphs = boring topology |
+| **G: Home Feed Bridge** | UI Phase 6 (Home Dashboard) | Story cards don't appear on Home without this |
 
 **Recommended execution order:**
 ```
@@ -1072,12 +1058,12 @@ Agent Phase A: Stream Protocol     ← FIRST (unblocks everything)
 Agent Phase B: Composer Config     ← Enables Modern engines
 UI Phase 0: Foundation             ← Can run in parallel with Agent B
 UI Phase 1: Streaming Protocol     ← Requires Agent Phase A complete
-Agent Phases C-E: Seed Scenarios   ← Can run in parallel with UI Phases 2-5
-UI Phases 2-7: Entity/Story/Viz   ← Feature development
-Agent Phase F: Shared Services     ← Before UI Phase 7
-Agent Phase G: Home Feed Bridge    ← Before UI Phase 8
-UI Phase 8: Home Dashboard         ← Requires Agent Phases C-G complete
-UI Phases 9-10: Cleanup + Admin
+Agent Phases C-E: Seed Scenarios   ← Can run in parallel with UI Phases 2-4
+UI Phases 2-5: Entity/Story/Viz   ← Feature development
+Agent Phase F: Shared Services     ← Before UI Phase 5
+Agent Phase G: Home Feed Bridge    ← Before UI Phase 6
+UI Phase 6: Home Dashboard         ← Requires Agent Phases C-G complete
+UI Phase 7: Admin Composer Config
 ```
 
 ---
