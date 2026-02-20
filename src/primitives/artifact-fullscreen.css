@@ -1,8 +1,11 @@
 .cei-artifact-fullscreen-root {
-  grid-row: 2 / -1;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 28;
   min-height: 0;
-  position: relative;
 }
 
 .cei-artifact-fullscreen-panel {
