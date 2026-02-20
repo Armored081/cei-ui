@@ -136,6 +136,12 @@
   font-size: 0.72rem;
 }
 
+.cei-story-card-mini-entities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
 .cei-story-timeline {
   display: grid;
   grid-template-columns: auto 1fr auto;

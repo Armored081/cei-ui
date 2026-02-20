@@ -82,7 +82,7 @@ export const storyCardSchema = z.object({
 
 export const vizHintSchema = z.object({
   id: z.string(),
-  chartType: z.enum(['gauge', 'timeline', 'heatmap']),
+  chartType: z.enum(['gauge', 'timeline', 'heatmap', 'bar']),
   title: z.string().optional(),
   data: z.unknown(),
   config: z.unknown().optional(),

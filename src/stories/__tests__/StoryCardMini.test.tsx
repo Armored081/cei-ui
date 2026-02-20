@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { fireEvent, render, screen } from '@testing-library/react'
+import { describe, expect, it, vi } from 'vitest'
 
 import { StoryCardMini } from '../StoryCardMini.js'
 import { buildStoryCard } from './storyTestData.js'
@@ -24,5 +24,25 @@ describe('StoryCardMini', (): void => {
     render(<StoryCardMini story={buildStoryCard()} />)
 
     expect(screen.getByText('2 related entities')).toBeInTheDocument()
+  })
+
+  it('renders entity chips for correlated entities', (): void => {
+    render(<StoryCardMini story={buildStoryCard()} />)
+
+    expect(screen.getByRole('button', { name: 'Credential Abuse Risk' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Account Management' })).toBeInTheDocument()
+  })
+
+  it('invokes onEntityClick when an entity chip is clicked', (): void => {
+    const onEntityClick = vi.fn()
+    render(<StoryCardMini onEntityClick={onEntityClick} story={buildStoryCard()} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Credential Abuse Risk' }))
+
+    expect(onEntityClick).toHaveBeenCalledWith({
+      type: 'risk',
+      id: 'RSK-1',
+      name: 'Credential Abuse Risk',
+    })
   })
 })

@@ -1,5 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 
+import type { VizHint } from '../types/modern-context.js'
+import { VizHintRenderer } from '../viz/VizHintRenderer.js'
 import type { HomeMetricItem } from './types'
 
 interface MetricsGlanceProps {
@@ -10,6 +12,8 @@ interface MetricsGlanceProps {
 }
 
 type TrendDirection = 'up' | 'down' | 'flat'
+
+type ThresholdStatus = 'red' | 'amber' | 'green'
 
 /**
  * Computes threshold class from deterministic metric thresholds.
@@ -40,6 +44,20 @@ function getThresholdClass(item: HomeMetricItem): string {
   return 'cei-metric-value--green'
 }
 
+function thresholdStatus(item: HomeMetricItem): ThresholdStatus {
+  const thresholdClass = getThresholdClass(item)
+
+  if (thresholdClass.endsWith('red')) {
+    return 'red'
+  }
+
+  if (thresholdClass.endsWith('amber')) {
+    return 'amber'
+  }
+
+  return 'green'
+}
+
 /**
  * Renders a trend arrow symbol from current and previous values.
  */
@@ -68,6 +86,65 @@ function getTrendDirection(value: number, previousValue: number): TrendDirection
   }
 
   return 'flat'
+}
+
+function toVizSeverity(item: HomeMetricItem): 'critical' | 'high' | 'low' {
+  const status = thresholdStatus(item)
+
+  if (status === 'red') {
+    return 'critical'
+  }
+
+  if (status === 'amber') {
+    return 'high'
+  }
+
+  return 'low'
+}
+
+function isPercentageMetric(item: HomeMetricItem): boolean {
+  return item.valueDisplay.includes('%')
+}
+
+function toMetricVizHint(item: HomeMetricItem): VizHint {
+  if (isPercentageMetric(item)) {
+    return {
+      id: `${item.id}-gauge`,
+      chartType: 'gauge',
+      data: {
+        value: item.value,
+        max: 100,
+        label: item.label,
+        severity: toVizSeverity(item),
+      },
+    }
+  }
+
+  const maxValue = Math.max(
+    item.value,
+    item.previousValue,
+    item.threshold.red,
+    item.threshold.amber,
+    1,
+  )
+
+  return {
+    id: `${item.id}-bar`,
+    chartType: 'bar',
+    data: [
+      {
+        label: 'Current',
+        value: item.value,
+      },
+      {
+        label: 'Previous',
+        value: item.previousValue,
+      },
+    ],
+    config: {
+      max: maxValue,
+    },
+  }
 }
 
 /**
@@ -160,6 +237,9 @@ export function MetricsGlance({
                   </span>
                 </div>
                 <p className="cei-home-metric-label">{item.label}</p>
+                <div className="cei-home-metric-viz">
+                  <VizHintRenderer height={132} hint={toMetricVizHint(item)} width={260} />
+                </div>
               </div>
             )
           })}

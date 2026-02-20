@@ -46,6 +46,21 @@ function buildHeatmapHint(): VizHint {
   }
 }
 
+function buildBarHint(): VizHint {
+  return {
+    id: 'hint-bar',
+    chartType: 'bar',
+    title: 'Weekly findings',
+    data: [
+      { label: 'Current', value: 12 },
+      { label: 'Previous', value: 9 },
+    ],
+    config: {
+      max: 20,
+    },
+  }
+}
+
 describe('VizHintRenderer', (): void => {
   it('routes gauge hints to GaugeChart', (): void => {
     render(<VizHintRenderer hint={buildGaugeHint()} />)
@@ -66,6 +81,15 @@ describe('VizHintRenderer', (): void => {
 
     expect(screen.getByTestId('viz-hint-heatmap')).toBeInTheDocument()
     expect(screen.getByTestId('heatmap-chart')).toBeInTheDocument()
+  })
+
+  it('routes bar hints to compact bar renderer', (): void => {
+    render(<VizHintRenderer hint={buildBarHint()} />)
+
+    expect(screen.getByTestId('viz-hint-bar')).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: 'Weekly findings chart' })).toBeInTheDocument()
+    expect(screen.getByText('Current')).toBeInTheDocument()
+    expect(screen.getByText('Previous')).toBeInTheDocument()
   })
 
   it('passes width and height props to chart renderers', (): void => {
