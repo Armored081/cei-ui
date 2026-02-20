@@ -221,3 +221,68 @@ describe('streamEventSchema agent metadata extensions', (): void => {
     })
   })
 })
+
+describe('streamEventSchema modern-context events', (): void => {
+  const validModernContext = {
+    storyCards: [],
+    entityGraph: {
+      nodes: [
+        {
+          type: 'risk',
+          id: 'risk-1',
+          name: 'Credential Exposure',
+        },
+      ],
+      edges: [],
+    },
+    vizHints: [],
+    pivotTargets: [],
+  } as const
+
+  it('parses a modern-context stream event with valid modernContext payload', (): void => {
+    const parsed = streamEventSchema.safeParse({
+      type: 'modern-context',
+      modernContext: validModernContext,
+    })
+
+    expect(parsed.success).toBe(true)
+  })
+
+  it('accepts modern-context stream event even when modernContext payload is invalid (validated downstream)', (): void => {
+    const parsed = streamEventSchema.safeParse({
+      type: 'modern-context',
+      modernContext: {
+        storyCards: [],
+        entityGraph: {
+          nodes: [{ type: 'not-real', id: 'bad', name: 'Bad' }],
+          edges: [],
+        },
+        vizHints: [],
+        pivotTargets: [],
+      },
+    })
+
+    // Transport layer accepts z.unknown() to avoid stream termination on malformed metadata
+    // Actual validation happens in useChatEngine via safeParse for graceful degradation
+    expect(parsed.success).toBe(true)
+  })
+
+  it('parses done event when optional modernContext is present', (): void => {
+    const parsed = streamEventSchema.safeParse({
+      type: 'done',
+      summary: 'Complete',
+      modernContext: validModernContext,
+    })
+
+    expect(parsed.success).toBe(true)
+  })
+
+  it('parses done event without modernContext for backward compatibility', (): void => {
+    const parsed = streamEventSchema.safeParse({
+      type: 'done',
+      summary: 'Complete',
+    })
+
+    expect(parsed.success).toBe(true)
+  })
+})

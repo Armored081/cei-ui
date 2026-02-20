@@ -90,6 +90,7 @@ function createEngine(onToggleTool: (messageId: string, toolId: string) => void)
     messages: [message],
     artifacts,
     toolLog,
+    latestModernContext: null,
     draftMessage: '',
     setDraftMessage: (): void => {},
     errorBanner: '',

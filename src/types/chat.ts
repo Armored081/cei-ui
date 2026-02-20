@@ -1,4 +1,5 @@
 import type { AttachmentInput, StructuredBlock } from '../agent/types'
+import type { ModernContext } from './modern-context.js'
 
 /** Supported timeline message roles. */
 export type ChatMessageRole = 'user' | 'agent'
@@ -67,6 +68,7 @@ export interface ChatMessageItem {
   errorText: string
   id: string
   isStreaming: boolean
+  modernContext?: ModernContext | null
   retryPrompt?: string
   role: ChatMessageRole
   segments: ChatMessageSegment[]
