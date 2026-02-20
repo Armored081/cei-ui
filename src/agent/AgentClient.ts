@@ -130,9 +130,15 @@ async function buildHttpErrorEvent(response: Response): Promise<StreamEvent> {
 function parseSseEvent(rawEvent: string): StreamEvent | null {
   const lines = rawEvent.split('\n')
   const dataLines: string[] = []
+  let eventType: string | null = null
 
   for (const line of lines) {
     if (!line || line.startsWith(':')) {
+      continue
+    }
+
+    if (line.startsWith('event:')) {
+      eventType = line.slice(6).trim().toLowerCase()
       continue
     }
 
@@ -142,12 +148,19 @@ function parseSseEvent(rawEvent: string): StreamEvent | null {
   }
 
   if (dataLines.length === 0) {
+    // event-only completion signal (no data payload)
+    if (eventType === 'done' || eventType === 'complete') {
+      return { type: 'done' }
+    }
     return null
   }
 
   const payload = dataLines.join('\n').trim()
 
   if (!payload) {
+    if (eventType === 'done' || eventType === 'complete') {
+      return { type: 'done' }
+    }
     return null
   }
 
@@ -175,6 +188,10 @@ function parseSseEvent(rawEvent: string): StreamEvent | null {
       message: toErrorMessage(error),
     }
   }
+}
+
+function isContentStreamEvent(streamEvent: StreamEvent): boolean {
+  return streamEvent.type !== 'done' && streamEvent.type !== 'error'
 }
 
 async function* readSseMessages(
@@ -355,6 +372,7 @@ export async function* invokeAgentStream(
 
   let didReceiveDone = false
   let didReceiveError = false
+  let didReceiveContent = false
 
   try {
     for await (const rawEvent of readSseMessages(response.body, params.signal)) {
@@ -376,6 +394,10 @@ export async function* invokeAgentStream(
         didReceiveError = true
       }
 
+      if (isContentStreamEvent(streamEvent)) {
+        didReceiveContent = true
+      }
+
       yield streamEvent
     }
   } catch (error) {
@@ -392,6 +414,11 @@ export async function* invokeAgentStream(
   }
 
   if (!didReceiveDone && !didReceiveError && !params.signal.aborted) {
+    if (didReceiveContent) {
+      yield { type: 'done' }
+      return
+    }
+
     yield {
       type: 'error',
       code: 'stream_interrupted',

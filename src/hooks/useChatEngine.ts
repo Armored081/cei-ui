@@ -87,6 +87,8 @@ export const ATTACHMENT_ACCEPTED_MIME_TYPES = [
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
 ] as const
 export const ATTACHMENT_ACCEPT_ATTRIBUTE = ATTACHMENT_ACCEPTED_MIME_TYPES.join(',')
+const ESCAPE_ABORT_IGNORE_SELECTOR =
+  '.cei-artifact-overlay-panel, .cei-slide-up-drawer, [role="dialog"]'
 
 // ---------------------------------------------------------------------------
 // Pure helpers
@@ -376,6 +378,18 @@ function hasFilesInDataTransfer(dataTransfer: DataTransfer | null): boolean {
   return Array.from(dataTransfer.types).includes('Files')
 }
 
+function isWithinEscapeAbortIgnoreRegion(target: EventTarget | null): boolean {
+  if (target instanceof Element) {
+    return Boolean(target.closest(ESCAPE_ABORT_IGNORE_SELECTOR))
+  }
+
+  if (target instanceof Node) {
+    return Boolean(target.parentElement?.closest(ESCAPE_ABORT_IGNORE_SELECTOR))
+  }
+
+  return false
+}
+
 // ---------------------------------------------------------------------------
 // ChatEngine interface
 // ---------------------------------------------------------------------------
@@ -625,6 +639,10 @@ export function useChatEngine(params: UseChatEngineParams): ChatEngine {
       }
 
       if (!isStreaming) {
+        return
+      }
+
+      if (isWithinEscapeAbortIgnoreRegion(event.target)) {
         return
       }
 
