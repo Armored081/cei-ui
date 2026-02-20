@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+import { entityTypeSchema } from '../types/modern-context.js'
+
 export const chartDataPointSchema = z
   .object({
     label: z.string(),
@@ -164,7 +166,15 @@ export const structuredBlockSchema = z.discriminatedUnion('kind', [
         end: z.string(),
       })
       .optional(),
-    correlatedEntities: z.array(z.unknown()).optional(),
+    correlatedEntities: z
+      .array(
+        z.object({
+          type: entityTypeSchema,
+          id: z.string(),
+          name: z.string(),
+        }),
+      )
+      .optional(),
   }),
 ])
 
