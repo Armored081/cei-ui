@@ -39,7 +39,7 @@ describe('Chart artifact layout CSS', (): void => {
       /\.cei-artifact-fullscreen-content-chart\s+\.cei-chart-wrapper\s*{[^}]*flex:\s*1;[^}]*min-height:\s*320px;[^}]*height:\s*auto\s*!important;/s,
     )
     expect(css).toMatch(
-      /\.cei-artifact-fullscreen-content-chart\s+\.cei-artifact-chart-table\s*{[^}]*max-height:\s*min\(42dvh,\s*420px\);/s,
+      /\.cei-artifact-fullscreen-content-chart\s+\.cei-artifact-chart-table\s*{[^}]*max-height:\s*200px;[^}]*overflow-y:\s*auto;/s,
     )
   })
 })

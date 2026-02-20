@@ -121,7 +121,8 @@
 }
 
 .cei-artifact-fullscreen-content-chart .cei-artifact-chart-table {
-  max-height: min(42dvh, 420px);
+  max-height: 200px;
+  overflow-y: auto;
 }
 
 .cei-artifact-fullscreen-actions {
