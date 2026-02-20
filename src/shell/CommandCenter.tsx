@@ -887,7 +887,7 @@ export function CommandCenterLayout({ engine, userEmail, onLogout }: LayoutProps
       </SlideOver>
 
       <SlideUpDrawer
-        isOpen={isCompactLayout && mobileArtifactsOpen}
+        isOpen={isCompactLayout && mobileArtifactsOpen && !selectedArtifact}
         maxHeight="72vh"
         onClose={(): void => setMobileArtifactsOpen(false)}
         title={rightRailTitle}
