@@ -222,6 +222,73 @@ describe('streamEventSchema agent metadata extensions', (): void => {
   })
 })
 
+describe('structuredBlockSchema story-card validation', (): void => {
+  it('accepts story-card blocks with all fields', (): void => {
+    const parsed = structuredBlockSchema.parse({
+      kind: 'story-card',
+      storyCardId: 'story-1',
+      title: 'Credential Exposure in Production',
+      severity: 'critical',
+      narrative: 'Multiple AWS IAM keys discovered in public repositories.',
+      temporalWindow: {
+        start: '2026-02-15T00:00:00Z',
+        end: '2026-02-20T00:00:00Z',
+      },
+      correlatedEntities: [
+        { type: 'finding', id: 'finding-1', name: 'Exposed API Key' },
+        { type: 'asset', id: 'asset-1', name: 'Production S3 Bucket' },
+      ],
+    })
+
+    expect(parsed).toMatchObject({
+      kind: 'story-card',
+      storyCardId: 'story-1',
+      severity: 'critical',
+    })
+  })
+
+  it('accepts story-card blocks with minimal fields', (): void => {
+    const parsed = structuredBlockSchema.parse({
+      kind: 'story-card',
+      storyCardId: 'story-2',
+      title: 'Policy Drift Detected',
+      severity: 'medium',
+    })
+
+    expect(parsed).toMatchObject({
+      kind: 'story-card',
+      storyCardId: 'story-2',
+      severity: 'medium',
+    })
+  })
+
+  it('rejects story-card blocks with malformed correlatedEntities', (): void => {
+    const parsed = structuredBlockSchema.safeParse({
+      kind: 'story-card',
+      storyCardId: 'story-3',
+      title: 'Test Story',
+      severity: 'low',
+      correlatedEntities: [
+        { type: 'risk', id: 'risk-1' }, // missing 'name' field
+      ],
+    })
+
+    expect(parsed.success).toBe(false)
+  })
+
+  it('rejects story-card blocks with invalid correlatedEntities (null values)', (): void => {
+    const parsed = structuredBlockSchema.safeParse({
+      kind: 'story-card',
+      storyCardId: 'story-4',
+      title: 'Test Story',
+      severity: 'info',
+      correlatedEntities: [null],
+    })
+
+    expect(parsed.success).toBe(false)
+  })
+})
+
 describe('streamEventSchema modern-context events', (): void => {
   const validModernContext = {
     storyCards: [],

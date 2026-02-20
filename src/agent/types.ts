@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+import { entityTypeSchema } from '../types/modern-context.js'
+
 export const chartDataPointSchema = z
   .object({
     label: z.string(),
@@ -150,6 +152,28 @@ export const structuredBlockSchema = z.discriminatedUnion('kind', [
         warnings: z.array(z.string()),
         adjustments: z.array(z.string()),
       })
+      .optional(),
+  }),
+  z.object({
+    kind: z.literal('story-card'),
+    storyCardId: z.string(),
+    title: z.string(),
+    severity: z.enum(['critical', 'high', 'medium', 'low', 'info']),
+    narrative: z.string().optional(),
+    temporalWindow: z
+      .object({
+        start: z.string(),
+        end: z.string(),
+      })
+      .optional(),
+    correlatedEntities: z
+      .array(
+        z.object({
+          type: entityTypeSchema,
+          id: z.string(),
+          name: z.string(),
+        }),
+      )
       .optional(),
   }),
 ])
