@@ -1,17 +1,20 @@
 import type { CSSProperties, RefObject } from 'react'
 
-import type { StructuredBlock } from '../agent/types'
+import type { StructuredBlock } from '../agent/types.js'
+import { ChartBlock } from '../components/blocks/ChartBlock.js'
+import { RecommendationBlock } from '../components/blocks/RecommendationBlock.js'
+import { TableBlock } from '../components/blocks/TableBlock.js'
+import { TaskProgressBlock } from '../components/blocks/TaskProgressBlock.js'
+import { EntityChipParser } from './EntityChipParser.js'
+import { StoryCardInline } from './StoryCardInline.js'
 import type {
   ChatMessageRole,
   ChatMessageSegment,
   ChatTimelineItem,
   ToolActivityItem,
   ToolActivityStatus,
-} from '../types/chat'
-import { ChartBlock } from '../components/blocks/ChartBlock'
-import { RecommendationBlock } from '../components/blocks/RecommendationBlock'
-import { TaskProgressBlock } from '../components/blocks/TaskProgressBlock'
-import { TableBlock } from '../components/blocks/TableBlock'
+} from '../types/chat.js'
+import type { EntityType } from '../types/entity.js'
 import './message-list.css'
 
 export type BlockRenderer = 'inline' | 'pill' | 'mini-card' | 'tag'
@@ -26,6 +29,7 @@ interface MessageListProps {
   displayMode?: DisplayMode
   blockRenderer?: BlockRenderer
   onArtifactClick?: (artifactId: string) => void
+  onEntityClick?: (entityRef: { type: EntityType; id: string; name: string }) => void
 }
 
 function roleLabel(role: ChatMessageRole): string {
@@ -179,6 +183,7 @@ export function MessageList({
   displayMode = 'full',
   blockRenderer = 'inline',
   onArtifactClick,
+  onEntityClick,
 }: MessageListProps): JSX.Element {
   const isClean = displayMode === 'clean'
   const useAlternateBlocks = isClean && blockRenderer !== 'inline'
@@ -219,6 +224,7 @@ export function MessageList({
 
         const bubbleClassName =
           item.role === 'user' ? 'cei-message-bubble cei-message-user' : 'cei-message-bubble'
+        const storyCards = item.modernContext?.storyCards || []
 
         return (
           <article className="cei-message" key={item.id}>
@@ -227,13 +233,16 @@ export function MessageList({
             </header>
 
             <div className={bubbleClassName}>
+              {storyCards.length > 0 ? (
+                <StoryCardInline onEntityClick={onEntityClick} storyCards={storyCards} />
+              ) : null}
               {hasRenderableSegments(item.segments) ? (
                 <div className="cei-message-content">
                   {item.segments.map((segment, index): JSX.Element => {
                     if (segment.type === 'text') {
                       return (
                         <span className="cei-message-text-segment" key={`text-${index.toString()}`}>
-                          {segment.content}
+                          <EntityChipParser text={segment.content} onEntityClick={onEntityClick} />
                         </span>
                       )
                     }
@@ -266,9 +275,9 @@ export function MessageList({
                     )
                   })}
                 </div>
-              ) : (
+              ) : storyCards.length === 0 ? (
                 <span className="cei-muted">Waiting for response...</span>
-              )}
+              ) : null}
               {item.isStreaming ? (
                 <span aria-hidden="true" className="cei-typing-cursor">
                   |

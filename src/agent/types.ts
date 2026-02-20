@@ -152,6 +152,20 @@ export const structuredBlockSchema = z.discriminatedUnion('kind', [
       })
       .optional(),
   }),
+  z.object({
+    kind: z.literal('story-card'),
+    storyCardId: z.string(),
+    title: z.string(),
+    severity: z.enum(['critical', 'high', 'medium', 'low', 'info']),
+    narrative: z.string().optional(),
+    temporalWindow: z
+      .object({
+        start: z.string(),
+        end: z.string(),
+      })
+      .optional(),
+    correlatedEntities: z.array(z.unknown()).optional(),
+  }),
 ])
 
 export const streamEventSchema = z.discriminatedUnion('type', [
