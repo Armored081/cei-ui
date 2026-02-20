@@ -1,4 +1,5 @@
 import { useRef, type KeyboardEvent as ReactKeyboardEvent } from 'react'
+import { createPortal } from 'react-dom'
 
 import { ArtifactRegistry } from '../artifacts/ArtifactRegistry'
 import type { Artifact } from '../hooks/useChatEngine'
@@ -43,7 +44,11 @@ export function ArtifactFullScreen({
     }
   }
 
-  return (
+  if (typeof document === 'undefined') {
+    return null
+  }
+
+  return createPortal(
     <div className="cei-artifact-fullscreen-root">
       <div
         aria-label={`Full-screen artifact: ${artifact.title}`}
@@ -99,6 +104,7 @@ export function ArtifactFullScreen({
           <ReasoningSection reasoning={artifact.reasoning} />
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
