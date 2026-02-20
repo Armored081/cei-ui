@@ -29,7 +29,10 @@ interface MessageListProps {
   displayMode?: DisplayMode
   blockRenderer?: BlockRenderer
   onArtifactClick?: (artifactId: string) => void
-  onEntityClick?: (entityRef: { type: EntityType; id: string; name: string }) => void
+  onEntityClick?: (
+    entityRef: { type: EntityType; id: string; name: string },
+    messageId?: string,
+  ) => void
 }
 
 function roleLabel(role: ChatMessageRole): string {
@@ -226,6 +229,14 @@ export function MessageList({
           item.role === 'user' ? 'cei-message-bubble cei-message-user' : 'cei-message-bubble'
         const storyCards = item.modernContext?.storyCards || []
 
+        const onMessageEntityClick = (entityRef: {
+          type: EntityType
+          id: string
+          name: string
+        }): void => {
+          onEntityClick?.(entityRef, item.id)
+        }
+
         return (
           <article className="cei-message" key={item.id}>
             <header className="cei-message-header">
@@ -234,7 +245,7 @@ export function MessageList({
 
             <div className={bubbleClassName}>
               {storyCards.length > 0 ? (
-                <StoryCardInline onEntityClick={onEntityClick} storyCards={storyCards} />
+                <StoryCardInline onEntityClick={onMessageEntityClick} storyCards={storyCards} />
               ) : null}
               {hasRenderableSegments(item.segments) ? (
                 <div className="cei-message-content">
@@ -242,7 +253,10 @@ export function MessageList({
                     if (segment.type === 'text') {
                       return (
                         <span className="cei-message-text-segment" key={`text-${index.toString()}`}>
-                          <EntityChipParser text={segment.content} onEntityClick={onEntityClick} />
+                          <EntityChipParser
+                            text={segment.content}
+                            onEntityClick={onMessageEntityClick}
+                          />
                         </span>
                       )
                     }

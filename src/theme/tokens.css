@@ -38,6 +38,7 @@
   --severity-high: #e89040;
   --severity-medium: #e5a530;
   --severity-low: #5ce0b8;
+  --severity-info: #7c93c4;
 
   /* Table */
   --table-header-bg: rgba(20, 26, 38, 0.85);
