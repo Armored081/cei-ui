@@ -33,6 +33,10 @@ function makeChartArtifact(dataPoints: number): Artifact {
   }
 }
 
+function parsedHeightPx(element: HTMLElement): number {
+  return Number.parseFloat(element.style.height || '0')
+}
+
 describe('ArtifactOverlay chart layout', () => {
   const noop = vi.fn()
 
@@ -51,7 +55,9 @@ describe('ArtifactOverlay chart layout', () => {
     )
 
     // Title renders (in overlay header + chart block = multiple matches)
-    expect(screen.getAllByText('Technical Standards by NIST CSF V2 Category').length).toBeGreaterThanOrEqual(1)
+    expect(
+      screen.getAllByText('Technical Standards by NIST CSF V2 Category').length,
+    ).toBeGreaterThanOrEqual(1)
 
     // Close button is touch-friendly with proper class
     const closeBtn = screen.getByLabelText('Close artifact view')
@@ -80,6 +86,7 @@ describe('ArtifactOverlay chart layout', () => {
     const chartContainer = screen.getByTestId('chart-container')
     expect(chartContainer).toBeTruthy()
     expect(chartContainer.className).toContain('cei-chart-wrapper')
+    expect(parsedHeightPx(chartContainer)).toBeGreaterThanOrEqual(320)
 
     // Chart block renders inside the expanded content
     const chartBlock = screen.getByTestId('chart-block-bar')

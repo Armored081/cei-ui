@@ -29,6 +29,28 @@ function buildTableArtifact(): Artifact {
   }
 }
 
+function buildChartArtifact(): Artifact {
+  return {
+    block: {
+      chartType: 'bar',
+      data: [
+        { label: 'Identify', value: 12 },
+        { label: 'Protect', value: 18 },
+        { label: 'Detect', value: 9 },
+      ],
+      kind: 'chart',
+      title: 'NIST CSF Coverage',
+    },
+    confidence: 'high',
+    confidenceDecay: '2026-02-12T10:00:00.000Z',
+    id: 'artifact-chart-1',
+    kind: 'chart',
+    segmentIndex: 2,
+    sourceMessageId: 'agent-1',
+    title: 'NIST CSF Coverage',
+  }
+}
+
 describe('ArtifactFullScreen', (): void => {
   it('renders full-screen dialog and table controls', (): void => {
     render(
@@ -87,5 +109,20 @@ describe('ArtifactFullScreen', (): void => {
       },
     )
     expect(onEscape).toHaveBeenCalledTimes(1)
+  })
+
+  it('renders chart artifacts with explicit fullscreen chart height', (): void => {
+    render(
+      <ArtifactFullScreen
+        artifact={buildChartArtifact()}
+        onBack={vi.fn()}
+        onClose={vi.fn()}
+        onEscape={vi.fn()}
+        onToggleFullScreen={vi.fn()}
+      />,
+    )
+
+    const chartContainer = screen.getByTestId('chart-container')
+    expect(Number.parseFloat(chartContainer.style.height || '0')).toBeGreaterThanOrEqual(400)
   })
 })

@@ -66,17 +66,14 @@
 }
 
 .cei-artifact-expanded-content-chart {
-  height: 100%;
-  min-height: 300px;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
+  min-height: 0;
+  width: 100%;
 }
 
 .cei-artifact-expanded-chart {
   min-height: 0;
-  flex: 1;
-  display: flex;
+  min-width: 0;
+  width: 100%;
 }
 
 /* Chart artifacts fill available space in expanded overlay */
@@ -85,14 +82,20 @@
 }
 
 .cei-artifact-expanded-content-chart .cei-block {
-  height: 100%;
-  min-height: 0;
-  grid-template-rows: auto 1fr;
+  min-width: 0;
 }
 
 .cei-artifact-expanded-content-chart .cei-chart-wrapper {
-  height: 100%;
-  min-height: 300px;
+  min-height: 320px;
+}
+
+.cei-artifact-fullscreen-content-chart .cei-chart-wrapper {
+  min-height: 400px;
+}
+
+.cei-artifact-fullscreen-content-chart .cei-artifact-chart-table {
+  max-height: min(42vh, 420px);
+  max-height: min(42dvh, 420px);
 }
 
 .cei-artifact-fullscreen-actions {

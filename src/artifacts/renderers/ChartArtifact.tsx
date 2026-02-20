@@ -1,13 +1,17 @@
-import { ChartBlock } from '../../components/blocks/ChartBlock'
-import { useLayoutEffect, useRef, useState } from 'react'
-import type { Artifact } from '../../hooks/useChatEngine'
-import type { StructuredBlock } from '../../agent/types'
-import type { ArtifactTypeDefinition } from '../ArtifactRegistry'
-import { chartRows, downloadRowsAsCsv } from './utils'
+import { useLayoutEffect, useState } from 'react'
+
+import type { StructuredBlock } from '../../agent/types.js'
+import { ChartBlock } from '../../components/blocks/ChartBlock.js'
+import type { Artifact } from '../../hooks/useChatEngine.js'
+import type { ArtifactTypeDefinition } from '../ArtifactRegistry.js'
+import { chartRows, downloadRowsAsCsv } from './utils.js'
 import './artifact-renderers.css'
 
 type ChartBlockData = Extract<StructuredBlock, { kind: 'chart' }>
-const MIN_EXPANDED_CHART_HEIGHT = 300
+const MIN_EXPANDED_CHART_HEIGHT = 320
+const EXPANDED_LAYOUT_CHROME_PX = 220
+const MIN_FULLSCREEN_CHART_HEIGHT = 400
+const FULLSCREEN_CHART_VIEWPORT_RATIO = 0.5
 
 function isChartArtifact(artifact: Artifact): artifact is Artifact & { block: ChartBlockData } {
   return artifact.block.kind === 'chart'
@@ -15,6 +19,69 @@ function isChartArtifact(artifact: Artifact): artifact is Artifact & { block: Ch
 
 function chartTypeLabel(chartType: ChartBlockData['chartType']): string {
   return chartType.replace(/-/g, ' ')
+}
+
+function currentViewportHeight(): number {
+  if (typeof window === 'undefined') {
+    return 0
+  }
+
+  const visualViewportHeight = window.visualViewport?.height
+  if (
+    typeof visualViewportHeight === 'number' &&
+    Number.isFinite(visualViewportHeight) &&
+    visualViewportHeight > 0
+  ) {
+    return Math.floor(visualViewportHeight)
+  }
+
+  return Math.max(0, Math.floor(window.innerHeight))
+}
+
+function expandedChartHeight(viewportHeight: number): number {
+  return Math.max(MIN_EXPANDED_CHART_HEIGHT, viewportHeight - EXPANDED_LAYOUT_CHROME_PX)
+}
+
+function fullScreenChartHeight(viewportHeight: number): number {
+  return Math.max(
+    MIN_FULLSCREEN_CHART_HEIGHT,
+    Math.floor(viewportHeight * FULLSCREEN_CHART_VIEWPORT_RATIO),
+  )
+}
+
+function useViewportChartHeight(viewMode: 'expanded' | 'fullscreen'): number {
+  const fallbackHeight =
+    viewMode === 'expanded' ? MIN_EXPANDED_CHART_HEIGHT : MIN_FULLSCREEN_CHART_HEIGHT
+  const [chartHeight, setChartHeight] = useState<number>(fallbackHeight)
+
+  useLayoutEffect(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    const onMeasure = (): void => {
+      const viewportHeight = currentViewportHeight()
+      const nextHeight =
+        viewMode === 'expanded'
+          ? expandedChartHeight(viewportHeight)
+          : fullScreenChartHeight(viewportHeight)
+
+      setChartHeight((current) => (current === nextHeight ? current : nextHeight))
+    }
+
+    onMeasure()
+
+    const visualViewport = window.visualViewport
+    window.addEventListener('resize', onMeasure)
+    visualViewport?.addEventListener('resize', onMeasure)
+
+    return () => {
+      window.removeEventListener('resize', onMeasure)
+      visualViewport?.removeEventListener('resize', onMeasure)
+    }
+  }, [viewMode])
+
+  return chartHeight
 }
 
 function renderInline(artifact: Artifact): JSX.Element {
@@ -44,44 +111,23 @@ function ExpandedChart({
 }: {
   artifact: Artifact & { block: ChartBlockData }
 }): JSX.Element {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [chartHeight, setChartHeight] = useState<number | null>(null)
-
-  useLayoutEffect(() => {
-    const container = containerRef.current
-    if (!container) {
-      return
-    }
-
-    const onMeasure = (): void => {
-      const nextHeight = Math.max(
-        MIN_EXPANDED_CHART_HEIGHT,
-        Math.floor(container.getBoundingClientRect().height),
-      )
-
-      setChartHeight((current) => (current === nextHeight ? current : nextHeight))
-    }
-
-    onMeasure()
-
-    if (typeof ResizeObserver === 'undefined') {
-      window.addEventListener('resize', onMeasure)
-      return () => window.removeEventListener('resize', onMeasure)
-    }
-
-    const observer = new ResizeObserver(onMeasure)
-    observer.observe(container)
-    return () => observer.disconnect()
-  }, [])
+  const chartHeight = useViewportChartHeight('expanded')
 
   return (
-    <div className="cei-artifact-expanded-chart" ref={containerRef}>
-      <ChartBlock
-        block={artifact.block}
-        expandedHeight={chartHeight || MIN_EXPANDED_CHART_HEIGHT}
-      />
+    <div className="cei-artifact-expanded-chart">
+      <ChartBlock block={artifact.block} expandedHeight={chartHeight} />
     </div>
   )
+}
+
+function FullScreenChart({
+  artifact,
+}: {
+  artifact: Artifact & { block: ChartBlockData }
+}): JSX.Element {
+  const chartHeight = useViewportChartHeight('fullscreen')
+
+  return <ChartBlock block={artifact.block} expandedHeight={chartHeight} />
 }
 
 function renderExpanded(artifact: Artifact): JSX.Element {
@@ -104,7 +150,7 @@ function renderFullScreen(artifact: Artifact): JSX.Element {
   const { columns, rows } = chartRows(artifact.block)
 
   return (
-    <div className="cei-artifact-fullscreen-content">
+    <div className="cei-artifact-fullscreen-content cei-artifact-fullscreen-content-chart">
       <div className="cei-artifact-fullscreen-actions">
         <button
           className="cei-artifact-fullscreen-action-btn"
@@ -114,7 +160,7 @@ function renderFullScreen(artifact: Artifact): JSX.Element {
           Export CSV
         </button>
       </div>
-      <ChartBlock block={artifact.block} />
+      <FullScreenChart artifact={artifact} />
       <section aria-label="Chart data table" className="cei-artifact-chart-table">
         {rows.length === 0 || columns.length === 0 ? (
           <p className="cei-artifact-inline-preview">No data rows available.</p>
