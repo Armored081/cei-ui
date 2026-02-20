@@ -1,6 +1,6 @@
 # CEI UI — Deployment Guide
 
-> **Last updated:** 2026-02-19
+> **Last updated:** 2026-02-20
 > **Author:** Clawd 🦞
 
 ## Quick Reference
@@ -100,6 +100,92 @@ JOB_ID=$(echo "$RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin
 ZIP_URL=$(echo "$RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin)['zipUploadUrl'])") && \
 curl -s -T /tmp/cei-ui-deploy.zip "$ZIP_URL" > /dev/null && \
 AWS_PROFILE=cei-dev aws amplify start-deployment --app-id d1cnuuhsdb7jup --branch-name main --job-id "$JOB_ID" --region us-east-1 --query 'jobSummary.status' --output text
+```
+
+## E2E Verification (Playwright)
+
+> **Rule: Never claim a visual fix works without automated verification.**
+> Deploy → ask human → "still broken" → repeat is slow. Playwright diagnostics are 50x faster.
+
+### Auth Setup (one-time)
+
+```bash
+cd ~/development/cei-ui
+npx playwright test --project=setup
+# Creates .auth/e2e-user.json (Cognito session)
+```
+
+### Quick Visual Verification
+
+After deploying a UI fix, run a Playwright script to verify the rendered layout:
+
+```typescript
+import { chromium } from 'playwright'
+
+const browser = await chromium.launch({ headless: true })
+const context = await browser.newContext({
+  viewport: { width: 1280, height: 900 },
+  storageState: '.auth/e2e-user.json',
+})
+const page = await context.newPage()
+await page.goto('https://main.d1cnuuhsdb7jup.amplifyapp.com/')
+```
+
+### Measuring CSS Layout Chains
+
+For layout bugs (chart height, overlay sizing, flex collapse), measure **every container** in the chain:
+
+```typescript
+const selectors = [
+  '.parent-container',
+  '.intermediate-wrapper',
+  '.target-element',
+]
+for (const sel of selectors) {
+  const el = page.locator(sel).first()
+  if (await el.isVisible()) {
+    const box = await el.boundingBox()
+    const styles = await el.evaluate((node) => {
+      const cs = window.getComputedStyle(node)
+      return {
+        height: cs.height, minHeight: cs.minHeight,
+        flex: cs.flex, display: cs.display,
+        position: cs.position, overflow: cs.overflowY,
+      }
+    })
+    console.log(`${sel}: ${box.width}x${box.height}`)
+    console.log(`  h=${styles.height} flex=${styles.flex} pos=${styles.position}`)
+  }
+}
+```
+
+This pinpoints exactly which container has the wrong dimensions — no guessing.
+
+### Full E2E Test Suite
+
+```bash
+cd ~/development/cei-ui
+npx playwright test --project=setup --project=chromium
+```
+
+### CSS Layout Traps to Watch For
+
+| Trap | Symptom | Fix |
+|------|---------|-----|
+| **Implicit grid rows** | `grid-row: 1 / -1` doesn't span all rows | Use `position: absolute` or add explicit `grid-template-rows` |
+| **Flex height collapse** | Child with `flex: 1` has 0 height | Ensure every ancestor has resolved height |
+| **ResponsiveContainer** | Recharts chart is tiny | Parent must have explicit resolved pixel height |
+| **`height: 100%` in flex** | Percentage resolves to 0 | Use `flex: 1` instead of `height: 100%` |
+| **Stacking context bleed** | Sidebar visible through overlay | Use `visibility: hidden` or higher `z-index` |
+
+### Verification Workflow
+
+```
+1. Deploy fix to Amplify
+2. Wait for SUCCEED status
+3. Run Playwright diagnostic against live URL
+4. Verify dimensions are correct in stdout
+5. THEN tell the human it's fixed
 ```
 
 ## Environment Variables
