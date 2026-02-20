@@ -27,7 +27,7 @@ export function ArtifactFullScreen({
   onClose,
   onEscape,
   onToggleFullScreen,
-}: ArtifactFullScreenProps): JSX.Element {
+}: ArtifactFullScreenProps): JSX.Element | null {
   const panelRef = useRef<HTMLDivElement>(null)
   const definition = ArtifactRegistry.get(artifact.kind)
 
