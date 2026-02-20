@@ -66,26 +66,13 @@
 }
 
 /* Chart artifacts fill available space in expanded overlay */
-.cei-artifact-expanded-content {
-  display: flex;
-  flex-direction: column;
-}
-
-.cei-artifact-expanded-content .cei-block {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
+.cei-artifact-expanded-content .cei-block-header {
+  display: none;
 }
 
 .cei-artifact-expanded-content .cei-chart-wrapper {
-  flex: 1;
-  height: auto !important;
-  min-height: 0;
-}
-
-.cei-artifact-expanded-content .cei-block-header {
-  display: none;
+  height: calc(100vh - 160px) !important;
+  min-height: 300px !important;
 }
 
 .cei-artifact-fullscreen-actions {

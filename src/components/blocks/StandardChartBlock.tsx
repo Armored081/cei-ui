@@ -24,6 +24,7 @@ export type ChartBlockData = Extract<StructuredBlock, { kind: 'chart' }>
 
 interface StandardChartBlockProps {
   block: ChartBlockData
+  expandedHeight?: number
 }
 
 const defaultChartSeriesColors = [
@@ -253,7 +254,7 @@ function renderChart(block: ChartBlockData): JSX.Element {
 /**
  * Existing Recharts implementation for chart blocks.
  */
-export function StandardChartBlock({ block }: StandardChartBlockProps): JSX.Element {
+export function StandardChartBlock({ block, expandedHeight }: StandardChartBlockProps): JSX.Element {
   return (
     <section className="cei-block" data-testid={`chart-block-${block.chartType}`}>
       <header className="cei-block-header">
@@ -262,7 +263,7 @@ export function StandardChartBlock({ block }: StandardChartBlockProps): JSX.Elem
       </header>
 
       <div className="cei-chart-wrapper" data-testid="chart-container">
-        <ResponsiveContainer height="100%" width="100%">
+        <ResponsiveContainer height={expandedHeight || '100%'} width="100%">
           {renderChart(block)}
         </ResponsiveContainer>
       </div>

@@ -1,4 +1,5 @@
 import { ChartBlock } from '../../components/blocks/ChartBlock'
+import { useEffect, useRef, useState } from 'react'
 import type { Artifact } from '../../hooks/useChatEngine'
 import type { StructuredBlock } from '../../agent/types'
 import type { ArtifactTypeDefinition } from '../ArtifactRegistry'
@@ -37,6 +38,35 @@ function renderInline(artifact: Artifact): JSX.Element {
   )
 }
 
+function ExpandedChart({ artifact }: { artifact: Artifact & { block: ChartBlockData } }): JSX.Element {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [chartHeight, setChartHeight] = useState(500)
+
+  useEffect(() => {
+    const measure = (): void => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect()
+        const available = Math.max(300, rect.height - 8)
+        setChartHeight(available)
+      }
+    }
+
+    measure()
+    window.addEventListener('resize', measure)
+    return () => window.removeEventListener('resize', measure)
+  }, [])
+
+  return (
+    <div
+      className="cei-artifact-expanded-chart"
+      ref={containerRef}
+      style={{ flex: 1, minHeight: 0 }}
+    >
+      <ChartBlock block={artifact.block} expandedHeight={chartHeight} />
+    </div>
+  )
+}
+
 function renderExpanded(artifact: Artifact): JSX.Element {
   if (!isChartArtifact(artifact)) {
     return <p>Unsupported chart artifact.</p>
@@ -45,9 +75,9 @@ function renderExpanded(artifact: Artifact): JSX.Element {
   return (
     <div
       className="cei-artifact-expanded-content"
-      style={{ height: 'calc(100vh - 140px)', minHeight: '300px' }}
+      style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 140px)', minHeight: '300px' }}
     >
-      <ChartBlock block={artifact.block} />
+      <ExpandedChart artifact={artifact as Artifact & { block: ChartBlockData }} />
     </div>
   )
 }
