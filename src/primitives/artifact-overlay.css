@@ -1,7 +1,9 @@
 .cei-artifact-overlay-root {
-  position: relative;
-  grid-column: 2 / 4;
-  grid-row: 1 / -1;
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: var(--cei-left-rail-width, 240px);
   z-index: 20;
   min-width: 0;
   min-height: 0;
