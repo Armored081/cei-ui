@@ -268,6 +268,18 @@ describe('ChartBlock', (): void => {
     expect(barCalls[0][0].fill).toBe('var(--chart-series-1)')
   })
 
+  it('uses explicit wrapper height when expandedHeight is provided', (): void => {
+    render(<ChartBlock block={buildSingleSeriesChartBlock('bar')} expandedHeight={640} />)
+
+    const chartContainer = screen.getByTestId('chart-container')
+    expect(chartContainer).toHaveStyle({ height: '640px' })
+
+    const responsiveContainerCalls = rechartsMocks.ResponsiveContainer.mock.calls as [
+      Record<string, unknown>,
+    ][]
+    expect(responsiveContainerCalls[0][0].height).toBe('100%')
+  })
+
   it('downloads chart payload as json', async (): Promise<void> => {
     const createObjectUrlSpy = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:chart')
     const revokeObjectUrlSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation((): void => {})

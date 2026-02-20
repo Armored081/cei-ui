@@ -1,5 +1,5 @@
 import { ChartBlock } from '../../components/blocks/ChartBlock'
-import { useEffect, useRef, useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import type { Artifact } from '../../hooks/useChatEngine'
 import type { StructuredBlock } from '../../agent/types'
 import type { ArtifactTypeDefinition } from '../ArtifactRegistry'
@@ -7,6 +7,7 @@ import { chartRows, downloadRowsAsCsv } from './utils'
 import './artifact-renderers.css'
 
 type ChartBlockData = Extract<StructuredBlock, { kind: 'chart' }>
+const MIN_EXPANDED_CHART_HEIGHT = 300
 
 function isChartArtifact(artifact: Artifact): artifact is Artifact & { block: ChartBlockData } {
   return artifact.block.kind === 'chart'
@@ -38,31 +39,47 @@ function renderInline(artifact: Artifact): JSX.Element {
   )
 }
 
-function ExpandedChart({ artifact }: { artifact: Artifact & { block: ChartBlockData } }): JSX.Element {
+function ExpandedChart({
+  artifact,
+}: {
+  artifact: Artifact & { block: ChartBlockData }
+}): JSX.Element {
   const containerRef = useRef<HTMLDivElement>(null)
-  const [chartHeight, setChartHeight] = useState(500)
+  const [chartHeight, setChartHeight] = useState<number | null>(null)
 
-  useEffect(() => {
-    const measure = (): void => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect()
-        const available = Math.max(300, rect.height - 8)
-        setChartHeight(available)
-      }
+  useLayoutEffect(() => {
+    const container = containerRef.current
+    if (!container) {
+      return
     }
 
-    measure()
-    window.addEventListener('resize', measure)
-    return () => window.removeEventListener('resize', measure)
+    const onMeasure = (): void => {
+      const nextHeight = Math.max(
+        MIN_EXPANDED_CHART_HEIGHT,
+        Math.floor(container.getBoundingClientRect().height),
+      )
+
+      setChartHeight((current) => (current === nextHeight ? current : nextHeight))
+    }
+
+    onMeasure()
+
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', onMeasure)
+      return () => window.removeEventListener('resize', onMeasure)
+    }
+
+    const observer = new ResizeObserver(onMeasure)
+    observer.observe(container)
+    return () => observer.disconnect()
   }, [])
 
   return (
-    <div
-      className="cei-artifact-expanded-chart"
-      ref={containerRef}
-      style={{ flex: 1, minHeight: 0 }}
-    >
-      <ChartBlock block={artifact.block} expandedHeight={chartHeight} />
+    <div className="cei-artifact-expanded-chart" ref={containerRef}>
+      <ChartBlock
+        block={artifact.block}
+        expandedHeight={chartHeight || MIN_EXPANDED_CHART_HEIGHT}
+      />
     </div>
   )
 }
@@ -73,11 +90,8 @@ function renderExpanded(artifact: Artifact): JSX.Element {
   }
 
   return (
-    <div
-      className="cei-artifact-expanded-content"
-      style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 140px)', minHeight: '300px' }}
-    >
-      <ExpandedChart artifact={artifact as Artifact & { block: ChartBlockData }} />
+    <div className="cei-artifact-expanded-content cei-artifact-expanded-content-chart">
+      <ExpandedChart artifact={artifact} />
     </div>
   )
 }

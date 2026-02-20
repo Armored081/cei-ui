@@ -154,7 +154,16 @@ function renderChart(block: ChartBlockData): JSX.Element {
       return (
         <BarChart data={data} margin={{ top: 8, right: 16, bottom: 56, left: 8 }}>
           <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 3" />
-          <XAxis angle={-40} dataKey="label" height={64} interval={0} stroke="var(--text-muted)" textAnchor="end" tick={{ fontSize: 10, fill: 'var(--text-muted)' }} tickFormatter={(v: string): string => truncateLabel(v, 20)} />
+          <XAxis
+            angle={-40}
+            dataKey="label"
+            height={64}
+            interval={0}
+            stroke="var(--text-muted)"
+            textAnchor="end"
+            tick={{ fontSize: 10, fill: 'var(--text-muted)' }}
+            tickFormatter={(v: string): string => truncateLabel(v, 20)}
+          />
           <YAxis stroke="var(--text-muted)" width={40} />
           <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} />
           <Legend />
@@ -175,7 +184,16 @@ function renderChart(block: ChartBlockData): JSX.Element {
       return (
         <BarChart data={data} margin={{ top: 8, right: 16, bottom: 56, left: 8 }}>
           <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 3" />
-          <XAxis angle={-40} dataKey="label" height={64} interval={0} stroke="var(--text-muted)" textAnchor="end" tick={{ fontSize: 10, fill: 'var(--text-muted)' }} tickFormatter={(v: string): string => truncateLabel(v, 20)} />
+          <XAxis
+            angle={-40}
+            dataKey="label"
+            height={64}
+            interval={0}
+            stroke="var(--text-muted)"
+            textAnchor="end"
+            tick={{ fontSize: 10, fill: 'var(--text-muted)' }}
+            tickFormatter={(v: string): string => truncateLabel(v, 20)}
+          />
           <YAxis stroke="var(--text-muted)" width={40} />
           <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} />
           <Legend />
@@ -254,7 +272,14 @@ function renderChart(block: ChartBlockData): JSX.Element {
 /**
  * Existing Recharts implementation for chart blocks.
  */
-export function StandardChartBlock({ block, expandedHeight }: StandardChartBlockProps): JSX.Element {
+export function StandardChartBlock({
+  block,
+  expandedHeight,
+}: StandardChartBlockProps): JSX.Element {
+  const chartWrapperStyle = expandedHeight
+    ? { height: `${Math.round(expandedHeight).toString()}px` }
+    : undefined
+
   return (
     <section className="cei-block" data-testid={`chart-block-${block.chartType}`}>
       <header className="cei-block-header">
@@ -262,8 +287,8 @@ export function StandardChartBlock({ block, expandedHeight }: StandardChartBlock
         <BlockDownloadButton filenameBase={`${block.title}-chart`} payload={block} />
       </header>
 
-      <div className="cei-chart-wrapper" data-testid="chart-container">
-        <ResponsiveContainer height={expandedHeight || '100%'} width="100%">
+      <div className="cei-chart-wrapper" data-testid="chart-container" style={chartWrapperStyle}>
+        <ResponsiveContainer height="100%" width="100%">
           {renderChart(block)}
         </ResponsiveContainer>
       </div>

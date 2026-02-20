@@ -124,7 +124,9 @@
   justify-content: center;
   border-radius: var(--radius-md, 8px);
   font-size: 1.3rem;
-  transition: background 150ms ease, color 150ms ease;
+  transition:
+    background 150ms ease,
+    color 150ms ease;
 }
 
 .cei-artifact-overlay-btn-close {
@@ -165,6 +167,8 @@
 .cei-artifact-overlay-renderer {
   min-height: 0;
   flex: 1;
+  display: flex;
+  flex-direction: column;
   overflow-x: auto;
   overflow-y: visible;
 }

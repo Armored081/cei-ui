@@ -65,14 +65,34 @@
   gap: var(--space-3);
 }
 
+.cei-artifact-expanded-content-chart {
+  height: 100%;
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.cei-artifact-expanded-chart {
+  min-height: 0;
+  flex: 1;
+  display: flex;
+}
+
 /* Chart artifacts fill available space in expanded overlay */
 .cei-artifact-expanded-content .cei-block-header {
   display: none;
 }
 
-.cei-artifact-expanded-content .cei-chart-wrapper {
-  height: calc(100vh - 160px) !important;
-  min-height: 300px !important;
+.cei-artifact-expanded-content-chart .cei-block {
+  height: 100%;
+  min-height: 0;
+  grid-template-rows: auto 1fr;
+}
+
+.cei-artifact-expanded-content-chart .cei-chart-wrapper {
+  height: 100%;
+  min-height: 300px;
 }
 
 .cei-artifact-fullscreen-actions {
