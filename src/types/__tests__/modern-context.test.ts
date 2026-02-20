@@ -47,11 +47,11 @@ function buildValidModernContext(): {
     }>
   }
   vizHints: Array<{
+    id: string
     chartType: 'timeline'
-    title: string
-    dataKeys: string[]
-    groupBy: string
-    description: string
+    title?: string
+    data: Array<{ timestamp: string; label: string }>
+    config?: unknown
   }>
   pivotTargets: Array<{
     entity: { id: string; name: string; type: 'risk' }
@@ -98,11 +98,18 @@ function buildValidModernContext(): {
     },
     vizHints: [
       {
+        id: 'hint-1',
         chartType: 'timeline',
         title: 'Exception trend',
-        dataKeys: ['count'],
-        groupBy: 'day',
-        description: 'Daily trend of IAM exceptions',
+        data: [
+          {
+            timestamp: '2026-02-03T00:00:00.000Z',
+            label: 'Exception spike',
+          },
+        ],
+        config: {
+          timezone: 'UTC',
+        },
       },
     ],
     pivotTargets: [

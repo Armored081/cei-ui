@@ -465,9 +465,7 @@ describe('CommandCenter compact layout', (): void => {
     fireEvent.click(screen.getByRole('button', { name: 'Risk story' }))
 
     const entityDialog = screen.getByRole('dialog', { name: 'Entity Detail' })
-    expect(
-      within(entityDialog).getByRole('heading', { name: 'Risk story' }),
-    ).toBeInTheDocument()
+    expect(within(entityDialog).getByRole('heading', { name: 'Risk story' })).toBeInTheDocument()
 
     fireEvent.click(within(entityDialog).getByRole('button', { name: 'Close' }))
 

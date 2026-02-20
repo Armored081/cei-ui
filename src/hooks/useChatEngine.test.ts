@@ -37,9 +37,10 @@ function buildModernContext(id: string): ModernContext {
     },
     vizHints: [
       {
-        chartType: 'table',
+        id: `hint-${id}`,
+        chartType: 'timeline',
         title: `Hint ${id}`,
-        dataKeys: ['label', 'value'],
+        data: [{ timestamp: '2026-02-01T00:00:00Z', label: `Event ${id}` }],
       },
     ],
     pivotTargets: [

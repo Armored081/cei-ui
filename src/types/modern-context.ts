@@ -49,6 +49,8 @@ export const entityRelationshipSchema = z.object({
   weight: z.number().optional(),
 })
 
+export const entityEdgeSchema = entityRelationshipSchema
+
 export const entityGroupSchema = z.object({
   id: z.string(),
   label: z.string(),
@@ -58,7 +60,7 @@ export const entityGroupSchema = z.object({
 
 export const entityGraphSchema = z.object({
   nodes: z.array(entityReferenceSchema),
-  edges: z.array(entityRelationshipSchema),
+  edges: z.array(entityEdgeSchema),
   groups: z.array(entityGroupSchema).optional(),
 })
 
@@ -79,22 +81,11 @@ export const storyCardSchema = z.object({
 })
 
 export const vizHintSchema = z.object({
-  chartType: z.enum([
-    'bar',
-    'line',
-    'pie',
-    'radar',
-    'heatmap',
-    'treemap',
-    'gauge',
-    'topology',
-    'timeline',
-    'table',
-  ]),
-  title: z.string(),
-  dataKeys: z.array(z.string()),
-  groupBy: z.string().optional(),
-  description: z.string().optional(),
+  id: z.string(),
+  chartType: z.enum(['gauge', 'timeline', 'heatmap']),
+  title: z.string().optional(),
+  data: z.unknown(),
+  config: z.unknown().optional(),
 })
 
 export const pivotTargetSchema = z.object({
@@ -113,6 +104,7 @@ export const modernContextSchema = z.object({
 export type EntityType = z.infer<typeof entityTypeSchema>
 export type EntityReference = z.infer<typeof entityReferenceSchema>
 export type EntityRelationship = z.infer<typeof entityRelationshipSchema>
+export type EntityEdge = z.infer<typeof entityEdgeSchema>
 export type EntityGroup = z.infer<typeof entityGroupSchema>
 export type EntityGraph = z.infer<typeof entityGraphSchema>
 export type StoryCard = z.infer<typeof storyCardSchema>
