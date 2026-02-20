@@ -118,8 +118,8 @@ describe('ArtifactFullScreen', (): void => {
     expect(onEscape).toHaveBeenCalledTimes(1)
   })
 
-  it('renders chart artifacts with explicit fullscreen chart height', (): void => {
-    render(
+  it('renders chart artifacts with flex-based fullscreen sizing classes', (): void => {
+    const { container } = render(
       <ArtifactFullScreen
         artifact={buildChartArtifact()}
         onBack={vi.fn()}
@@ -130,6 +130,11 @@ describe('ArtifactFullScreen', (): void => {
     )
 
     const chartContainer = screen.getByTestId('chart-container')
-    expect(Number.parseFloat(chartContainer.style.height || '0')).toBeGreaterThanOrEqual(400)
+    expect(chartContainer.getAttribute('style')).toBeNull()
+    expect(
+      container.querySelector(
+        '.cei-artifact-fullscreen-content.cei-artifact-fullscreen-content-chart',
+      ),
+    ).toBeTruthy()
   })
 })

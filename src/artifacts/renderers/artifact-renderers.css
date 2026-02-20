@@ -68,12 +68,18 @@
 .cei-artifact-expanded-content-chart {
   min-height: 0;
   width: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .cei-artifact-expanded-chart {
   min-height: 0;
   min-width: 0;
   width: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Chart artifacts fill available space in expanded overlay */
@@ -83,18 +89,38 @@
 
 .cei-artifact-expanded-content-chart .cei-block {
   min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .cei-artifact-expanded-content-chart .cei-chart-wrapper {
-  min-height: 320px;
+  flex: 1;
+  min-height: 280px;
+  height: auto !important;
+}
+
+.cei-artifact-fullscreen-content-chart {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.cei-artifact-fullscreen-content-chart .cei-block {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 
 .cei-artifact-fullscreen-content-chart .cei-chart-wrapper {
-  min-height: 400px;
+  flex: 1;
+  min-height: 320px;
+  height: auto !important;
 }
 
 .cei-artifact-fullscreen-content-chart .cei-artifact-chart-table {
-  max-height: min(42vh, 420px);
   max-height: min(42dvh, 420px);
 }
 
