@@ -23,7 +23,10 @@ function buildItems(text: string): ChatTimelineItem[] {
 
 function renderMessageList(
   items: ChatTimelineItem[],
-  onEntityClick?: (entityRef: { type: EntityType; id: string; name: string }) => void,
+  onEntityClick?: (
+    entityRef: { type: EntityType; id: string; name: string },
+    messageId?: string,
+  ) => void,
 ): void {
   render(
     <MessageList
@@ -56,11 +59,14 @@ describe('MessageList entity integration', (): void => {
     fireEvent.click(screen.getByRole('button', { name: 'Privileged Access Abuse' }))
 
     expect(onEntityClick).toHaveBeenCalledTimes(1)
-    expect(onEntityClick).toHaveBeenCalledWith({
-      type: 'risk',
-      id: 'RS-042',
-      name: 'Privileged Access Abuse',
-    })
+    expect(onEntityClick).toHaveBeenCalledWith(
+      {
+        type: 'risk',
+        id: 'RS-042',
+        name: 'Privileged Access Abuse',
+      },
+      'agent-1',
+    )
   })
 
   it('renders plain text unchanged when no entity notation exists', (): void => {

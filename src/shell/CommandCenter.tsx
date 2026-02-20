@@ -10,15 +10,18 @@ import { MessageList } from '../conversation/MessageList'
 import { composerPropsFromEngine } from '../conversation/composerPropsFromEngine'
 import type { Artifact, ConversationSnapshot } from '../hooks/useChatEngine'
 import { useChatEngine } from '../hooks/useChatEngine'
+import type { ArtifactRailMode, ContextRailMode } from '../hooks/useEntityPanel.js'
+import { useEntityPanel } from '../hooks/useEntityPanel.js'
 import { useThreads } from '../hooks/useThreads'
-import { ArtifactCard } from '../primitives/ArtifactCard'
-import { ActivityDrawer } from '../primitives/ActivityDrawer'
+import { EntityDetailPanel } from '../entities/EntityDetailPanel.js'
 import { ArtifactFullScreen } from '../primitives/ArtifactFullScreen'
 import { ArtifactOverlay } from '../primitives/ArtifactOverlay'
 import { SlideOver } from '../primitives/SlideOver'
 import { SlideUpDrawer } from '../primitives/SlideUpDrawer'
 import { ThreadList } from '../primitives/ThreadList'
 import type { ChatMessageItem, ChatTimelineItem } from '../types/chat'
+import type { EntityReference } from '../types/modern-context.js'
+import { ContextRail } from './ContextRail.js'
 import { TopBar } from './TopBar'
 import type { LayoutProps } from './types'
 import './layout-shell.css'
@@ -191,10 +194,16 @@ export function CommandCenterLayout({ engine, userEmail, onLogout }: LayoutProps
     useState<ArtifactZoomState>(createInlineZoomState)
   const [leftCollapsed, setLeftCollapsed] = useState(false)
   const [rightCollapsed, setRightCollapsed] = useState(false)
+  const [railMode, setRailMode] = useState<ContextRailMode>('artifacts-only')
   const [isActivityDrawerExpanded, setIsActivityDrawerExpanded] = useState(false)
   const [isCompactLayout, setIsCompactLayout] = useState<boolean>(readIsCompactLayout)
   const [mobileThreadsOpen, setMobileThreadsOpen] = useState(false)
   const [mobileArtifactsOpen, setMobileArtifactsOpen] = useState(false)
+  const hasLatestStoryCards = (engine.latestModernContext?.storyCards.length || 0) > 0
+  const autoRailMode: ArtifactRailMode = hasLatestStoryCards
+    ? 'stories+artifacts'
+    : 'artifacts-only'
+  const entityPanel = useEntityPanel(autoRailMode)
 
   const {
     threads,
@@ -231,6 +240,44 @@ export function CommandCenterLayout({ engine, userEmail, onLogout }: LayoutProps
     (): string | null => latestAgentMessageId(engine.messages),
     [engine.messages],
   )
+  const latestContextMessageId = useMemo((): string | null => {
+    for (let index = engine.timelineItems.length - 1; index >= 0; index -= 1) {
+      const item = engine.timelineItems[index]
+
+      if (item.type === 'message' && item.role === 'agent' && item.modernContext) {
+        return item.id
+      }
+    }
+
+    return null
+  }, [engine.timelineItems])
+  const resolvedRailMode: ContextRailMode =
+    railMode === 'entity-detail' ? railMode : railMode || autoRailMode
+  const rightRailTitle =
+    resolvedRailMode === 'entity-detail'
+      ? 'Entity Detail'
+      : hasLatestStoryCards
+        ? 'Context'
+        : 'Artifacts'
+  const sourceModernContext = useMemo(() => {
+    if (!entityPanel.sourceMessageId) {
+      return null
+    }
+
+    for (let index = engine.timelineItems.length - 1; index >= 0; index -= 1) {
+      const timelineItem = engine.timelineItems[index]
+
+      if (
+        timelineItem.type === 'message' &&
+        timelineItem.id === entityPanel.sourceMessageId &&
+        timelineItem.role === 'agent'
+      ) {
+        return timelineItem.modernContext || null
+      }
+    }
+
+    return null
+  }, [engine.timelineItems, entityPanel.sourceMessageId])
   const zoomAnnouncement = useMemo(
     (): string => zoomAnnouncementText(artifactZoomState.zoomLevel, selectedArtifact?.title),
     [artifactZoomState.zoomLevel, selectedArtifact?.title],
@@ -486,6 +533,17 @@ export function CommandCenterLayout({ engine, userEmail, onLogout }: LayoutProps
     rightCollapsed,
   ])
 
+  const onCloseEntityPanel = useCallback((): void => {
+    const restoredMode = entityPanel.previousRailMode
+    entityPanel.closePanel()
+    setRailMode(restoredMode)
+  }, [entityPanel])
+
+  const onResetEntityPanel = useCallback((): void => {
+    entityPanel.closePanel()
+    setRailMode('artifacts-only')
+  }, [entityPanel])
+
   const onCreateThread = useCallback((): void => {
     if (activeThreadId) {
       threadStateMapRef.current.set(activeThreadId, engine.getConversationSnapshot())
@@ -500,8 +558,9 @@ export function CommandCenterLayout({ engine, userEmail, onLogout }: LayoutProps
 
     engine.restoreConversationSnapshot(emptySnapshot)
     onResetArtifactZoom()
+    onResetEntityPanel()
     setMobileThreadsOpen(false)
-  }, [activeThreadId, createThread, engine, onResetArtifactZoom])
+  }, [activeThreadId, createThread, engine, onResetArtifactZoom, onResetEntityPanel])
 
   const onSwitchThread = useCallback(
     (threadId: string): void => {
@@ -524,9 +583,10 @@ export function CommandCenterLayout({ engine, userEmail, onLogout }: LayoutProps
       switchThread(threadId)
       engine.restoreConversationSnapshot(targetSnapshot)
       onResetArtifactZoom()
+      onResetEntityPanel()
       setMobileThreadsOpen(false)
     },
-    [activeThreadId, engine, onResetArtifactZoom, switchThread],
+    [activeThreadId, engine, onResetArtifactZoom, onResetEntityPanel, switchThread],
   )
 
   const onArchiveThread = useCallback(
@@ -561,6 +621,7 @@ export function CommandCenterLayout({ engine, userEmail, onLogout }: LayoutProps
         switchThread(fallbackThread.id)
         engine.restoreConversationSnapshot(fallbackSnapshot)
         onResetArtifactZoom()
+        onResetEntityPanel()
         return
       }
 
@@ -570,6 +631,7 @@ export function CommandCenterLayout({ engine, userEmail, onLogout }: LayoutProps
       threadMessageCountsRef.current.set(nextThread.id, 0)
       engine.restoreConversationSnapshot(emptySnapshot)
       onResetArtifactZoom()
+      onResetEntityPanel()
     },
     [
       activeThreadId,
@@ -577,6 +639,7 @@ export function CommandCenterLayout({ engine, userEmail, onLogout }: LayoutProps
       createThread,
       engine,
       onResetArtifactZoom,
+      onResetEntityPanel,
       switchThread,
       threads,
     ],
@@ -595,9 +658,38 @@ export function CommandCenterLayout({ engine, userEmail, onLogout }: LayoutProps
     setIsActivityDrawerExpanded((currentExpanded: boolean): boolean => !currentExpanded)
   }, [])
 
+  const onEntityClick = useCallback(
+    (entityRef: EntityReference, sourceMessageId?: string): void => {
+      const sourceMessage = sourceMessageId || currentExchangeMessageId
+
+      if (!sourceMessage) {
+        return
+      }
+
+      entityPanel.openEntity(entityRef, sourceMessage)
+      setRailMode('entity-detail')
+      setRightCollapsed(false)
+      setIsActivityDrawerExpanded(false)
+
+      if (isCompactLayout) {
+        setMobileArtifactsOpen(true)
+      }
+    },
+    [currentExchangeMessageId, entityPanel, isCompactLayout],
+  )
+
   const gridClassName = `cei-cc-grid${leftCollapsed ? ' cei-cc-grid-left-collapsed' : ''}${
     rightCollapsed ? ' cei-cc-grid-right-collapsed' : ''
   }`
+  const entityDetailPanel =
+    entityPanel.isOpen && entityPanel.activeEntity ? (
+      <EntityDetailPanel
+        entity={entityPanel.activeEntity}
+        modernContext={sourceModernContext}
+        onBack={onCloseEntityPanel}
+        onClose={onCloseEntityPanel}
+      />
+    ) : null
 
   return (
     <div className="cei-cc-shell">
@@ -696,6 +788,7 @@ export function CommandCenterLayout({ engine, userEmail, onLogout }: LayoutProps
             items={engine.timelineItems}
             listRef={engine.messageListRef}
             onArtifactClick={onSelectArtifactFromMessage}
+            onEntityClick={onEntityClick}
             onRetryMessage={engine.onRetryMessage}
             onScroll={engine.updateMessageScrollIntent}
             onToggleTool={engine.onToggleTool}
@@ -703,7 +796,7 @@ export function CommandCenterLayout({ engine, userEmail, onLogout }: LayoutProps
           <Composer {...composerPropsFromEngine(engine, 'full')} />
         </main>
 
-        {/* Right rail: Artifacts */}
+        {/* Right rail: Context */}
         <aside className={`cei-cc-right${rightCollapsed ? ' cei-cc-rail-collapsed' : ''}`}>
           {rightCollapsed ? (
             <button
@@ -718,7 +811,7 @@ export function CommandCenterLayout({ engine, userEmail, onLogout }: LayoutProps
           ) : (
             <>
               <div className="cei-cc-rail-header">
-                <h3 className="cei-cc-rail-title">Artifacts</h3>
+                <h3 className="cei-cc-rail-title">{rightRailTitle}</h3>
                 <button
                   aria-label="Collapse artifacts rail"
                   className="cei-cc-collapse-btn"
@@ -731,24 +824,18 @@ export function CommandCenterLayout({ engine, userEmail, onLogout }: LayoutProps
                   &rsaquo;
                 </button>
               </div>
-              <div className="cei-cc-artifacts">
-                {engine.artifacts.length === 0 ? (
-                  <p className="cei-muted cei-cc-empty-hint">Artifacts will appear here.</p>
-                ) : (
-                  engine.artifacts.map((artifact) => (
-                    <ArtifactCard
-                      artifact={artifact}
-                      isSelected={artifact.id === artifactZoomState.artifactId}
-                      key={artifact.id}
-                      onClick={onSelectArtifact}
-                    />
-                  ))
-                )}
-              </div>
-              <ActivityDrawer
+              <ContextRail
+                artifacts={engine.artifacts}
                 currentExchangeMessageId={currentExchangeMessageId}
-                isExpanded={isActivityDrawerExpanded}
-                onToggleExpanded={onToggleActivityDrawer}
+                entityDetailPanel={entityDetailPanel}
+                isActivityDrawerExpanded={isActivityDrawerExpanded}
+                latestContextMessageId={latestContextMessageId}
+                latestModernContext={engine.latestModernContext}
+                mode={resolvedRailMode}
+                onEntityClick={onEntityClick}
+                onSelectArtifact={onSelectArtifact}
+                onToggleActivityDrawer={onToggleActivityDrawer}
+                selectedArtifactId={artifactZoomState.artifactId}
                 toolLog={engine.toolLog}
               />
             </>
@@ -803,22 +890,23 @@ export function CommandCenterLayout({ engine, userEmail, onLogout }: LayoutProps
         isOpen={isCompactLayout && mobileArtifactsOpen}
         maxHeight="72vh"
         onClose={(): void => setMobileArtifactsOpen(false)}
-        title="Artifacts"
+        title={rightRailTitle}
       >
-        <div className="cei-cc-artifacts">
-          {engine.artifacts.length === 0 ? (
-            <p className="cei-muted cei-cc-empty-hint">Artifacts will appear here.</p>
-          ) : (
-            engine.artifacts.map((artifact) => (
-              <ArtifactCard
-                artifact={artifact}
-                isSelected={artifact.id === artifactZoomState.artifactId}
-                key={artifact.id}
-                onClick={onSelectArtifact}
-              />
-            ))
-          )}
-        </div>
+        <ContextRail
+          artifacts={engine.artifacts}
+          currentExchangeMessageId={currentExchangeMessageId}
+          entityDetailPanel={entityDetailPanel}
+          isActivityDrawerExpanded={isActivityDrawerExpanded}
+          latestContextMessageId={latestContextMessageId}
+          latestModernContext={engine.latestModernContext}
+          mode={resolvedRailMode}
+          onEntityClick={onEntityClick}
+          onSelectArtifact={onSelectArtifact}
+          onToggleActivityDrawer={onToggleActivityDrawer}
+          selectedArtifactId={artifactZoomState.artifactId}
+          showActivityDrawer={false}
+          toolLog={engine.toolLog}
+        />
       </SlideUpDrawer>
     </div>
   )

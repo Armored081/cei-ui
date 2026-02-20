@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { StructuredBlock } from '../agent/types'
 import type { ChatMessageItem } from '../types/chat'
 import type { Artifact, ChatEngine, ToolLogItem } from '../hooks/useChatEngine'
+import type { ModernContext } from '../types/modern-context.js'
 import { CommandCenterLayout } from './CommandCenter'
 
 function mockCompactViewport(): void {
@@ -27,7 +28,73 @@ function mockCompactViewport(): void {
   })
 }
 
-function createEngine(onToggleTool: (messageId: string, toolId: string) => void): ChatEngine {
+interface EngineOptions {
+  latestModernContext?: ModernContext | null
+  messages?: ChatMessageItem[]
+}
+
+function buildModernContext(
+  suffix: string,
+  options: {
+    includeStoryCards?: boolean
+    relatedName?: string
+  } = {},
+): ModernContext {
+  const includeStoryCards = options.includeStoryCards ?? true
+  const activeEntity = {
+    type: 'risk' as const,
+    id: `RS-${suffix}`,
+    name: `Risk ${suffix}`,
+  }
+
+  return {
+    storyCards: includeStoryCards
+      ? [
+          {
+            id: `story-${suffix}`,
+            title: `Story ${suffix}`,
+            severity: 'medium',
+            narrative: `Narrative ${suffix}`,
+            correlatedEntities: [
+              {
+                type: 'control',
+                id: `AC-${suffix}`,
+                name: `Control ${suffix}`,
+              },
+            ],
+          },
+        ]
+      : [],
+    entityGraph: {
+      nodes: [
+        activeEntity,
+        {
+          type: 'control',
+          id: `CTRL-${suffix}`,
+          name: options.relatedName || `Related ${suffix}`,
+        },
+      ],
+      edges: [
+        {
+          source: activeEntity,
+          target: {
+            type: 'control',
+            id: `CTRL-${suffix}`,
+            name: options.relatedName || `Related ${suffix}`,
+          },
+          relationshipType: 'mitigated-by',
+        },
+      ],
+    },
+    vizHints: [],
+    pivotTargets: [],
+  }
+}
+
+function createEngine(
+  onToggleTool: (messageId: string, toolId: string) => void,
+  options: EngineOptions = {},
+): ChatEngine {
   const recommendationBlock: StructuredBlock = {
     kind: 'recommendation',
     severity: 'medium',
@@ -35,7 +102,7 @@ function createEngine(onToggleTool: (messageId: string, toolId: string) => void)
     body: 'Update dependency xyz to 3.2.1.',
   }
 
-  const message: ChatMessageItem = {
+  const defaultMessage: ChatMessageItem = {
     canRetry: false,
     errorText: '',
     id: 'agent-1',
@@ -58,39 +125,60 @@ function createEngine(onToggleTool: (messageId: string, toolId: string) => void)
     type: 'message',
   }
 
-  const artifacts: Artifact[] = [
-    {
-      id: 'agent-1-block-1',
-      sourceMessageId: message.id,
-      segmentIndex: 1,
-      block: recommendationBlock,
-      kind: recommendationBlock.kind,
-      title: recommendationBlock.title,
-    },
-  ]
+  let messages = options.messages
+  if (!messages) {
+    messages = [defaultMessage]
+    if (options.latestModernContext) {
+      messages = [
+        {
+          ...defaultMessage,
+          modernContext: options.latestModernContext,
+        },
+      ]
+    }
+  }
 
-  const toolLog: ToolLogItem[] = [
-    {
-      args: { query: 'latest dependencies' },
-      id: 'tool-1',
-      isExpanded: false,
-      name: 'db_lookup',
-      result: { documentId: 'DOC-7' },
+  const artifacts: Artifact[] = messages.flatMap((message) =>
+    message.segments.flatMap((segment, segmentIndex): Artifact[] => {
+      if (segment.type !== 'block') {
+        return []
+      }
+
+      return [
+        {
+          id: `${message.id}-block-${segmentIndex.toString()}`,
+          sourceMessageId: message.id,
+          segmentIndex,
+          block: segment.block,
+          kind: segment.block.kind,
+          title: segment.block.title,
+        },
+      ]
+    }),
+  )
+
+  const toolLog: ToolLogItem[] = messages.flatMap((message) =>
+    message.tools.map((tool) => ({
+      args: tool.args,
+      id: tool.id,
+      isExpanded: tool.isExpanded,
+      name: tool.name,
+      result: tool.result,
       sourceMessageId: message.id,
-      status: 'complete',
-    },
-  ]
+      status: tool.status,
+    })),
+  )
 
   return {
-    timelineItems: [message],
+    timelineItems: messages,
     streamStatus: 'idle',
     sessionId: 'session-1',
     isStreaming: false,
     statusLabelText: 'Idle',
-    messages: [message],
+    messages,
     artifacts,
     toolLog,
-    latestModernContext: null,
+    latestModernContext: options.latestModernContext || null,
     draftMessage: '',
     setDraftMessage: (): void => {},
     errorBanner: '',
@@ -105,7 +193,7 @@ function createEngine(onToggleTool: (messageId: string, toolId: string) => void)
     createNewThread: (): void => {},
     getConversationSnapshot: () => ({
       sessionId: 'session-1',
-      timelineItems: [message],
+      timelineItems: messages,
     }),
     restoreConversationSnapshot: (): void => {},
     onRetryMessage: (): void => {},
@@ -214,5 +302,224 @@ describe('CommandCenter compact layout', (): void => {
     fireEvent.click(summaryBar)
 
     expect(screen.getByRole('heading', { name: 'Activity Log' })).toBeInTheDocument()
+  })
+
+  it('shows context rail title when story cards are available', (): void => {
+    renderLayout(
+      createEngine(vi.fn(), {
+        latestModernContext: buildModernContext('context', { includeStoryCards: true }),
+      }),
+    )
+
+    const contextHeadings = screen.getAllByRole('heading', { name: 'Context' })
+    expect(contextHeadings.length).toBeGreaterThan(0)
+  })
+
+  it('opens entity detail from message chip and restores previous rail mode on back', (): void => {
+    const modernContext = buildModernContext('story', {
+      includeStoryCards: true,
+      relatedName: 'Legacy Control',
+    })
+
+    const message: ChatMessageItem = {
+      canRetry: false,
+      errorText: '',
+      id: 'agent-entity',
+      isStreaming: false,
+      modernContext,
+      role: 'agent',
+      segments: [{ type: 'text', content: 'Investigate [[entity:risk:RS-story|Risk story]].' }],
+      tools: [],
+      type: 'message',
+    }
+
+    renderLayout(
+      createEngine(vi.fn(), {
+        latestModernContext: modernContext,
+        messages: [message],
+      }),
+    )
+
+    const conversation = screen.getByRole('log', { name: 'Conversation' })
+    fireEvent.click(within(conversation).getByRole('button', { name: 'Risk story' }))
+
+    const entityDialog = screen.getByRole('dialog', { name: 'Entity Detail' })
+    expect(within(entityDialog).getByRole('heading', { name: 'Risk story' })).toBeInTheDocument()
+
+    fireEvent.click(within(entityDialog).getByRole('tab', { name: 'Related' }))
+    expect(within(entityDialog).getByText('Legacy Control')).toBeInTheDocument()
+
+    fireEvent.click(within(entityDialog).getByRole('button', { name: 'Back to Artifacts' }))
+    expect(screen.getAllByRole('heading', { name: 'Story cards' }).length).toBeGreaterThan(0)
+  })
+
+  it('uses clicked message modernContext for entity detail instead of latestModernContext', (): void => {
+    const firstContext = buildModernContext('one', {
+      includeStoryCards: false,
+      relatedName: 'Legacy Control',
+    })
+    const latestContext = buildModernContext('two', {
+      includeStoryCards: true,
+      relatedName: 'Current Control',
+    })
+
+    const firstMessage: ChatMessageItem = {
+      canRetry: false,
+      errorText: '',
+      id: 'agent-1',
+      isStreaming: false,
+      modernContext: firstContext,
+      role: 'agent',
+      segments: [{ type: 'text', content: 'Inspect [[entity:risk:RS-one|Risk one]].' }],
+      tools: [],
+      type: 'message',
+    }
+
+    const secondMessage: ChatMessageItem = {
+      canRetry: false,
+      errorText: '',
+      id: 'agent-2',
+      isStreaming: false,
+      modernContext: latestContext,
+      role: 'agent',
+      segments: [{ type: 'text', content: 'Latest response in thread.' }],
+      tools: [],
+      type: 'message',
+    }
+
+    renderLayout(
+      createEngine(vi.fn(), {
+        latestModernContext: latestContext,
+        messages: [firstMessage, secondMessage],
+      }),
+    )
+
+    const conversation = screen.getByRole('log', { name: 'Conversation' })
+    fireEvent.click(within(conversation).getByRole('button', { name: 'Risk one' }))
+
+    const entityDialog = screen.getByRole('dialog', { name: 'Entity Detail' })
+    fireEvent.click(within(entityDialog).getByRole('tab', { name: 'Related' }))
+
+    expect(within(entityDialog).getByText('Legacy Control')).toBeInTheDocument()
+    expect(within(entityDialog).queryByText('Current Control')).not.toBeInTheDocument()
+  })
+
+  it('restores previous rail mode when entity panel is closed via Close button', (): void => {
+    const modernContext = buildModernContext('restore', {
+      includeStoryCards: true,
+      relatedName: 'Restore Control',
+    })
+
+    const message: ChatMessageItem = {
+      canRetry: false,
+      errorText: '',
+      id: 'agent-restore',
+      isStreaming: false,
+      modernContext,
+      role: 'agent',
+      segments: [{ type: 'text', content: 'Track [[entity:risk:RS-restore|Risk restore]].' }],
+      tools: [],
+      type: 'message',
+    }
+
+    renderLayout(
+      createEngine(vi.fn(), {
+        latestModernContext: modernContext,
+        messages: [message],
+      }),
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Risk restore' }))
+
+    const entityDialog = screen.getByRole('dialog', { name: 'Entity Detail' })
+    fireEvent.click(within(entityDialog).getByRole('button', { name: 'Close' }))
+
+    expect(screen.getAllByRole('heading', { name: 'Story cards' }).length).toBeGreaterThan(0)
+  })
+
+  it('opens entity detail from message chip and restores previous rail mode on back', (): void => {
+    const modernContext = buildModernContext('story', {
+      includeStoryCards: true,
+      relatedName: 'Legacy Control',
+    })
+
+    const message: ChatMessageItem = {
+      canRetry: false,
+      errorText: '',
+      id: 'agent-entity',
+      isStreaming: false,
+      modernContext,
+      role: 'agent',
+      segments: [{ type: 'text', content: 'Investigate [[entity:risk:RS-story|Risk story]].' }],
+      tools: [],
+      type: 'message',
+    }
+
+    renderLayout(
+      createEngine(vi.fn(), {
+        latestModernContext: modernContext,
+        messages: [message],
+      }),
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Risk story' }))
+
+    const entityDialog = screen.getByRole('dialog', { name: 'Entity Detail' })
+    expect(
+      within(entityDialog).getByRole('heading', { name: 'Risk story' }),
+    ).toBeInTheDocument()
+
+    fireEvent.click(within(entityDialog).getByRole('button', { name: 'Close' }))
+
+    expect(screen.getAllByRole('heading', { name: 'Story cards' }).length).toBeGreaterThan(0)
+  })
+
+  it('uses Entity Detail as mobile drawer title when entity panel opens', (): void => {
+    const modernContext = buildModernContext('drawer', { includeStoryCards: false })
+
+    const message: ChatMessageItem = {
+      canRetry: false,
+      errorText: '',
+      id: 'agent-drawer',
+      isStreaming: false,
+      modernContext,
+      role: 'agent',
+      segments: [{ type: 'text', content: 'Open [[entity:risk:RS-drawer|Risk drawer]].' }],
+      tools: [],
+      type: 'message',
+    }
+
+    renderLayout(
+      createEngine(vi.fn(), {
+        latestModernContext: modernContext,
+        messages: [message],
+      }),
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Risk drawer' }))
+
+    expect(screen.getByRole('dialog', { name: 'Entity Detail' })).toBeInTheDocument()
+  })
+
+  it('keeps artifacts rail title when no story cards exist', (): void => {
+    renderLayout(
+      createEngine(vi.fn(), {
+        latestModernContext: buildModernContext('none', { includeStoryCards: false }),
+      }),
+    )
+
+    const artifactsHeadings = screen.getAllByRole('heading', { name: 'Artifacts' })
+    expect(artifactsHeadings.length).toBeGreaterThan(0)
+  })
+
+  it('shows context rail title when story cards are available', (): void => {
+    renderLayout(
+      createEngine(vi.fn(), {
+        latestModernContext: buildModernContext('context', { includeStoryCards: true }),
+      }),
+    )
+
+    const contextHeadings = screen.getAllByRole('heading', { name: 'Context' })
+    expect(contextHeadings.length).toBeGreaterThan(0)
   })
 })

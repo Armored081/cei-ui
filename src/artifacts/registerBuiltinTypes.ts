@@ -1,10 +1,11 @@
-import { ArtifactRegistry } from './ArtifactRegistry'
-import { assessmentDetailArtifactDefinition } from './renderers/AssessmentDetailArtifact'
-import { assessmentListArtifactDefinition } from './renderers/AssessmentListArtifact'
-import { chartArtifactDefinition } from './renderers/ChartArtifact'
-import { documentArtifactDefinition } from './renderers/DocumentArtifact'
-import { recommendationArtifactDefinition } from './renderers/RecommendationArtifact'
-import { tableArtifactDefinition } from './renderers/TableArtifact'
+import { ArtifactRegistry } from './ArtifactRegistry.js'
+import { assessmentDetailArtifactDefinition } from './renderers/AssessmentDetailArtifact.js'
+import { assessmentListArtifactDefinition } from './renderers/AssessmentListArtifact.js'
+import { chartArtifactDefinition } from './renderers/ChartArtifact.js'
+import { documentArtifactDefinition } from './renderers/DocumentArtifact.js'
+import { recommendationArtifactDefinition } from './renderers/RecommendationArtifact.js'
+import { storyCardArtifactDefinition } from './renderers/StoryCardArtifact.js'
+import { tableArtifactDefinition } from './renderers/TableArtifact.js'
 
 let areBuiltinTypesRegistered = false
 
@@ -15,6 +16,7 @@ const builtinDefinitions = [
   assessmentListArtifactDefinition,
   assessmentDetailArtifactDefinition,
   documentArtifactDefinition,
+  storyCardArtifactDefinition,
 ]
 
 /**

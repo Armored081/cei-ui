@@ -1,0 +1,130 @@
+.cei-context-rail {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  overflow: hidden;
+  position: relative;
+}
+
+.cei-context-rail-scroll {
+  min-height: 0;
+  overflow-y: auto;
+  display: grid;
+  align-content: start;
+  gap: var(--space-3);
+  padding: var(--space-3);
+}
+
+.cei-context-rail-entity {
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.cei-context-rail-section {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.cei-context-rail-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cei-context-rail-section-title {
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.cei-context-rail .cei-cc-artifacts {
+  padding: 0;
+}
+
+.cei-context-topology-preview {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent) 10%, var(--bg-panel-muted)) 0%,
+    var(--bg-panel-muted) 100%
+  );
+  padding: var(--space-3);
+  display: grid;
+  gap: var(--space-2);
+}
+
+.cei-context-topology-title {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+}
+
+.cei-context-topology-meta {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.cei-context-topology-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.cei-context-topology-tag {
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 0.71rem;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.cei-context-topology-action {
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  justify-self: start;
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg-panel-muted));
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 0.76rem;
+  line-height: 1;
+  padding: 8px 10px;
+}
+
+.cei-context-topology-action:hover {
+  border-color: var(--accent);
+}
+
+.cei-context-topology-overlay {
+  position: absolute;
+  inset: var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: rgba(10, 14, 20, 0.92);
+  backdrop-filter: blur(6px);
+  display: grid;
+  place-items: center;
+  padding: var(--space-3);
+}
+
+.cei-context-topology-overlay-content {
+  text-align: center;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.cei-context-topology-overlay-content h5,
+.cei-context-topology-overlay-content p {
+  margin: 0;
+}
+
+.cei-context-rail-empty {
+  margin: var(--space-3);
+  color: var(--text-muted);
+  font-size: 0.84rem;
+}
